@@ -1,5 +1,6 @@
 package bogen.studio.Room.Repository;
 
+import bogen.studio.Room.DTO.DTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -17,7 +18,7 @@ import java.util.Map;
 // and mongodb has a very powerful query language as seen in https://www.mongodb.com/docs/manual/reference/operator/query/
 // whenever your database provides such verbose filtering functionality, it is a good idea to push the query building
 // to the ui and then pass the query as a parameter to the backend, this is a common pattern in lucene based search engines
-public interface FilterableRepository<T> {
+public interface FilterableRepository<T, D> {
 
     // this method is used to get a page of results from the database with filtering
     Page<T> findAllWithFilter(Class<T> typeParameterClass,
@@ -25,6 +26,9 @@ public interface FilterableRepository<T> {
 
     // this method is used to get a page of results from the database with filtering
     List<T> findAllWithFilter(Class<T> typeParameterClass, Filtering filtering);
+
+    // this method is used to get a page of results from the database with filtering
+    List<T> findAllDigestWithFilter(Class<T> typeParameterClass, Filtering filtering);
 
     // this method is used to get all the possible values for a filter
     // so that the ui can show a dropdown with all the possible values with checkboxes or radio buttons

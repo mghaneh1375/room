@@ -1,11 +1,8 @@
 package bogen.studio.Room.Models;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import bogen.studio.Room.DTO.BoomData;
+import lombok.*;
 import org.bson.types.ObjectId;
-import org.json.JSONObject;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -26,19 +23,18 @@ public class Boom {
     @Field("_id")
     private ObjectId _id;
 
-    private String title;
-    private String image;
+//    private BoomData data;
 
-    private JSONObject data;
-
-    private boolean availability;
-    private boolean visibility;
+    private boolean availability = false;
 
     @Field("user_id")
     private Integer userId;
 
-    @Field("mysql_id")
-    private Integer mysqlId;
+    @Field("place_id")
+    private ObjectId placeId;
+
+    @Field("business_id")
+    private Integer businessId;
 
     @Field("created_at")
     @CreatedDate

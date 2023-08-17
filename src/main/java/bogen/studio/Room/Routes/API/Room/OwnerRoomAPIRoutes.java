@@ -1,6 +1,6 @@
 package bogen.studio.Room.Routes.API.Room;
 
-import bogen.studio.Room.DTO.RoomData;
+import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Service.RoomService;
 import bogen.studio.Room.Utility.Positive;
@@ -32,7 +32,7 @@ public class OwnerRoomAPIRoutes {
     @Autowired
     RoomService roomService;
 
-    public final static int userId = 12;
+    public final static int userId = 1315;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -41,8 +41,8 @@ public class OwnerRoomAPIRoutes {
     @ResponseBody
     public String update(HttpServletRequest request,
                          @PathVariable @ObjectIdConstraint ObjectId id,
-                         final @RequestBody @Valid RoomData roomData) {
-        return roomService.update(id, userId, roomData);
+                         final @RequestBody @Valid RoomDTO roomDTO) {
+        return roomService.update(id, userId, roomDTO);
     }
 
     @PutMapping(value = "setPic/{id}")
@@ -78,11 +78,11 @@ public class OwnerRoomAPIRoutes {
             ) @NotBlank String jsonObject,
             final @RequestPart(value = "file") @ValidatedRegularImage MultipartFile file) {
 
-        RoomData roomData;
+        RoomDTO roomDTO;
 
         try {
-            roomData = objectMapper.readValue(jsonObject, RoomData.class);
-            return roomService.store(roomData, userId, boomId, file);
+            roomDTO = objectMapper.readValue(jsonObject, RoomDTO.class);
+            return roomService.store(roomDTO, userId, boomId, file);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return e.toString();

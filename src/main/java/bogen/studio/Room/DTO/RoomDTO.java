@@ -10,7 +10,7 @@ import java.util.List;
 @ValidatedRoom
 @Getter
 @Setter
-public class RoomData {
+public class RoomDTO {
 
     private String title;
     private String description;

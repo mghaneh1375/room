@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public class FilterableRepositoryImpl<T> implements FilterableRepository<T> {
+public class FilterableRepositoryImpl<T, D> implements FilterableRepository<T, D> {
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -28,6 +28,13 @@ public class FilterableRepositoryImpl<T> implements FilterableRepository<T> {
         Query query = constructQueryFromFiltering(filtering);
         return mongoTemplate.find(query, typeParameterClass);
     }
+
+    @Override
+    public List<T> findAllDigestWithFilter(Class<T> typeParameterClass, Filtering filtering) {
+        Query query = constructQueryFromFiltering(filtering);
+        return mongoTemplate.find(query, typeParameterClass);
+    }
+
 
     @Override
     public List<Object> getAllPossibleValuesForFilter(Class<T> typeParameterClass, Filtering filtering, String filterKey) {

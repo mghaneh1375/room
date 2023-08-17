@@ -1,20 +1,19 @@
 package bogen.studio.Room.DTO;
 
-import bogen.studio.Room.Validator.ValidatedBoom;
 import lombok.Getter;
 import lombok.Setter;
-import org.json.JSONObject;
 
-@ValidatedBoom
 @Getter
 @Setter
 public class BoomData {
 
-    private int userId;
-    private int mysqlId;
-    private String title;
-    private String image;
-    private String createdAt;
-    private JSONObject data;
+    private String description;
+    private String city;
+    private String state;
+    private String tel;
+    private int room_count;
+    private int stair_count;
+    private Long lat;
+    private Long lng;
 
 }

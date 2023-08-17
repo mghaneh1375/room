@@ -1,15 +1,18 @@
 package bogen.studio.Room.Service;
 
-import bogen.studio.Room.Models.Boom;
 import bogen.studio.Room.Models.PaginatedResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.bson.types.ObjectId;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+
+import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
 
 public abstract class AbstractService <T, D> {
 
@@ -26,6 +29,10 @@ public abstract class AbstractService <T, D> {
                 .build();
     }
 
+    public String authorizedList(List<String> filters) {
+        return null;
+    }
+
     abstract PaginatedResponse<T> list(List<String> filters);
 
     public abstract String update(ObjectId id, Object userId, D dto);
@@ -34,9 +41,7 @@ public abstract class AbstractService <T, D> {
 
     T populateEntity(T t, D d) {
         try {
-            String json = new JSONObject(d).toString();
-            System.out.println(json);
-            return (T) objectMapper.readValue(json, t.getClass());
+            return (T) objectMapper.readValue(new JSONObject(d).toString(), t.getClass());
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
@@ -44,5 +49,17 @@ public abstract class AbstractService <T, D> {
     }
 
     abstract T findById(ObjectId id);
+
+    public String toJSON(List<Object> objects) {
+
+        JSONArray jsonArray = new JSONArray();
+
+        for(Object o : objects) {
+//            jsonArray.put(new JSONObject(new Gson().toJson(o)));
+            jsonArray.put(new Gson().toJson(o));
+        }
+
+        return generateSuccessMsg("data", jsonArray);
+    }
 
 }

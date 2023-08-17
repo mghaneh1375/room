@@ -1,6 +1,6 @@
 package bogen.studio.Room.Service;
 
-import bogen.studio.Room.DTO.RoomData;
+import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Enums.Limitation;
 import bogen.studio.Room.Models.PaginatedResponse;
 import bogen.studio.Room.Models.Room;
@@ -23,7 +23,7 @@ import static bogen.studio.Room.Utility.StaticValues.*;
 import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
 
 @Service
-public class RoomService extends AbstractService<Room, RoomData> {
+public class RoomService extends AbstractService<Room, RoomDTO> {
 
     private final static String FOLDER = "rooms";
 
@@ -43,7 +43,7 @@ public class RoomService extends AbstractService<Room, RoomData> {
     }
 
     @Override
-    public String update(ObjectId id, Object userId, RoomData dto) {
+    public String update(ObjectId id, Object userId, RoomDTO dto) {
 
         Optional<Room> roomOptional = roomRepository.findById(id);
 
@@ -60,7 +60,7 @@ public class RoomService extends AbstractService<Room, RoomData> {
     }
 
     @Override
-    public String store(RoomData dto, Object ...additionalFields) {
+    public String store(RoomDTO dto, Object ...additionalFields) {
 
         Room room = populateEntity(null, dto);
         if(room == null)
@@ -101,7 +101,7 @@ public class RoomService extends AbstractService<Room, RoomData> {
     }
 
     @Override
-    Room populateEntity(Room room, RoomData roomData) {
+    Room populateEntity(Room room, RoomDTO roomDTO) {
 
         boolean isNew = false;
 
@@ -110,12 +110,12 @@ public class RoomService extends AbstractService<Room, RoomData> {
             isNew = true;
         }
 
-        room.setTitle(roomData.getTitle());
-        room.setDescription(roomData.getDescription());
-        room.setMaxCap(roomData.getMaxCap());
+        room.setTitle(roomDTO.getTitle());
+        room.setDescription(roomDTO.getDescription());
+        room.setMaxCap(roomDTO.getMaxCap());
 
-        if(roomData.getLimitations() != null)
-            room.setLimitations(roomData.getLimitations().stream()
+        if(roomDTO.getLimitations() != null)
+            room.setLimitations(roomDTO.getLimitations().stream()
                     .map(String::toUpperCase)
                     .map(Limitation::valueOf)
                     .collect(Collectors.toList())

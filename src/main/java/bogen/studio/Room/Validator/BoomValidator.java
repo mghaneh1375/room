@@ -1,13 +1,12 @@
 package bogen.studio.Room.Validator;
 
-import bogen.studio.Room.DTO.BoomData;
+import bogen.studio.Room.DTO.BoomDTO;
 import org.json.JSONObject;
-import org.springframework.util.ObjectUtils;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-public class BoomValidator implements ConstraintValidator<ValidatedBoom, BoomData> {
+public class BoomValidator implements ConstraintValidator<ValidatedBoom, BoomDTO> {
 
     @Override
     public void initialize(ValidatedBoom constraintAnnotation) {
@@ -15,15 +14,26 @@ public class BoomValidator implements ConstraintValidator<ValidatedBoom, BoomDat
     }
 
     @Override
-    public boolean isValid(BoomData value, ConstraintValidatorContext context) {
+    public boolean isValid(BoomDTO value, ConstraintValidatorContext context) {
 
         boolean isErrored = false;
         JSONObject errs = new JSONObject();
 
-        if (ObjectUtils.isEmpty(value.getTitle())) {
-            errs.put("name", "لطفا نام بوم گردی را وارد نمایید");
+        if (value.getUserId() == null) {
+            errs.put("userId", "لطفا آی دی کاربر را وارد نمایید");
             isErrored = true;
         }
+
+        if (value.getBusinessId() == null) {
+            errs.put("businessId", "لطفا آی دی بیزینس را وارد نمایید");
+            isErrored = true;
+        }
+
+        if (value.getPlaceId() == null) {
+            errs.put("businessId", "لطفا آی دی بوم گردی را وارد نمایید");
+            isErrored = true;
+        }
+
         if(isErrored) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(errs.toString()).addConstraintViolation();

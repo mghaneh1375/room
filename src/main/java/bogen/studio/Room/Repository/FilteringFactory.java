@@ -74,6 +74,7 @@ public class FilteringFactory {
                             nestedObject(typeParameterClass, filterSplit[2], nested));
                 }
             } catch (NoSuchFieldException e) {
+                e.printStackTrace();
                 throw new IllegalArgumentException("Filtering parameter not allowed: " + filterSplit[0]);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);

@@ -1,6 +1,6 @@
 package bogen.studio.Room.Routes.API.BoomAPIRoutes;
 
-import bogen.studio.Room.DTO.BoomData;
+import bogen.studio.Room.DTO.BoomDTO;
 import bogen.studio.Room.Service.BoomService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -18,8 +18,8 @@ public class SystemBoomAPIRoutes {
 
     @PostMapping("store")
     @ResponseBody
-    public String store(final @RequestBody BoomData boomData) {
-        return boomService.store(boomData);
+    public String store(final @RequestBody @Valid BoomDTO boomDTO) {
+        return boomService.store(boomDTO);
     }
 
 }

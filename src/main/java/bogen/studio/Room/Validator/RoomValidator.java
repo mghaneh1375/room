@@ -1,6 +1,6 @@
 package bogen.studio.Room.Validator;
 
-import bogen.studio.Room.DTO.RoomData;
+import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Enums.Limitation;
 import org.json.JSONObject;
 import org.springframework.util.ObjectUtils;
@@ -8,7 +8,7 @@ import org.springframework.util.ObjectUtils;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomData> {
+public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO> {
 
     @Override
     public void initialize(ValidatedRoom constraintAnnotation) {
@@ -16,7 +16,7 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDat
     }
 
     @Override
-    public boolean isValid(RoomData value, ConstraintValidatorContext context) {
+    public boolean isValid(RoomDTO value, ConstraintValidatorContext context) {
 
         boolean isErrored = false;
         JSONObject errs = new JSONObject();
