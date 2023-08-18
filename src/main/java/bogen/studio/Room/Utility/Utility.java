@@ -3,13 +3,51 @@ package bogen.studio.Room.Utility;
 import org.bson.Document;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
+
+import static bogen.studio.Room.Utility.StaticValues.ONE_DAY_MSEC;
 
 public class Utility {
 
     private static final Pattern justNumPattern = Pattern.compile("^\\d+$");
     private static final Pattern passwordStrengthPattern = Pattern.compile("^(?=.*[0-9])(?=.*[A-z])(?=\\S+$).{8,}$");
+
+    public static String getPast(String delimeter, String solarDate, int days) {
+
+        Locale loc = new Locale("en_US");
+        String[] splited = solarDate.split("\\/");
+
+        JalaliCalendar.YearMonthDate tmp =
+                JalaliCalendar.jalaliToGregorian(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2]));
+
+        DateFormat format = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
+
+        Date d = null;
+        try {
+            d = format.parse(tmp.toString());
+
+            SolarCalendar sc = new SolarCalendar(new Date(d.getTime() - ONE_DAY_MSEC * days));
+            return String.valueOf(sc.year) + delimeter + String.format(loc, "%02d",
+                    sc.month) + delimeter + String.format(loc, "%02d", sc.date);
+
+        } catch (ParseException e) {
+            return null;
+        }
+
+    }
+
+    public static String getPast(String delimeter, int days) {
+        Locale loc = new Locale("en_US");
+        SolarCalendar sc = new SolarCalendar(-ONE_DAY_MSEC * days);
+        return String.valueOf(sc.year) + delimeter + String.format(loc, "%02d",
+                sc.month) + delimeter + String.format(loc, "%02d", sc.date);
+    }
 
     public static Document searchInDocumentsKeyVal(List<Document> arr, String key, Object val) {
 

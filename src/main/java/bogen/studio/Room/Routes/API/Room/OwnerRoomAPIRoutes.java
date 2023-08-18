@@ -1,5 +1,6 @@
 package bogen.studio.Room.Routes.API.Room;
 
+import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Service.RoomService;
@@ -53,6 +54,14 @@ public class OwnerRoomAPIRoutes {
         return roomService.setPic(id, file);
     }
 
+    @PutMapping(value = "setDatePrice/{id}")
+    @ResponseBody
+    public String setDatePrice(HttpServletRequest request,
+                               @PathVariable @ObjectIdConstraint ObjectId id,
+                               final @RequestBody @Valid DatePrice datePrice) {
+        return roomService.addDatePrice(id, datePrice);
+    }
+
     @PostMapping(value = "store/{boomId}")
     @ResponseBody
     public String store(
@@ -61,28 +70,32 @@ public class OwnerRoomAPIRoutes {
             final @RequestPart(name = "data") @StrongJSONConstraint(
                     params = {
                             "title", "maxCap", "capPrice",
-                            "availability", "visibility"
+                            "cap", "price", "availability",
                     },
                     paramsType = {
                             String.class, Positive.class, Positive.class,
-                            Boolean.class, Boolean.class
+                            Positive.class, Positive.class, Boolean.class,
                     },
                     optionals = {
                             "description", "limitations", "sleepFeatures",
-                            "accessibilityFeatures"
+                            "accessibilityFeatures", "weekendPrice",
+                            "vacationPrice", "foodFacilities", "welfare",
+                            "additionalFacilities"
                     },
                     optionalsType = {
                             String.class, JSONArray.class, JSONArray.class,
-                            JSONArray.class,
+                            JSONArray.class, Positive.class, Positive.class,
+                            JSONArray.class, JSONArray.class, JSONArray.class
                     }
-            ) @NotBlank String jsonObject,
-            final @RequestPart(value = "file") @ValidatedRegularImage MultipartFile file) {
+            ) @NotBlank String jsonObject) {
+//,
+//        final @RequestPart(value = "file", required = false) @ValidatedRegularImage MultipartFile file
 
         RoomDTO roomDTO;
-
+        System.out.println("dwq");
         try {
             roomDTO = objectMapper.readValue(jsonObject, RoomDTO.class);
-            return roomService.store(roomDTO, userId, boomId, file);
+            return roomService.store(roomDTO, userId, boomId, null);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return e.toString();

@@ -168,9 +168,9 @@ public abstract class Common extends Repository {
 
             if (!table.isEmpty()) {
                 if (secKey.isEmpty())
-                    addToCache(table, doc, 200, ONE_DAY_MSEC);
+                    addToCache(table, doc, 200, (int)ONE_DAY_MSEC);
                 else
-                    addToCache(table, doc, secKey, 200, ONE_DAY_MSEC);
+                    addToCache(table, doc, secKey, 200, (int)ONE_DAY_MSEC);
             }
 
             return doc;
@@ -200,7 +200,7 @@ public abstract class Common extends Repository {
             Document doc = cursor.iterator().next();
 
             if (!table.isEmpty())
-                addToCache(table, doc, val, 200, ONE_DAY_MSEC);
+                addToCache(table, doc, val, 200, (int)ONE_DAY_MSEC);
 
             return doc;
         }

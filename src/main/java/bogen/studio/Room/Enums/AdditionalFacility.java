@@ -1,8 +1,8 @@
 package bogen.studio.Room.Enums;
 
-public enum SleepFeature {
+public enum AdditionalFacility {
 
-    SINGLE, DOUBLE, COUPLE, BED_LINEN;
+    TERRACE, SERVICE_ROOM, IRAN_REST_ROOM, BATH, KITCHEN;
 
     public String getName() {
         return name().toLowerCase();

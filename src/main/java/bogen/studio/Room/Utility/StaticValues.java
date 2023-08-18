@@ -5,11 +5,11 @@ import org.json.JSONObject;
 
 public class StaticValues {
 
-    public final static int ONE_DAY_MSEC = 60 * 60 * 24 * 1000;
+    public final static long ONE_DAY_MSEC = 60 * 60 * 24 * 1000;
 
     public static final int MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-    public final static long TOKEN_EXPIRATION_MSEC = 60 * 60 * 24 * 7 * 1000;
+    public final static long TOKEN_EXPIRATION_MSEC = ONE_DAY_MSEC * 7;
     public final static int TOKEN_EXPIRATION = 60 * 60 * 24 * 7;
     public final static long SERVER_TOKEN_EXPIRATION_MSEC = 20 * 1000; // 20 s
 
