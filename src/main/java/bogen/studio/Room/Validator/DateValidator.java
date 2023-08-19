@@ -37,6 +37,6 @@ public class DateValidator implements
 
     @Override
     public boolean isValid(String s, ConstraintValidatorContext constraintValidatorContext) {
-        return pattern.matcher(Utility.convertPersianDigits(s)).matches();
+        return pattern2.matcher(Utility.convertPersianDigits(s)).matches();
     }
 }

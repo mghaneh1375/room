@@ -12,7 +12,7 @@ import java.util.List;
 public interface BoomRepository extends
         MongoRepository<Boom, ObjectId>, FilterableRepository<Boom, bogen.studio.Room.DTO.Digests.Authorized.Boom> {
 
-    @Query(value = "{ 'userId' : ?0 }", fields = "{ '_id': 1, 'availability': 1, 'visibility': 1, 'createdAt': 1 }")
+    @Query(value = "{ 'userId' : ?0 }", fields = "{ '_id': 1, 'availability': 1, 'createdAt': 1, 'place_id': 1 }")
     List<Boom> findByUserIdIncludeEmbeddedFields(Integer userId);
 
 }

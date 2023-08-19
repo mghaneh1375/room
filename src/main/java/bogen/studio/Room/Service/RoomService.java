@@ -12,9 +12,16 @@ import bogen.studio.Room.Repository.FilteringFactory;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
+import bogen.studio.Room.Utility.JalaliCalendar;
 import bogen.studio.Room.Utility.PairValue;
 import bogen.studio.Room.Utility.Utility;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.bson.types.ObjectId;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,15 +51,67 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     private ReservationRequestsRepository reservationRequestsRepository;
 
     @Override
-    public PaginatedResponse<Room> list(List<String> filters) {
+    public String list(List<String> filters) {
 
-        Pageable pageable = PageRequest.of(0, 10);
+        ObjectId boomId = new ObjectId(filters.get(0));
+        int userId = Integer.parseInt(filters.get(1));
 
-        Page<Room> all = roomRepository.findAllWithFilter(Room.class,
-                FilteringFactory.parseFromParams(filters, Room.class), pageable
+        List<Room> rooms = roomRepository.findByUserIdAndBoomId(userId, boomId);
+
+        return generateSuccessMsg("data", rooms.stream()
+                .map(x -> {
+
+                            String id = x.get_id().toString();
+
+                            JSONObject jsonObject = new JSONObject()
+                                    .put("id", id)
+                                    .put("created_at", x.getCreatedAt().toString())
+                                    .put("availability", x.isAvailability())
+                                    .put("title", x.getTitle())
+                                    .put("image", x.getImage())
+                                    .put("cap", x.getCap())
+                                    .put("price", x.getPrice())
+                                    .put("maxCap", x.getMaxCap())
+                                    .put("capPrice", x.getCapPrice())
+                                    .put("onlineReservation", x.isOnlineReservation());
+
+                            if(x.isOnlineReservation())
+                                jsonObject.put("pendingRequests", reservationRequestsRepository.countByRoomIdAndStatus(x.get_id(), "RESERVED"));
+
+                            return jsonObject;
+                        }
+                ).collect(Collectors.toList())
         );
 
-        return returnPaginateResponse(all);
+    }
+
+
+    public String publicList(ObjectId boomId) {
+
+//        List<Room> rooms = roomRepository.findByBoomId(boomId).stream().map(x -> {
+//
+//            JSONObject jsonObject = new JSONObject(x);
+////            roomDTO.getLimitations().stream()
+////                    .map(String::toUpperCase)
+////                    .map(Limitation::valueOf)
+////                    .collect(Collectors.toList()
+//
+////            jsonObject.put("foodFacilities", );
+//
+//        });
+
+        JSONArray jsonArray = new JSONArray();
+
+        for(Room room : rooms) {
+            JSONObject jsonObject = new JSONObject(room);
+            jsonObject.put("id", room.get_id().toString());
+            jsonObject.put("foodFacilities", jsonObject.getJSONArray("foodFacilities"))
+            jsonObject.remove("_id");
+            jsonArray.put(jsonObject);
+        }
+
+        return generateSuccessMsg("data", jsonArray);
+
     }
 
     @Override
@@ -67,7 +127,15 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (!room.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
-        roomRepository.save(populateEntity(room, dto));
+        String oldTitle = room.getTitle();
+
+        room = populateEntity(room, dto);
+
+        if(!oldTitle.equals(room.getTitle()) &&
+                roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
+                return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
+
+        roomRepository.save(room);
         return JSON_OK;
     }
 
@@ -75,18 +143,18 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     public String store(RoomDTO dto, Object... additionalFields) {
 
         Room room = populateEntity(null, dto);
-        if (room == null)
-            return JSON_UNKNOWN_UPLOAD_FILE;
 
         room.setUserId((Integer) additionalFields[0]);
         room.setBoomId((ObjectId) additionalFields[1]);
+
+        if(roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
+            return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
 
         String filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
         if (filename == null)
             return JSON_UNKNOWN_UPLOAD_FILE;
 
         room.setImage(filename);
-
         roomRepository.insert(room);
 
         return generateSuccessMsg("id", room.get_id());
@@ -112,7 +180,43 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return JSON_OK;
     }
 
+    public String removeDatePrice(ObjectId id, String date) {
+
+        Room room = findById(id);
+        if (room == null)
+            return JSON_NOT_VALID_ID;
+
+        if (room.getDatePrices() == null)
+            return JSON_NOT_ACCESS;
+
+        List<DatePrice> datePrices = room.getDatePrices();
+
+        int idx = -1;
+        int counter = 0;
+
+        for (DatePrice itr : datePrices) {
+
+            if (itr.getDate().equals(date)) {
+                idx = counter;
+                break;
+            }
+
+            counter++;
+        }
+
+        if (idx == -1)
+            return JSON_NOT_ACCESS;
+
+        datePrices.remove(idx);
+        roomRepository.save(room);
+
+        return JSON_OK;
+    }
+
     public String addDatePrice(ObjectId id, DatePrice datePrice) {
+
+        if (!datePrice.isLargerThanToday())
+            return generateErr("تاریخ باید بزرگ تر از امروز باشد");
 
         Room room = findById(id);
         if (room == null)
@@ -147,12 +251,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     @Override
     Room populateEntity(Room room, RoomDTO roomDTO) {
 
-        boolean isNew = false;
-
-        if (room == null) {
+        if (room == null)
             room = new Room();
-            isNew = true;
-        }
 
         room.setTitle(roomDTO.getTitle());
         room.setDescription(roomDTO.getDescription());
@@ -207,9 +307,6 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     .collect(Collectors.toList())
             );
 
-        //todo: uniqueness of name in one boomgardy for a person
-        if (isNew) ;
-
         return room;
 
     }
@@ -220,6 +317,24 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return room.orElse(null);
     }
 
+
+    public String get(ObjectId id, int userId) {
+
+        Room room = findById(id);
+
+        if(room == null)
+            return JSON_NOT_VALID_ID;
+
+        if(room.getUserId() != userId)
+            return JSON_NOT_ACCESS;
+
+        JSONObject jsonObject = new JSONObject(room);
+        jsonObject.put("boomId", room.getBoomId().toString());
+        jsonObject.put("id", room.get_id().toString());
+        jsonObject.remove("_id");
+
+        return generateSuccessMsg("data", jsonObject);
+    }
 
     public void remove(ObjectId id) {
         roomRepository.deleteById(id);
@@ -257,8 +372,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
+            PairValue p = calcPrice(room, dates, dto.getPassengers());
 
-            return generateSuccessMsg("data", calcPrice(room, dates, dto.getPassengers()).getKey());
+            return generateSuccessMsg("data", new JSONObject()
+                    .put("total", p.getKey())
+                    .put("prices", p.getValue())
+            );
         } catch (Exception x) {
             return generateErr(x.getMessage());
         }
@@ -291,11 +410,46 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                 continue;
             }
 
-            // todo: check is vacation
-            // todo: check is weekend
+            String[] splited = date.split("\\/");
+            int dayOfWeek = JalaliCalendar.dayOfWeek(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2]));
 
-            prices.add(additionalPassengerPrice > 0 ? room.getPrice() + additionalPassengerPrice : room.getPrice());
-            totalPrice += additionalPassengerPrice > 0 ? room.getPrice() + additionalPassengerPrice : room.getPrice();
+
+            if (room.getWeekendPrice() != null && weekends.contains(dayOfWeek)) {
+                prices.add(additionalPassengerPrice > 0 ? room.getWeekendPrice() + additionalPassengerPrice : room.getWeekendPrice());
+                totalPrice += additionalPassengerPrice > 0 ? room.getWeekendPrice() + additionalPassengerPrice : room.getWeekendPrice();
+            }
+            // todo: check is vacation
+            else {
+
+                boolean isHoliday = false;
+
+                if (room.getVacationPrice() != null) {
+                    if (fetchedHolidays.containsKey(date)) {
+                        isHoliday = fetchedHolidays.get(date);
+                    } else {
+                        try {
+                            HttpResponse<JsonNode> res = Unirest.get("https://holidayapi.ir/jalali/" + date).asJson();
+                            if (res.getStatus() == 200 && res.getBody().getObject().has("is_holiday")) {
+                                isHoliday = res.getBody().getObject().getBoolean("is_holiday");
+                                fetchedHolidays.put(date, isHoliday);
+                            }
+                        } catch (UnirestException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                int p;
+
+                if (isHoliday)
+                    p = additionalPassengerPrice > 0 ? room.getVacationPrice() + additionalPassengerPrice : room.getVacationPrice();
+                else
+                    p = additionalPassengerPrice > 0 ? room.getPrice() + additionalPassengerPrice : room.getPrice();
+
+                prices.add(p);
+                totalPrice += p;
+            }
+
         }
 
         return new PairValue(totalPrice, prices);
@@ -319,23 +473,36 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             reservationRequests.setPassengers(dto.getPassengers());
             reservationRequests.setPrices(prices);
             reservationRequests.setTotalAmount(totalAmount);
-            reservationRequests.setStatus(room.isOnlineReservation() ?
-                    ReservationStatus.RESERVED :
-                    ReservationStatus.PENDING
+            reservationRequests.setStatus(ReservationStatus.RESERVED);
+            reservationRequests.setReserveExpireAt(room.isOnlineReservation() ?
+                    System.currentTimeMillis() + BANK_WAIT_MSEC :
+                    System.currentTimeMillis() + ACCEPT_PENDING_WAIT_MSEC
             );
             reservationRequests.setUserId(userId);
             reservationRequests.setRoomId(room.get_id());
 
             reservationRequestsRepository.insert(reservationRequests);
 
-            if(room.isOnlineReservation())
+            if (room.isOnlineReservation())
                 //todo: go to bank
-             ;
+                ;
 
             return generateSuccessMsg("data", reservationRequests.get_id());
         } catch (Exception x) {
             return generateErr(x.getMessage());
         }
 
+    }
+
+    public String toggleAccessibility(ObjectId id) {
+
+        Room room = findById(id);
+        if (room == null)
+            return JSON_NOT_VALID_ID;
+
+        room.setAvailability(!room.isAvailability());
+        roomRepository.save(room);
+
+        return JSON_OK;
     }
 }

@@ -3,15 +3,27 @@ package bogen.studio.Room.Utility;
 import com.mongodb.BasicDBObject;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public class StaticValues {
 
     public final static long ONE_DAY_MSEC = 60 * 60 * 24 * 1000;
+
+    public final static long BANK_WAIT_MSEC = 60 * 1000 * 15;
+    public final static long ACCEPT_PENDING_WAIT_MSEC = 60 * 1000 * 15;
+    public final static long PAY_WAIT_MSEC = 60 * 1000 * 15;
 
     public static final int MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     public final static long TOKEN_EXPIRATION_MSEC = ONE_DAY_MSEC * 7;
     public final static int TOKEN_EXPIRATION = 60 * 60 * 24 * 7;
     public final static long SERVER_TOKEN_EXPIRATION_MSEC = 20 * 1000; // 20 s
+
+    public final static List<Integer> weekends = new ArrayList<Integer>(){{add(7);}};
+
+    public static HashMap<String, Boolean> fetchedHolidays = new HashMap<>();
 
     public final static BasicDBObject USER_DIGEST = new BasicDBObject("_id", 1)
             .append("first_name", 1)

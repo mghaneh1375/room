@@ -14,7 +14,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     private ReservationRequests reservationRequests;
 
     @Override
-    PaginatedResponse<ReservationRequests> list(List<String> filters) {
+    String list(List<String> filters) {
         return null;
     }
 
