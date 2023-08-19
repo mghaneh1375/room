@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import java.util.ArrayList;
+
 import static bogen.studio.Room.Routes.API.Room.OwnerRoomAPIRoutes.userId;
 
 @RestController
@@ -36,6 +38,13 @@ public class PublicRoomAPIRoutes {
                             @PathVariable @ObjectIdConstraint ObjectId id,
                             @RequestBody @Valid ReservationRequestDTO dto) {
         return roomService.calcPrice(id, dto);
+    }
+
+    @GetMapping(value = "list/{boomId}")
+    @ResponseBody
+    public String list(HttpServletRequest request,
+                       @PathVariable @ObjectIdConstraint ObjectId boomId) {
+        return roomService.publicList(boomId);
     }
 
 }

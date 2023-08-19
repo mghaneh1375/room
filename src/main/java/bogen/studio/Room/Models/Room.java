@@ -41,7 +41,11 @@ public class Room {
     private Integer capPrice;
 
     private Integer price;
+
+    @Field("weekend_price")
     private Integer weekendPrice;
+
+    @Field("vacation_price")
     private Integer vacationPrice;
 
     @Field("date_prices")

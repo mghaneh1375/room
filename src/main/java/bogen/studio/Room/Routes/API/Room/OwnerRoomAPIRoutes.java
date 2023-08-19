@@ -5,6 +5,7 @@ import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Service.RoomService;
 import bogen.studio.Room.Utility.Positive;
+import bogen.studio.Room.Validator.DateConstraint;
 import bogen.studio.Room.Validator.ObjectIdConstraint;
 import bogen.studio.Room.Validator.StrongJSONConstraint;
 import bogen.studio.Room.Validator.ValidatedRegularImage;
@@ -21,6 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
+
+import java.util.ArrayList;
 
 import static bogen.studio.Room.Utility.StaticValues.JSON_NOT_VALID_ID;
 import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
@@ -62,6 +65,22 @@ public class OwnerRoomAPIRoutes {
         return roomService.addDatePrice(id, datePrice);
     }
 
+    @DeleteMapping(value = "removeDatePrice/{id}/{date}")
+    @ResponseBody
+    public String removeDatePrice(HttpServletRequest request,
+                                  @PathVariable @ObjectIdConstraint ObjectId id,
+                                  @PathVariable @DateConstraint String date) {
+        return roomService.removeDatePrice(id, date.replace("-", "/"));
+    }
+
+    @PutMapping(value = "/toggleAccessibility/{id}")
+    @ResponseBody
+    public String toggleAccessibility(HttpServletRequest request,
+                                      @PathVariable @ObjectIdConstraint ObjectId id
+    ) {
+        return roomService.toggleAccessibility(id);
+    }
+
     @PostMapping(value = "store/{boomId}")
     @ResponseBody
     public String store(
@@ -87,15 +106,15 @@ public class OwnerRoomAPIRoutes {
                             JSONArray.class, Positive.class, Positive.class,
                             JSONArray.class, JSONArray.class, JSONArray.class
                     }
-            ) @NotBlank String jsonObject) {
-//,
-//        final @RequestPart(value = "file", required = false) @ValidatedRegularImage MultipartFile file
+            ) @NotBlank String jsonObject,
+            final @RequestPart(value = "file", required = false) @ValidatedRegularImage MultipartFile file) {
+
 
         RoomDTO roomDTO;
-        System.out.println("dwq");
+
         try {
             roomDTO = objectMapper.readValue(jsonObject, RoomDTO.class);
-            return roomService.store(roomDTO, userId, boomId, null);
+            return roomService.store(roomDTO, userId, boomId, file);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return e.toString();
@@ -103,18 +122,19 @@ public class OwnerRoomAPIRoutes {
     }
 
 
+    @GetMapping(value = "list/{boomId}")
+    @ResponseBody
+    public String list(HttpServletRequest request,
+                       @PathVariable @ObjectIdConstraint ObjectId boomId) {
+        ArrayList<String> filters = new ArrayList<>();
+        filters.add(boomId.toString());
+        filters.add(userId + "");
+        return roomService.list(filters);
+    }
+
     @GetMapping(value = "get/{id}")
     @ResponseBody
     public String get(@PathVariable @ObjectIdConstraint ObjectId id) {
-
-        Room room = roomService.findById(id);
-        if (room == null)
-            return JSON_NOT_VALID_ID;
-
-        JSONObject jsonObject = new JSONObject()
-                .put("id", room.get_id().toString())
-                .put("name", room.getTitle());
-
-        return generateSuccessMsg("data", jsonObject);
+        return roomService.get(id, userId);
     }
 }

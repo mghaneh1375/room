@@ -2,7 +2,7 @@ package bogen.studio.Room.Enums;
 
 public enum ReservationStatus {
 
-    ACCEPT, REJECT, PENDING, CANCELED, RESERVED;
+    ACCEPT, REJECT, CANCELED, RESERVED, REFUND, ACCEPT_CANCELED, PAID, FINISH;
 
     public String getName() {
         return name().toLowerCase();

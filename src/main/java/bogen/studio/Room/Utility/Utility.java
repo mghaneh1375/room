@@ -49,6 +49,13 @@ public class Utility {
                 sc.month) + delimeter + String.format(loc, "%02d", sc.date);
     }
 
+    public static String getToday(String delimeter) {
+        Locale loc = new Locale("en_US");
+        SolarCalendar sc = new SolarCalendar();
+        return String.valueOf(sc.year) + delimeter + String.format(loc, "%02d",
+                sc.month) + delimeter + String.format(loc, "%02d", sc.date);
+    }
+
     public static Document searchInDocumentsKeyVal(List<Document> arr, String key, Object val) {
 
         if (arr == null)
