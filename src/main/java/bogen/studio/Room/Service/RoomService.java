@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
 import static bogen.studio.Room.Utility.Utility.generateErr;
@@ -75,7 +76,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                     .put("capPrice", x.getCapPrice())
                                     .put("onlineReservation", x.isOnlineReservation());
 
-                            if(x.isOnlineReservation())
+                            if (x.isOnlineReservation())
                                 jsonObject.put("pendingRequests", reservationRequestsRepository.countByRoomIdAndStatus(x.get_id(), "RESERVED"));
 
                             return jsonObject;
@@ -88,27 +89,47 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     public String publicList(ObjectId boomId) {
 
-//        List<Room> rooms = roomRepository.findByBoomId(boomId).stream().map(x -> {
-//
-//            JSONObject jsonObject = new JSONObject(x);
-////            roomDTO.getLimitations().stream()
-////                    .map(String::toUpperCase)
-////                    .map(Limitation::valueOf)
-////                    .collect(Collectors.toList()
-//
-////            jsonObject.put("foodFacilities", );
-//
-//        });
-
         JSONArray jsonArray = new JSONArray();
 
-        for(Room room : rooms) {
-            JSONObject jsonObject = new JSONObject(room);
-            jsonObject.put("id", room.get_id().toString());
-            jsonObject.put("foodFacilities", jsonObject.getJSONArray("foodFacilities"))
+        roomRepository.findByBoomId(boomId).forEach(x -> {
+
+            JSONObject jsonObject = new JSONObject(x);
+
+            jsonObject.put("id", x.get_id().toString());
             jsonObject.remove("_id");
+
+            jsonObject.put("foodFacilities", x.getFoodFacilities() == null ? new JSONArray() :
+                    x.getFoodFacilities().stream()
+                            .map(FoodFacility::toFarsi)
+                            .collect(Collectors.toList()));
+
+            jsonObject.put("limitations", x.getLimitations() == null ? new JSONArray() :
+                    x.getLimitations().stream()
+                            .map(Limitation::toFarsi)
+                            .collect(Collectors.toList()));
+
+            jsonObject.put("welfares", x.getWelfares() == null ? new JSONArray() :
+                    x.getWelfares().stream()
+                            .map(Welfare::toFarsi)
+                            .collect(Collectors.toList()));
+
+            jsonObject.put("accessibilityFeatures", x.getAccessibilityFeatures() == null ? new JSONArray() :
+                    x.getAccessibilityFeatures().stream()
+                            .map(AccessibilityFeature::toFarsi)
+                            .collect(Collectors.toList()));
+
+            jsonObject.put("additionalFacilities", x.getAdditionalFacilities() == null ? new JSONArray() :
+                    x.getAdditionalFacilities().stream()
+                            .map(AdditionalFacility::toFarsi)
+                            .collect(Collectors.toList()));
+
+            jsonObject.put("SleepFeatures", x.getSleepFeatures() == null ? new JSONArray() :
+                    x.getSleepFeatures().stream()
+                            .map(SleepFeature::toFarsi)
+                            .collect(Collectors.toList()));
+
             jsonArray.put(jsonObject);
-        }
+        });
 
         return generateSuccessMsg("data", jsonArray);
 
@@ -131,9 +152,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         room = populateEntity(room, dto);
 
-        if(!oldTitle.equals(room.getTitle()) &&
+        if (!oldTitle.equals(room.getTitle()) &&
                 roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
-                return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
+            return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
 
         roomRepository.save(room);
         return JSON_OK;
@@ -147,7 +168,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         room.setUserId((Integer) additionalFields[0]);
         room.setBoomId((ObjectId) additionalFields[1]);
 
-        if(roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
+        if (roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
             return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
 
         String filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
@@ -322,10 +343,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room = findById(id);
 
-        if(room == null)
+        if (room == null)
             return JSON_NOT_VALID_ID;
 
-        if(room.getUserId() != userId)
+        if (room.getUserId() != userId)
             return JSON_NOT_ACCESS;
 
         JSONObject jsonObject = new JSONObject(room);
