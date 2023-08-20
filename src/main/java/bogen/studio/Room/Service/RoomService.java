@@ -3,12 +3,11 @@ package bogen.studio.Room.Service;
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.DTO.RoomDTO;
+import bogen.studio.Room.DTO.TripRequestDTO;
 import bogen.studio.Room.Enums.*;
 import bogen.studio.Room.Exception.InvalidFieldsException;
-import bogen.studio.Room.Models.PaginatedResponse;
 import bogen.studio.Room.Models.ReservationRequests;
 import bogen.studio.Room.Models.Room;
-import bogen.studio.Room.Repository.FilteringFactory;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
@@ -23,22 +22,16 @@ import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.Utility.generateErr;
-import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
+import static bogen.studio.Room.Utility.Utility.*;
 
 @Service
 public class RoomService extends AbstractService<Room, RoomDTO> {
@@ -76,8 +69,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                     .put("capPrice", x.getCapPrice())
                                     .put("onlineReservation", x.isOnlineReservation());
 
-                            if (x.isOnlineReservation())
-                                jsonObject.put("pendingRequests", reservationRequestsRepository.countByRoomIdAndStatus(x.get_id(), "RESERVED"));
+                            if (!x.isOnlineReservation())
+                                jsonObject.put("pendingRequests", reservationRequestsRepository.countByRoomIdAndStatus(x.get_id(),
+                                        ReservationStatus.PENDING.getName().toUpperCase())
+                                );
 
                             return jsonObject;
                         }
@@ -87,7 +82,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     }
 
 
-    public String publicList(ObjectId boomId) {
+    public String publicList(ObjectId boomId, TripRequestDTO dto) {
 
         JSONArray jsonArray = new JSONArray();
 
@@ -123,10 +118,20 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                             .map(AdditionalFacility::toFarsi)
                             .collect(Collectors.toList()));
 
-            jsonObject.put("SleepFeatures", x.getSleepFeatures() == null ? new JSONArray() :
+            jsonObject.put("sleepFeatures", x.getSleepFeatures() == null ? new JSONArray() :
                     x.getSleepFeatures().stream()
                             .map(SleepFeature::toFarsi)
                             .collect(Collectors.toList()));
+
+            if(dto != null) {
+
+                try {
+                    jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getPassengers()).getKey());
+                }
+                catch (Exception ex) {
+                    jsonObject.put("totalPrice", -1);
+                }
+            }
 
             jsonArray.put(jsonObject);
         });
@@ -236,7 +241,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     public String addDatePrice(ObjectId id, DatePrice datePrice) {
 
-        if (!datePrice.isLargerThanToday())
+        if (!isLargerThanToday(datePrice.getDate()))
             return generateErr("تاریخ باید بزرگ تر از امروز باشد");
 
         Room room = findById(id);
@@ -361,11 +366,16 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         roomRepository.deleteById(id);
     }
 
-    private PairValue canReserve(ObjectId id, ReservationRequestDTO dto) throws InvalidFieldsException {
+    private PairValue canReserve(ObjectId id, TripRequestDTO dto) throws InvalidFieldsException {
 
         Room room = findById(id);
         if (room == null)
             throw new InvalidFieldsException("id is not valid");
+
+        return new PairValue(room, canReserve(room, dto));
+    }
+
+    private List<String> canReserve(Room room, TripRequestDTO dto) throws InvalidFieldsException {
 
         if (!room.isAvailability())
             throw new InvalidFieldsException("has not access");
@@ -379,13 +389,13 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         for (int i = 1; i < dto.getNights(); i++)
             dates.add(Utility.getPast("/", dto.getStartDate(), -1 * i));
 
-        if (reservationRequestsRepository.findActiveReservations(room.get_id(), dates).size() > 0)
+        if (reservationRequestsRepository.findActiveReservations(room.get_id(), dates) > 0)
             throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
 
-        return new PairValue(room, dates);
+        return dates;
     }
 
-    public String calcPrice(ObjectId id, ReservationRequestDTO dto) {
+    public String calcPrice(ObjectId id, TripRequestDTO dto) {
 
         try {
 
@@ -395,39 +405,54 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             List<String> dates = (List<String>) pairValue.getValue();
             PairValue p = calcPrice(room, dates, dto.getPassengers());
 
+            JSONArray jsonArray = new JSONArray();
+
+            ((List<DatePrice>) p.getValue()).forEach(x -> jsonArray.put(new JSONObject()
+                    .put("additionalCapPrice", x.getCapPrice())
+                    .put("price", x.getPrice())
+                    .put("date", x.getDate())
+            ));
+
             return generateSuccessMsg("data", new JSONObject()
                     .put("total", p.getKey())
-                    .put("prices", p.getValue())
+                    .put("prices", jsonArray)
             );
         } catch (Exception x) {
             return generateErr(x.getMessage());
         }
     }
 
-
     public PairValue calcPrice(Room room, List<String> dates, int passengers) {
 
         int totalPrice = 0;
-        int additionalPassengerPrice = passengers > room.getCap() ?
-                (passengers - room.getCap()) * room.getCapPrice() : 0;
 
         List<DatePrice> datePrices = room.getDatePrices();
-        List<Integer> prices = new ArrayList<>();
+        List<DatePrice> pricesDetail = new ArrayList<>();
+
+        int exceedPassenger = Math.max(0, passengers - room.getCap());
 
         for (String date : dates) {
 
-            int nP = -1;
+            int nightPrice = -1;
 
-            for (DatePrice datePrice : datePrices) {
-                if (datePrice.getDate().equals(date)) {
-                    nP = datePrice.getPrice();
-                    break;
+            int additionalPassengerPrice = 0;
+
+            if(datePrices != null) {
+                for (DatePrice datePrice : datePrices) {
+                    if (datePrice.getDate().equals(date)) {
+                        nightPrice = datePrice.getPrice();
+                        if (exceedPassenger > 0)
+                            additionalPassengerPrice = datePrice.getCapPrice() != null ?
+                                    exceedPassenger * datePrice.getCapPrice() :
+                                    exceedPassenger * room.getCapPrice();
+                        break;
+                    }
                 }
             }
 
-            if (nP != -1) {
-                prices.add(additionalPassengerPrice > 0 ? nP + additionalPassengerPrice : nP);
-                totalPrice += additionalPassengerPrice > 0 ? nP + additionalPassengerPrice : nP;
+            if (nightPrice != -1) {
+                pricesDetail.add(new DatePrice(nightPrice, additionalPassengerPrice, date, "custom"));
+                totalPrice += nightPrice + additionalPassengerPrice;
                 continue;
             }
 
@@ -436,10 +461,15 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
 
             if (room.getWeekendPrice() != null && weekends.contains(dayOfWeek)) {
-                prices.add(additionalPassengerPrice > 0 ? room.getWeekendPrice() + additionalPassengerPrice : room.getWeekendPrice());
-                totalPrice += additionalPassengerPrice > 0 ? room.getWeekendPrice() + additionalPassengerPrice : room.getWeekendPrice();
+
+                if(exceedPassenger > 0)
+                    additionalPassengerPrice = room.getWeekendCapPrice() != null ?
+                            exceedPassenger * room.getWeekendCapPrice() :
+                            exceedPassenger * room.getCapPrice();
+
+                pricesDetail.add(new DatePrice(room.getWeekendPrice(), additionalPassengerPrice, date, "weekend"));
+                totalPrice += room.getWeekendPrice() + additionalPassengerPrice;
             }
-            // todo: check is vacation
             else {
 
                 boolean isHoliday = false;
@@ -460,41 +490,51 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     }
                 }
 
-                int p;
+                if(exceedPassenger > 0)
+                    additionalPassengerPrice = isHoliday && room.getVacationCapPrice() != null ?
+                            exceedPassenger * room.getVacationCapPrice() :
+                            exceedPassenger * room.getCapPrice();
 
                 if (isHoliday)
-                    p = additionalPassengerPrice > 0 ? room.getVacationPrice() + additionalPassengerPrice : room.getVacationPrice();
+                    nightPrice = room.getVacationPrice();
                 else
-                    p = additionalPassengerPrice > 0 ? room.getPrice() + additionalPassengerPrice : room.getPrice();
+                    nightPrice = room.getPrice();
 
-                prices.add(p);
-                totalPrice += p;
+                pricesDetail.add(new DatePrice(nightPrice, additionalPassengerPrice, date, isHoliday ? "vacation" : "regular"));
+                totalPrice += nightPrice + additionalPassengerPrice;
             }
 
         }
 
-        return new PairValue(totalPrice, prices);
+        return new PairValue(totalPrice, pricesDetail);
     }
 
     public String reserve(ObjectId id, ReservationRequestDTO dto, ObjectId userId) {
 
         try {
 
-            PairValue pairValue = canReserve(id, dto);
+            TripRequestDTO tripRequestDTO = new TripRequestDTO(
+                    dto.getPassengers(), dto.getInfants(),
+                    dto.getStartDate(), dto.getNights()
+            );
+
+            PairValue pairValue = canReserve(id, tripRequestDTO);
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
 
             PairValue p = calcPrice(room, dates, dto.getPassengers());
             int totalAmount = (int) p.getKey();
-            List<Integer> prices = (List<Integer>) p.getValue();
 
             ReservationRequests reservationRequests = new ReservationRequests();
-            reservationRequests.setNights(dates);
             reservationRequests.setPassengers(dto.getPassengers());
-            reservationRequests.setPrices(prices);
+            reservationRequests.setPassengersId(dto.getPassengersId());
+            reservationRequests.setPrices((List<DatePrice>) p.getValue());
             reservationRequests.setTotalAmount(totalAmount);
-            reservationRequests.setStatus(ReservationStatus.RESERVED);
+            reservationRequests.setOwnerId(room.getUserId());
+            reservationRequests.setStatus(room.isOnlineReservation() ?
+                    ReservationStatus.RESERVED : ReservationStatus.PENDING
+            );
             reservationRequests.setReserveExpireAt(room.isOnlineReservation() ?
                     System.currentTimeMillis() + BANK_WAIT_MSEC :
                     System.currentTimeMillis() + ACCEPT_PENDING_WAIT_MSEC
@@ -526,4 +566,5 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         return JSON_OK;
     }
+
 }

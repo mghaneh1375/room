@@ -245,4 +245,10 @@ public class Utility {
             System.out.println(x.getStackTrace()[i]);
 
     }
+
+    public static boolean isLargerThanToday(String date) {
+        int d = Utility.convertStringToDate(date);
+        int today = Utility.convertStringToDate(Utility.getToday("/"));
+        return today < d;
+    }
 }

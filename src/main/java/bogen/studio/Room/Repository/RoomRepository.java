@@ -30,4 +30,7 @@ public interface RoomRepository extends MongoRepository<Room, ObjectId>, Filtera
     @Query(value = "{ 'boom_id': ?0, 'title': ?1 }", count = true)
     Integer countRoomByBoomIdAndTitle(ObjectId boomId, String title);
 
+    @Query(value = "{ '_id': { $in: ?0 } }", fields = "{ 'title': 1, 'image': 1 }")
+    List<Room> findDigestByIds(List<ObjectId> ids);
+
 }

@@ -62,6 +62,10 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
+        if (value.getCount() == null || value.getCount() < 0) {
+            errs.put("count", "لطفا تعداد اتاق را وارد نمایید");
+            isErrored = true;
+        }
 
         // optional fields
 
@@ -72,6 +76,16 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
 
         if(value.getVacationPrice() != null && value.getVacationPrice() < 0) {
             errs.put("vacationPrice", "هزینه تعطیلات اتاق نامعبتر است");
+            isErrored = true;
+        }
+
+        if(value.getWeekendCapPrice() != null && value.getWeekendCapPrice() < 0) {
+            errs.put("weekendCapPrice", "هزینه نفر اضافه در آخر هفته اتاق نامعتبر است");
+            isErrored = true;
+        }
+
+        if(value.getVacationCapPrice() != null && value.getVacationCapPrice() < 0) {
+            errs.put("vacationCapPrice", "هزینه نفر اضافه در تعطیلات اتاق نامعبتر است");
             isErrored = true;
         }
 
