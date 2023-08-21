@@ -28,9 +28,11 @@ public class Room {
     @Field("_id")
     private ObjectId _id;
 
+    private int no;
     private String title;
     private String description;
     private String image;
+    private boolean main = false;
 
     private Integer cap;
 

@@ -64,7 +64,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                     .put("title", x.getTitle())
                                     .put("image", x.getImage())
                                     .put("cap", x.getCap())
+                                    .put("no", x.getNo())
                                     .put("price", x.getPrice())
+                                    .put("main", x.isMain())
                                     .put("maxCap", x.getMaxCap())
                                     .put("capPrice", x.getCapPrice())
                                     .put("onlineReservation", x.isOnlineReservation());
@@ -81,17 +83,43 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
-
     public String publicList(ObjectId boomId, TripRequestDTO dto) {
 
         JSONArray jsonArray = new JSONArray();
 
         roomRepository.findByBoomId(boomId).forEach(x -> {
 
+            for(int i = 0; i < jsonArray.length(); i++) {
+
+                JSONObject tmp = jsonArray.getJSONObject(i);
+
+                if(tmp.getString("title").equals(x.getTitle())) {
+
+                    if(dto != null) {
+                        try {
+
+                            List<String> dates = canReserve(x, dto);
+                            tmp.getJSONArray("freeRoomIds").put(x.get_id().toString());
+
+                            if(tmp.getInt("totalPrice") == -1) {
+                                tmp.put("totalPrice",
+                                        (int) calcPrice(x, dates, dto.getPassengers()).getKey()
+                                );
+                            }
+                        }
+                        catch (Exception ignore) {}
+                    }
+
+                    return;
+                }
+
+            }
+
             JSONObject jsonObject = new JSONObject(x);
 
             jsonObject.put("id", x.get_id().toString());
             jsonObject.remove("_id");
+            jsonObject.remove("no");
 
             jsonObject.put("foodFacilities", x.getFoodFacilities() == null ? new JSONArray() :
                     x.getFoodFacilities().stream()
@@ -125,12 +153,17 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             if(dto != null) {
 
+                JSONArray freeRoomIds = new JSONArray();
+
                 try {
                     jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getPassengers()).getKey());
+                    freeRoomIds.put(x.get_id().toString());
                 }
                 catch (Exception ex) {
                     jsonObject.put("totalPrice", -1);
                 }
+
+                jsonObject.put("freeRoomIds", freeRoomIds);
             }
 
             jsonArray.put(jsonObject);
@@ -140,60 +173,128 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
+    private Room canModify(ObjectId id, int userId) throws InvalidFieldsException {
+
+        Room room = findById(id);
+
+        if (room == null)
+            throw new InvalidFieldsException("id is not correct");
+
+        if(room.getUserId() != userId)
+            throw new InvalidFieldsException("access dined");
+
+        if(!room.isMain())
+            throw new InvalidFieldsException("تنها می توانید اتاق های اصلی را ویرایش کنید");
+
+        return room;
+    }
+
+    private void saveAllSimilar(String oldTitle, Room main) {
+
+        List<Room> similarRooms = roomRepository.findByNonMainByTitleAndBoomId(oldTitle, main.getBoomId());
+
+        List<Room> modified = new ArrayList<>();
+        modified.add(main);
+
+        for(Room itr : similarRooms)
+            copy(main, itr);
+
+        modified.addAll(similarRooms);
+
+        roomRepository.saveAll(modified);
+    }
+
     @Override
     public String update(ObjectId id, Object userId, RoomDTO dto) {
 
-        Optional<Room> roomOptional = roomRepository.findById(id);
-
-        Room room = roomOptional.orElse(null);
-
-        if (room == null)
-            return JSON_NOT_VALID_ID;
-
-        if (!room.getUserId().equals(userId))
-            return JSON_NOT_ACCESS;
+        Room room;
+        try {
+            room = canModify(id, (Integer) userId);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
 
         String oldTitle = room.getTitle();
 
-        room = populateEntity(room, dto);
-
-        if (!oldTitle.equals(room.getTitle()) &&
-                roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
+        if (!oldTitle.equals(dto.getTitle()) &&
+                roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), dto.getTitle()) > 0)
             return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
 
-        roomRepository.save(room);
+        saveAllSimilar(oldTitle, populateEntity(room, dto));
         return JSON_OK;
+    }
+
+    private void copy(Room main, Room room) {
+
+        room.setTitle(main.getTitle());
+        room.setDescription(main.getDescription());
+        room.setImage(main.getImage());
+
+        room.setMaxCap(main.getMaxCap());
+        room.setCap(main.getCap());
+
+        room.setDatePrices(main.getDatePrices());
+
+        room.setCapPrice(main.getCapPrice());
+        room.setWeekendCapPrice(main.getWeekendCapPrice());
+        room.setVacationCapPrice(main.getVacationCapPrice());
+
+        room.setPrice(main.getPrice());
+        room.setWeekendPrice(main.getWeekendPrice());
+        room.setVacationPrice(main.getVacationPrice());
+
+        room.setLimitations(main.getLimitations());
+        room.setFoodFacilities(main.getFoodFacilities());
+        room.setWelfares(main.getWelfares());
+        room.setSleepFeatures(main.getSleepFeatures());
+        room.setAdditionalFacilities(main.getAdditionalFacilities());
+        room.setAccessibilityFeatures(main.getAccessibilityFeatures());
+
+        room.setAvailability(main.isAvailability());
+        room.setOnlineReservation(main.isOnlineReservation());
     }
 
     @Override
     public String store(RoomDTO dto, Object... additionalFields) {
 
-        Room room = populateEntity(null, dto);
+        ObjectId boomId = (ObjectId) additionalFields[1];
+        int userId = (Integer) additionalFields[0];
 
-        room.setUserId((Integer) additionalFields[0]);
-        room.setBoomId((ObjectId) additionalFields[1]);
-
-        if (roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
+        if (roomRepository.countRoomByBoomIdAndTitle(boomId, dto.getTitle()) > 0)
             return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
 
-        String filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
-        if (filename == null)
-            return JSON_UNKNOWN_UPLOAD_FILE;
+        List<Room> rooms = storePopulateEntity(dto);
 
-        room.setImage(filename);
-        roomRepository.insert(room);
+        String filename = "";
 
-        return generateSuccessMsg("id", room.get_id());
+        if(rooms.size() > 0) {
+            filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
+            if (filename == null)
+                return JSON_UNKNOWN_UPLOAD_FILE;
+        }
+
+        JSONArray jsonArray = new JSONArray();
+
+        for(Room room : rooms) {
+            room.setUserId(userId);
+            room.setBoomId(boomId);
+            room.setImage(filename);
+            roomRepository.insert(room);
+
+            jsonArray.put(room.get_id().toString());
+        }
+
+        return generateSuccessMsg("ids", jsonArray);
     }
 
-    public String setPic(ObjectId id, MultipartFile file) {
+    public String setPic(ObjectId id, Integer userId, MultipartFile file) {
 
-        Optional<Room> roomOptional = roomRepository.findById(id);
-
-        Room room = roomOptional.orElse(null);
-
-        if (room == null)
-            return JSON_NOT_VALID_ID;
+        Room room;
+        try {
+            room = canModify(id, userId);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
 
         String filename = FileUtils.uploadFile(file, FOLDER);
         if (filename == null)
@@ -203,14 +304,18 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         room.setImage(filename);
         roomRepository.save(room);
 
+        saveAllSimilar(room.getTitle(), room);
         return JSON_OK;
     }
 
-    public String removeDatePrice(ObjectId id, String date) {
+    public String removeDatePrice(ObjectId id, int userId, String date) {
 
-        Room room = findById(id);
-        if (room == null)
-            return JSON_NOT_VALID_ID;
+        Room room;
+        try {
+            room = canModify(id, userId);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
 
         if (room.getDatePrices() == null)
             return JSON_NOT_ACCESS;
@@ -234,19 +339,22 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             return JSON_NOT_ACCESS;
 
         datePrices.remove(idx);
-        roomRepository.save(room);
+        saveAllSimilar(room.getTitle(), room);
 
         return JSON_OK;
     }
 
-    public String addDatePrice(ObjectId id, DatePrice datePrice) {
+    public String addDatePrice(ObjectId id, int userId, DatePrice datePrice) {
 
         if (!isLargerThanToday(datePrice.getDate()))
             return generateErr("تاریخ باید بزرگ تر از امروز باشد");
 
-        Room room = findById(id);
-        if (room == null)
-            return JSON_NOT_VALID_ID;
+        Room room;
+        try {
+            room = canModify(id, userId);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
 
         List<DatePrice> datePrices = room.getDatePrices() == null ? new ArrayList<>() : room.getDatePrices();
 
@@ -270,15 +378,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         room.setDatePrices(datePrices);
 
-        roomRepository.save(room);
+        saveAllSimilar(room.getTitle(), room);
         return JSON_OK;
     }
 
     @Override
     Room populateEntity(Room room, RoomDTO roomDTO) {
-
-        if (room == null)
-            room = new Room();
 
         room.setTitle(roomDTO.getTitle());
         room.setDescription(roomDTO.getDescription());
@@ -337,12 +442,83 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
+    List<Room> storePopulateEntity(RoomDTO roomDTO) {
+
+        List<Room> rooms = new ArrayList<>();
+
+        for(int i = 0; i < roomDTO.getCount(); i++) {
+
+            Room room = new Room();
+
+            if(i == 0)
+                room.setMain(true);
+
+            room.setTitle(roomDTO.getTitle());
+            room.setDescription(roomDTO.getDescription());
+            room.setNo(i + 1);
+
+            room.setMaxCap(roomDTO.getMaxCap());
+            room.setCap(roomDTO.getCap());
+
+            room.setCapPrice(roomDTO.getCapPrice());
+            room.setPrice(roomDTO.getPrice());
+            room.setWeekendPrice(roomDTO.getWeekendPrice());
+            room.setVacationPrice(roomDTO.getVacationPrice());
+
+            if (roomDTO.getLimitations() != null)
+                room.setLimitations(roomDTO.getLimitations().stream()
+                        .map(String::toUpperCase)
+                        .map(Limitation::valueOf)
+                        .collect(Collectors.toList())
+                );
+
+            if (roomDTO.getFoodFacilities() != null)
+                room.setFoodFacilities(roomDTO.getFoodFacilities().stream()
+                        .map(String::toUpperCase)
+                        .map(FoodFacility::valueOf)
+                        .collect(Collectors.toList())
+                );
+
+            if (roomDTO.getWelfares() != null)
+                room.setWelfares(roomDTO.getWelfares().stream()
+                        .map(String::toUpperCase)
+                        .map(Welfare::valueOf)
+                        .collect(Collectors.toList())
+                );
+
+            if (roomDTO.getSleepFeatures() != null)
+                room.setSleepFeatures(roomDTO.getSleepFeatures().stream()
+                        .map(String::toUpperCase)
+                        .map(SleepFeature::valueOf)
+                        .collect(Collectors.toList())
+                );
+
+            if (roomDTO.getAdditionalFacilities() != null)
+                room.setAdditionalFacilities(roomDTO.getAdditionalFacilities().stream()
+                        .map(String::toUpperCase)
+                        .map(AdditionalFacility::valueOf)
+                        .collect(Collectors.toList())
+                );
+
+            if (roomDTO.getAccessibilityFeatures() != null)
+                room.setAccessibilityFeatures(roomDTO.getAccessibilityFeatures().stream()
+                        .map(String::toUpperCase)
+                        .map(AccessibilityFeature::valueOf)
+                        .collect(Collectors.toList())
+                );
+
+            rooms.add(room);
+        }
+
+        return rooms;
+
+    }
+
     @Override
     public Room findById(ObjectId id) {
         Optional<Room> room = roomRepository.findById(id);
         return room.orElse(null);
     }
-
 
     public String get(ObjectId id, int userId) {
 
@@ -362,8 +538,26 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return generateSuccessMsg("data", jsonObject);
     }
 
-    public void remove(ObjectId id) {
-        roomRepository.deleteById(id);
+    public String remove(ObjectId id, int userId) {
+
+
+        Room room = findById(id);
+
+        if (room == null)
+            return JSON_NOT_VALID_ID;
+
+        if(room.getUserId() != userId)
+            return JSON_NOT_ACCESS;
+
+        if(reservationRequestsRepository.countAllActiveReservationsByRoomId(id) > 0)
+            return generateErr("امکان حذف این اتاق به دلیل وجود اقامت فعال وجود ندارد");
+
+        if(room.isMain())
+            roomRepository.deleteByTitleAndBoomId(room.getTitle(), room.getBoomId());
+        else
+            roomRepository.delete(room);
+
+        return JSON_OK;
     }
 
     private PairValue canReserve(ObjectId id, TripRequestDTO dto) throws InvalidFieldsException {
@@ -542,27 +736,38 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             reservationRequests.setUserId(userId);
             reservationRequests.setRoomId(room.get_id());
 
+            String trackingCode = randomString(6);
+
+            reservationRequests.setTrackingCode(trackingCode);
+
             reservationRequestsRepository.insert(reservationRequests);
 
             if (room.isOnlineReservation())
                 //todo: go to bank
                 ;
 
-            return generateSuccessMsg("data", reservationRequests.get_id());
+            return generateSuccessMsg("data", new JSONObject()
+                    .put("trackingCode", trackingCode)
+                    .put("reservationId", reservationRequests.get_id())
+            );
+
         } catch (Exception x) {
             return generateErr(x.getMessage());
         }
 
     }
 
-    public String toggleAccessibility(ObjectId id) {
+    public String toggleAccessibility(ObjectId id, int userId) {
 
-        Room room = findById(id);
-        if (room == null)
-            return JSON_NOT_VALID_ID;
+        Room room;
+        try {
+            room = canModify(id, userId);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
 
         room.setAvailability(!room.isAvailability());
-        roomRepository.save(room);
+        saveAllSimilar(room.getTitle(), room);
 
         return JSON_OK;
     }

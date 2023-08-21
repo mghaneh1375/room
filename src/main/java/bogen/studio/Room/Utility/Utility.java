@@ -3,6 +3,7 @@ package bogen.studio.Room.Utility;
 import org.bson.Document;
 import org.json.JSONObject;
 
+import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -54,68 +55,6 @@ public class Utility {
         SolarCalendar sc = new SolarCalendar();
         return String.valueOf(sc.year) + delimeter + String.format(loc, "%02d",
                 sc.month) + delimeter + String.format(loc, "%02d", sc.date);
-    }
-
-    public static Document searchInDocumentsKeyVal(List<Document> arr, String key, Object val) {
-
-        if (arr == null)
-            return null;
-
-        for (Document doc : arr) {
-            if (doc.containsKey(key) && doc.get(key).equals(val))
-                return doc;
-        }
-
-        return null;
-    }
-
-    public static Document searchInDocumentsKeyVal(List<Document> arr, String key, Object val,
-                                                   String key2, Object val2) {
-
-        if (arr == null)
-            return null;
-
-        for (Document doc : arr) {
-            if (doc.containsKey(key) && doc.get(key).equals(val) &&
-                    doc.containsKey(key2) && (
-                    (val2 == null && doc.get(key2) == null) ||
-                            (doc.get(key2) != null && doc.get(key2).equals(val2))
-            ))
-                return doc;
-        }
-
-        return null;
-    }
-
-    public static int searchInDocumentsKeyValIdx(List<Document> arr, String key, Object val,
-                                                 String key2, Object val2) {
-
-        if (arr == null)
-            return -1;
-
-        for (int i = 0; i < arr.size(); i++) {
-            Document doc = arr.get(i);
-            if (doc.containsKey(key) && doc.get(key).equals(val) && (
-                    (val2 == null && doc.get(key2) == null) ||
-                            (doc.get(key2) != null && doc.get(key2).equals(val2))
-            ))
-                return i;
-        }
-
-        return -1;
-    }
-
-    public static int searchInDocumentsKeyValIdx(List<Document> arr, String key, Object val) {
-
-        if (arr == null)
-            return -1;
-
-        for (int i = 0; i < arr.size(); i++) {
-            if (arr.get(i).containsKey(key) && arr.get(i).get(key).equals(val))
-                return i;
-        }
-
-        return -1;
     }
 
     public static String convertStringToDate(String date, String delimeter) {
@@ -250,5 +189,17 @@ public class Utility {
         int d = Utility.convertStringToDate(date);
         int today = Utility.convertStringToDate(Utility.getToday("/"));
         return today < d;
+    }
+
+    private static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static SecureRandom rnd = new SecureRandom();
+
+    public static String randomString(int len) {
+
+        StringBuilder sb = new StringBuilder(len);
+        for(int i = 0; i < len; i++)
+            sb.append(AB.charAt(rnd.nextInt(AB.length())));
+
+        return sb.toString();
     }
 }

@@ -19,6 +19,9 @@ public interface ReservationRequestsRepository extends MongoRepository<Reservati
     @Query(value = "{ 'room_id': ?0, 'status': ?1 }", count = true)
     Integer countByRoomIdAndStatus(ObjectId roomId, String status);
 
+    @Query(value = "{ 'room_id': ?0,  $or: [ { 'status': 'PENDING' }, { 'status': 'RESERVED' }, { 'status': 'PAID' }, { 'status': 'FINISH' }, { 'status': 'ACCEPT' }, { 'status': 'REFUND' } ] }", count = true)
+    Integer countAllActiveReservationsByRoomId(ObjectId roomId);
+
     @Query(value = "{ 'owner_id': ?0, 'status': ?1 }", count = true)
     Integer countByOwnerIdAndStatus(int userId, String status);
 
@@ -30,5 +33,17 @@ public interface ReservationRequestsRepository extends MongoRepository<Reservati
     @Query(value = "{ $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
             fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
     List<ReservationRequests> getActiveReservationsByUserId(ObjectId userId);
+
+    //todo: user_id filter
+    // 'user_id': ?0,
+    @Query(value = "{ '_id': ?1 }",
+            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
+    ReservationRequests getReservationsByUserIdAndId(ObjectId userId, ObjectId id);
+
+    //todo: user_id filter
+    // 'user_id': ?0,
+    @Query(value = "{ 'tracking_code': ?1 }",
+            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
+    ReservationRequests getReservationsByUserIdAndTrackingCode(ObjectId userId, String trackingCode);
 
 }

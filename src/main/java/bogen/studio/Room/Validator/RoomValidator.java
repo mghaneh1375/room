@@ -62,8 +62,8 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if (value.getCount() == null || value.getCount() < 0) {
-            errs.put("count", "لطفا تعداد اتاق را وارد نمایید");
+        if (value.getCount() != null && value.getCount() < 0) {
+            errs.put("count", "تعداد اتاق معتبر نمی باشد");
             isErrored = true;
         }
 

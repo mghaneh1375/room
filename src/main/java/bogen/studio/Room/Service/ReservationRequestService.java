@@ -147,4 +147,26 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return generateSuccessMsg("data", jsonArray);
     }
 
+    public String getMyReq(ObjectId userId, String trackingCode, ObjectId reqId) {
+
+        ReservationRequests reservationRequest = trackingCode == null ?
+                reservationRequestsRepository.getReservationsByUserIdAndId(userId, reqId) :
+                reservationRequestsRepository.getReservationsByUserIdAndTrackingCode(userId, trackingCode);
+
+        if(reservationRequest == null)
+            return JSON_NOT_ACCESS;
+
+        JSONObject jsonObject = new JSONObject(reservationRequest);
+
+        jsonObject.put("id", reservationRequest.get_id().toString());
+        jsonObject.remove("_id");
+        jsonObject.remove("roomId");
+
+        Room r = roomRepository.findDigestById(reservationRequest.getRoomId());
+        if(r != null)
+            jsonObject.put("room", new JSONObject(r));
+
+        return generateSuccessMsg("data", jsonObject);
+
+    }
 }
