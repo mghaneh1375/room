@@ -1,6 +1,6 @@
-package bogen.studio.Room.Routes.API.BoomAPIRoutes;
+package bogen.studio.Room.Routes.API;
 
-import bogen.studio.Room.Service.BoomService;
+import bogen.studio.Room.Service.AccountantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +13,17 @@ import javax.servlet.http.HttpServletRequest;
 import static bogen.studio.Room.Routes.API.Room.OwnerRoomAPIRoutes.userId;
 
 @RestController
-@RequestMapping(path = "/api/boom/public")
+@RequestMapping(path = "/api/manage/accountant")
 @Validated
-public class PublicBoomAPIRoutes {
+public class AccountantAPIRoutes {
 
     @Autowired
-    BoomService boomService;
+    AccountantService accountantService;
 
-    @GetMapping(value = "/search")
+    @GetMapping(value = "getPendingCount")
     @ResponseBody
-    public String list(HttpServletRequest request) {
-        return boomService.myList(userId);
+    public String getPendingCount(HttpServletRequest request) {
+        return accountantService.getPendingCount(userId);
     }
 
 }

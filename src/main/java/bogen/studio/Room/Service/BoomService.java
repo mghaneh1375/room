@@ -2,28 +2,21 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.BoomDTO;
 import bogen.studio.Room.Models.Boom;
-import bogen.studio.Room.Models.PaginatedResponse;
-import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.BoomRepository;
-import bogen.studio.Room.Repository.FilteringFactory;
-import org.bson.Document;
+import bogen.studio.Room.Repository.RoomRepository;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.Utility.generateErr;
-import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
+import static bogen.studio.Room.Utility.Utility.*;
 
 @Service
 public class BoomService extends AbstractService<Boom, BoomDTO> {
@@ -31,21 +24,57 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
     @Autowired
     private BoomRepository boomRepository;
 
-    public String myList(Integer userId) {
-        List<Boom> all = boomRepository.findByUserIdIncludeEmbeddedFields(userId);
-        return toJSON(Collections.singletonList(all));
-    }
+    @Autowired
+    private RoomRepository roomRepository;
 
     @Override
-    public PaginatedResponse<Boom> list(List<String> filters) {
+    public String list(List<String> filters) {
 
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Boom> all = boomRepository.findAllWithFilter(Boom.class,
-                FilteringFactory.parseFromParams(filters, Boom.class), pageable
+        int userId = Integer.parseInt(filters.get(0));
+        List<Boom> all = boomRepository.findByUserIdIncludeEmbeddedFields(userId);
+
+        JSONArray jsonArray = new JSONArray();
+
+        for(Boom boom : all)
+            jsonArray.put(boom.getPlaceId().toString());
+
+        // todo: cache res
+        JSONObject res = Network.sendPostReq("place/getSpecificPlaces",
+                new JSONObject().put("ids", jsonArray)
         );
 
-        return returnPaginateResponse(all);
+        if(res == null)
+            return generateErr("خطایی در ارتباط بین سیستم ها رخ داده است (خطا ۱۰۱)");
 
+        JSONArray places = res.getJSONArray("data");
+        if(places.length() != all.size())
+            return generateErr("خطایی در ارتباط بین سیستم ها رخ داده است (خطا ۱۰۲)");
+
+        return generateSuccessMsg("data", all.stream()
+                .map(x -> {
+
+                            JSONObject place = null;
+                            String id = x.get_id().toString();
+                            String placeId = x.getPlaceId().toString();
+
+                            for(int i = 0; i < places.length(); i++) {
+
+                                if(places.getJSONObject(i).getString("id").equals(placeId)) {
+                                    place = places.getJSONObject(i);
+                                    break;
+                                }
+
+                            }
+
+                            return new JSONObject()
+                                    .put("id", id)
+                                    .put("createdAt", convertDateToJalali(x.getCreatedAt()))
+                                    .put("place", place)
+                                    .put("rooms", roomRepository.countRoomByBoomId(x.get_id()))
+                                    .put("availability", x.isAvailability());
+                        }
+                ).collect(Collectors.toList())
+        );
     }
 
     public String toggleAccessibility(ObjectId id) {

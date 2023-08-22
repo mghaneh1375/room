@@ -17,10 +17,10 @@ public class FilterableRepositoryImpl<T, D> implements FilterableRepository<T, D
     private MongoTemplate mongoTemplate;
 
     @Override
-    public Page<T> findAllWithFilter(Class<T> typeParameterClass, Filtering filtering, Pageable pageable) {
+    public List<T> findAllWithFilter(Class<T> typeParameterClass, Filtering filtering, Pageable pageable) {
         Query query = constructQueryFromFiltering(filtering).with(pageable);
-        List<T> ts = mongoTemplate.find(query, typeParameterClass);
-        return PageableExecutionUtils.getPage(ts, pageable, () -> mongoTemplate.count(query, typeParameterClass));
+        return mongoTemplate.find(query, typeParameterClass);
+//        return PageableExecutionUtils.getPage(ts, pageable, () -> mongoTemplate.count(query, typeParameterClass));
     }
 
     @Override
@@ -30,7 +30,7 @@ public class FilterableRepositoryImpl<T, D> implements FilterableRepository<T, D
     }
 
     @Override
-    public List<T> findAllDigestWithFilter(Class<T> typeParameterClass, Filtering filtering) {
+    public List<D> findAllDigestWithFilter(Class<D> typeParameterClass, Filtering filtering) {
         Query query = constructQueryFromFiltering(filtering);
         return mongoTemplate.find(query, typeParameterClass);
     }

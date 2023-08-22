@@ -1,12 +1,9 @@
 package bogen.studio.Room.Models;
 
-import bogen.studio.Room.DTO.BoomData;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.data.mongodb.core.mapping.MongoId;
+import org.springframework.data.mongodb.core.mapping.*;
 
 import javax.persistence.Id;
 import java.util.Date;
@@ -39,5 +36,4 @@ public class Boom {
     @Field("created_at")
     @CreatedDate
     private Date createdAt;
-
 }
