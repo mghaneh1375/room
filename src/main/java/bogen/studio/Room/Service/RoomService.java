@@ -8,6 +8,7 @@ import bogen.studio.Room.Enums.*;
 import bogen.studio.Room.Exception.InvalidFieldsException;
 import bogen.studio.Room.Models.ReservationRequests;
 import bogen.studio.Room.Models.Room;
+import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
@@ -18,6 +19,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,7 +38,7 @@ import static bogen.studio.Room.Utility.Utility.*;
 @Service
 public class RoomService extends AbstractService<Room, RoomDTO> {
 
-    private final static String FOLDER = "rooms";
+    public final static String FOLDER = "rooms";
 
     @Autowired
     private RoomRepository roomRepository;
@@ -59,10 +61,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
                             JSONObject jsonObject = new JSONObject()
                                     .put("id", id)
-                                    .put("created_at", x.getCreatedAt().toString())
+                                    .put("createdAt", convertDateToJalali(x.getCreatedAt()))
                                     .put("availability", x.isAvailability())
                                     .put("title", x.getTitle())
-                                    .put("image", x.getImage())
+                                    .put("image", ASSET_URL + FOLDER + "/" + x.getImage())
                                     .put("cap", x.getCap())
                                     .put("no", x.getNo())
                                     .put("price", x.getPrice())
@@ -80,6 +82,40 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                         }
                 ).collect(Collectors.toList())
         );
+
+    }
+
+    private void translateFeatures(JSONObject jsonObject, Room x) {
+
+        jsonObject.put("foodFacilities", x.getFoodFacilities() == null ? new JSONArray() :
+                x.getFoodFacilities().stream()
+                        .map(FoodFacility::toFarsi)
+                        .collect(Collectors.toList()));
+
+        jsonObject.put("limitations", x.getLimitations() == null ? new JSONArray() :
+                x.getLimitations().stream()
+                        .map(Limitation::toFarsi)
+                        .collect(Collectors.toList()));
+
+        jsonObject.put("welfares", x.getWelfares() == null ? new JSONArray() :
+                x.getWelfares().stream()
+                        .map(Welfare::toFarsi)
+                        .collect(Collectors.toList()));
+
+        jsonObject.put("accessibilityFeatures", x.getAccessibilityFeatures() == null ? new JSONArray() :
+                x.getAccessibilityFeatures().stream()
+                        .map(AccessibilityFeature::toFarsi)
+                        .collect(Collectors.toList()));
+
+        jsonObject.put("additionalFacilities", x.getAdditionalFacilities() == null ? new JSONArray() :
+                x.getAdditionalFacilities().stream()
+                        .map(AdditionalFacility::toFarsi)
+                        .collect(Collectors.toList()));
+
+        jsonObject.put("sleepFeatures", x.getSleepFeatures() == null ? new JSONArray() :
+                x.getSleepFeatures().stream()
+                        .map(SleepFeature::toFarsi)
+                        .collect(Collectors.toList()));
 
     }
 
@@ -103,7 +139,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
                             if(tmp.getInt("totalPrice") == -1) {
                                 tmp.put("totalPrice",
-                                        (int) calcPrice(x, dates, dto.getPassengers()).getKey()
+                                        (int) calcPrice(x, dates, dto.getAdults(), dto.getChildren()).getKey()
                                 );
                             }
                         }
@@ -121,42 +157,16 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             jsonObject.remove("_id");
             jsonObject.remove("no");
 
-            jsonObject.put("foodFacilities", x.getFoodFacilities() == null ? new JSONArray() :
-                    x.getFoodFacilities().stream()
-                            .map(FoodFacility::toFarsi)
-                            .collect(Collectors.toList()));
+            jsonObject.put("image", ASSET_URL + FOLDER + "/" + x.getImage());
 
-            jsonObject.put("limitations", x.getLimitations() == null ? new JSONArray() :
-                    x.getLimitations().stream()
-                            .map(Limitation::toFarsi)
-                            .collect(Collectors.toList()));
-
-            jsonObject.put("welfares", x.getWelfares() == null ? new JSONArray() :
-                    x.getWelfares().stream()
-                            .map(Welfare::toFarsi)
-                            .collect(Collectors.toList()));
-
-            jsonObject.put("accessibilityFeatures", x.getAccessibilityFeatures() == null ? new JSONArray() :
-                    x.getAccessibilityFeatures().stream()
-                            .map(AccessibilityFeature::toFarsi)
-                            .collect(Collectors.toList()));
-
-            jsonObject.put("additionalFacilities", x.getAdditionalFacilities() == null ? new JSONArray() :
-                    x.getAdditionalFacilities().stream()
-                            .map(AdditionalFacility::toFarsi)
-                            .collect(Collectors.toList()));
-
-            jsonObject.put("sleepFeatures", x.getSleepFeatures() == null ? new JSONArray() :
-                    x.getSleepFeatures().stream()
-                            .map(SleepFeature::toFarsi)
-                            .collect(Collectors.toList()));
+            translateFeatures(jsonObject, x);
 
             if(dto != null) {
 
                 JSONArray freeRoomIds = new JSONArray();
 
                 try {
-                    jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getPassengers()).getKey());
+                    jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getAdults(), dto.getChildren()).getKey());
                     freeRoomIds.put(x.get_id().toString());
                 }
                 catch (Exception ex) {
@@ -533,7 +543,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         JSONObject jsonObject = new JSONObject(room);
         jsonObject.put("boomId", room.getBoomId().toString());
         jsonObject.put("id", room.get_id().toString());
+        jsonObject.remove("userId");
+        jsonObject.put("createdAt", convertDateToJalali(room.getCreatedAt()));
+        jsonObject.put("image", ASSET_URL + FOLDER + "/" + room.getImage());
         jsonObject.remove("_id");
+
+        translateFeatures(jsonObject, room);
 
         return generateSuccessMsg("data", jsonObject);
     }
@@ -574,7 +589,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (!room.isAvailability())
             throw new InvalidFieldsException("has not access");
 
-        if (room.getMaxCap() < dto.getPassengers())
+        if (room.getMaxCap() < (dto.getAdults() + dto.getChildren()))
             throw new InvalidFieldsException("حداکثر ظرفیت برای این اتاق " + room.getMaxCap() + " می باشد.");
 
         List<String> dates = new ArrayList<>();
@@ -597,7 +612,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
-            PairValue p = calcPrice(room, dates, dto.getPassengers());
+
+            PairValue p = calcPrice(room, dates, dto.getAdults(), dto.getChildren());
 
             JSONArray jsonArray = new JSONArray();
 
@@ -616,14 +632,17 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         }
     }
 
-    public PairValue calcPrice(Room room, List<String> dates, int passengers) {
+    public PairValue calcPrice(Room room, List<String> dates, int adults, int children) {
+
+        // todo: consider children independent
+        adults += children;
 
         int totalPrice = 0;
 
         List<DatePrice> datePrices = room.getDatePrices();
         List<DatePrice> pricesDetail = new ArrayList<>();
 
-        int exceedPassenger = Math.max(0, passengers - room.getCap());
+        int exceedPassenger = Math.max(0, adults - room.getCap());
 
         for (String date : dates) {
 
@@ -707,8 +726,40 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         try {
 
+            userId = FAKE_USER_ID;
+            ObjectId passengersId = dto.getPassengersId();
+
+            JSONObject passengerServiceResponse = Network.sendGetReq(PASSENGER_URL + "system/trip/getTripPassengers/" + passengersId + "/" + userId);
+            if(passengerServiceResponse == null)
+                return generateErr("passengersId is not valid");
+
+            int children = 0, adults = 0, infants = 0;
+
+            JSONArray passengersJSON = passengerServiceResponse.getJSONObject("data").getJSONArray("passengers");
+            List<Document> passengers = new ArrayList<>();
+
+            for(int j = 0; j < passengersJSON.length(); j++) {
+                Document doc = Document.parse(passengersJSON.getJSONObject(j).toString());
+                switch (doc.getString("ageType")) {
+                    case "بزرگسال":
+                    default:
+                        adults++;
+                        break;
+                    case "خردسال":
+                        children++;
+                        break;
+                    case "نوزاد":
+                        infants++;
+                        break;
+                }
+                passengers.add(doc);
+            }
+
+            if(adults == 0)
+                return generateErr("تعداد بزرگسال نمی تواند 0 باشد");
+
             TripRequestDTO tripRequestDTO = new TripRequestDTO(
-                    dto.getPassengers(), dto.getInfants(),
+                    adults, children, infants,
                     dto.getStartDate(), dto.getNights()
             );
 
@@ -717,12 +768,19 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
 
-            PairValue p = calcPrice(room, dates, dto.getPassengers());
+            PairValue p = calcPrice(room, dates, adults, children);
             int totalAmount = (int) p.getKey();
 
             ReservationRequests reservationRequests = new ReservationRequests();
-            reservationRequests.setPassengers(dto.getPassengers());
-            reservationRequests.setPassengersId(dto.getPassengersId());
+
+            reservationRequests.setCreator(Document.parse(passengerServiceResponse.getJSONObject("data").getJSONObject("creator").toString()));
+            reservationRequests.setPassengers(passengers);
+
+            reservationRequests.setAdults(adults);
+            reservationRequests.setChildren(children);
+            reservationRequests.setInfants(infants);
+
+            reservationRequests.setPassengersId(passengersId);
             reservationRequests.setPrices((List<DatePrice>) p.getValue());
             reservationRequests.setTotalAmount(totalAmount);
             reservationRequests.setOwnerId(room.getUserId());

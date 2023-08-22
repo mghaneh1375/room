@@ -44,20 +44,25 @@ public class ReservationRequestValidator implements ConstraintValidator<Validate
             isErrored = true;
         }
 
-        if(value.getPassengers() == null || value.getPassengers() < 1) {
-            errs.put("passengers", "لطفا تعداد مسافران را وارد نمایید");
-            isErrored = true;
-        }
-
-        if(value.getNights() == null) {
+        if(value.getNights() == null || value.getNights() < 0) {
             errs.put("nights", "لطفا تعداد شب اقامت را وارد نمایید");
             isErrored = true;
         }
 
-        if(value.getInfants() != null && value.getInfants() < 0) {
-            errs.put("infants", "تعداد خردسال معتبر نمی باشد");
-            isErrored = true;
-        }
+//        if(value.getAdults() == null || value.getAdults() < 1) {
+//            errs.put("adults", "لطفا تعداد مسافران را وارد نمایید");
+//            isErrored = true;
+//        }
+//
+//        if(value.getInfants() != null && value.getInfants() < 0) {
+//            errs.put("infants", "تعداد خردسال معتبر نمی باشد");
+//            isErrored = true;
+//        }
+//
+//        if(value.getChildren() != null && value.getChildren() < 0) {
+//            errs.put("children", "تعداد کودک معتبر نمی باشد");
+//            isErrored = true;
+//        }
 
         if(value.getPassengersId() == null) {
             errs.put("passengersId", "لطفا آی دی مسافران را وارد نمایید");

@@ -41,7 +41,7 @@ public class TripRequestValidator implements ConstraintValidator<ValidatedTripRe
             isErrored = true;
         }
 
-        if(value.getPassengers() == null || value.getPassengers() < 1) {
+        if(value.getAdults() == null || value.getAdults() < 1) {
             errs.put("passengers", "لطفا تعداد مسافران را وارد نمایید");
             isErrored = true;
         }
@@ -52,7 +52,12 @@ public class TripRequestValidator implements ConstraintValidator<ValidatedTripRe
         }
 
         if(value.getInfants() != null && value.getInfants() < 0) {
-            errs.put("infants", "تعداد خردسال معتبر نمی باشد");
+            errs.put("infants", "تعداد نوزاد معتبر نمی باشد");
+            isErrored = true;
+        }
+
+        if(value.getChildren() != null && value.getChildren() < 0) {
+            errs.put("children", "تعداد خردسال معتبر نمی باشد");
             isErrored = true;
         }
 

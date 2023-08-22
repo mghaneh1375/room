@@ -1,6 +1,5 @@
 package bogen.studio.Room.Utility;
 
-import org.bson.Document;
 import org.json.JSONObject;
 
 import java.security.SecureRandom;
@@ -8,16 +7,26 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import static bogen.studio.Room.Utility.StaticValues.ONE_DAY_MSEC;
 
 public class Utility {
 
-    private static final Pattern justNumPattern = Pattern.compile("^\\d+$");
-    private static final Pattern passwordStrengthPattern = Pattern.compile("^(?=.*[0-9])(?=.*[A-z])(?=\\S+$).{8,}$");
+    public static String convertDateToJalali(Date date) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String[] dateTime = simpleDateFormat.format(date).split(" ");
+        String[] splited = dateTime[0].split("-");
+        return JalaliCalendar.gregorianToJalali(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2])).format("/") + " - " + dateTime[1];
+    }
+
+    public static String convertDateToJalali(long time) {
+        Date d = new Date(time);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String[] dateTime = simpleDateFormat.format(d).split(" ");
+        String[] splited = dateTime[0].split("-");
+        return JalaliCalendar.gregorianToJalali(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2])).format("/") + " - " + dateTime[1];
+    }
 
     public static String getPast(String delimeter, String solarDate, int days) {
 
@@ -55,10 +64,6 @@ public class Utility {
         SolarCalendar sc = new SolarCalendar();
         return String.valueOf(sc.year) + delimeter + String.format(loc, "%02d",
                 sc.month) + delimeter + String.format(loc, "%02d", sc.date);
-    }
-
-    public static String convertStringToDate(String date, String delimeter) {
-        return date.substring(0, 4) + delimeter + date.substring(4, 6) + delimeter + date.substring(6, 8);
     }
 
     public static int convertStringToDate(String date) {
@@ -144,36 +149,6 @@ public class Utility {
 
         return jsonObject.toString();
 
-    }
-
-    public static boolean validationNationalCode(String code) {
-
-        if (code.length() != 10)
-            return false;
-
-        try {
-            long nationalCode = Long.parseLong(code);
-            byte[] arrayNationalCode = new byte[10];
-
-            //extract digits from number
-            for (int i = 0; i < 10; i++) {
-                arrayNationalCode[i] = (byte) (nationalCode % 10);
-                nationalCode = nationalCode / 10;
-            }
-
-            //Checking the control digit
-            int sum = 0;
-            for (int i = 9; i > 0; i--)
-                sum += arrayNationalCode[i] * (i + 1);
-            int temp = sum % 11;
-            if (temp < 2)
-                return arrayNationalCode[0] == temp;
-            else
-                return arrayNationalCode[0] == 11 - temp;
-        }
-        catch (Exception e) {
-            return false;
-        }
     }
 
     public static void printException(Exception x) {

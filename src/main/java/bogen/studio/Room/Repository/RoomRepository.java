@@ -33,6 +33,9 @@ public interface RoomRepository extends MongoRepository<Room, ObjectId>, Filtera
     @Query(value = "{ '_id': { $in: ?0 } }", fields = "{ 'title': 1, 'image': 1 }")
     List<Room> findDigestByIds(List<ObjectId> ids);
 
+    @Query(value = "{ '_id': { $in: ?0 } }", fields = "{ 'title': 1, 'image': 1, 'no': 1, '_id': 1 }")
+    List<Room> findDigestForOwnerByIds(List<ObjectId> ids);
+
     @Query(value = "{ '_id': ?0 }", fields = "{ 'title': 1, 'image': 1 }")
     Room findDigestById(ObjectId id);
 

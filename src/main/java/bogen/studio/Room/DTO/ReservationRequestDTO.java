@@ -12,8 +12,6 @@ public class ReservationRequestDTO {
 
     private ObjectId passengersId;
     private ObjectId giftId;
-    private Integer infants;
-    private Integer passengers;
     private String startDate;
     private Integer nights;
 }

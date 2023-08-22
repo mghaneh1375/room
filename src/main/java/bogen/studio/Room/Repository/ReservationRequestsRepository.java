@@ -34,6 +34,14 @@ public interface ReservationRequestsRepository extends MongoRepository<Reservati
             fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
     List<ReservationRequests> getActiveReservationsByUserId(ObjectId userId);
 
+    @Query(value = "{ 'room_id': ?0, 'owner_id': ?1, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+            fields = "{ 'owner_id': 0, 'user_id': 0, 'room_id': 0, 'passengersId': 0  }")
+    List<ReservationRequests> getActiveReservationsByRoomIdAndOwnerId(ObjectId roomId, int ownerId);
+
+    @Query(value = "{ 'owner_id': ?0, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+            fields = "{ 'owner_id': 0, 'user_id': 0, 'passengersId': 0  }")
+    List<ReservationRequests> getActiveReservationsByOwnerId(int ownerId);
+
     //todo: user_id filter
     // 'user_id': ?0,
     @Query(value = "{ '_id': ?1 }",

@@ -28,4 +28,18 @@ public class OwnerReserveAPIRoutes {
         return reservationRequestService.answerToRequest(id, userId, status);
     }
 
+    @GetMapping(value = "getActiveRequests/{roomId}")
+    @ResponseBody
+    public String getActiveRequests(HttpServletRequest request,
+                                    @PathVariable @ObjectIdConstraint ObjectId roomId) {
+        return reservationRequestService.getOwnerActiveRequests(roomId, userId);
+    }
+
+    @GetMapping(value = "getAllActiveRequests")
+    @ResponseBody
+    public String getOwnerAllActiveRequests(HttpServletRequest request) {
+        return reservationRequestService.getOwnerAllActiveRequests(userId);
+    }
+
+
 }

@@ -11,7 +11,8 @@ import lombok.Setter;
 @ValidatedTripRequest
 public class TripRequestDTO {
 
-    private Integer passengers;
+    private Integer adults;
+    private Integer children;
     private Integer infants;
     private String startDate;
     private Integer nights;

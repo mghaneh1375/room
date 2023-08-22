@@ -50,7 +50,8 @@ public class ReservationRequests {
     private String trackingCode;
 
     private Integer infants;
-    private Integer passengers;
+    private Integer children;
+    private Integer adults;
 
     private List<DatePrice> prices;
 
@@ -78,5 +79,8 @@ public class ReservationRequests {
 
     @Field("reserve_expire_at")
     private Long reserveExpireAt;
+
+    private List<org.bson.Document> passengers;
+    private org.bson.Document creator;
 
 }

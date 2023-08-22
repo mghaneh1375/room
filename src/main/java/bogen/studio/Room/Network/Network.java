@@ -78,14 +78,23 @@ public class Network {
 
         try {
 
-            HttpResponse<JsonNode> jsonResponse = Unirest.get(KOOCHITA_SERVER + api)
+            HttpResponse<JsonNode> jsonResponse = Unirest.get(
+                    api.contains("http://") || api.contains("https://") ? api :
+                            KOOCHITA_SERVER + api)
                     .header("accept", "application/json")
                     .asJson();
 
             if(jsonResponse.getStatus() != 200)
                 return null;
 
-            return jsonResponse.getBody().getObject();
+            JSONObject jsonObject =  jsonResponse.getBody().getObject();
+
+            if(jsonObject == null || !jsonObject.has("status") ||
+                    !jsonObject.getString("status").equalsIgnoreCase("ok")
+            )
+                return null;
+
+            return jsonObject;
 
         } catch (UnirestException e) {
             e.printStackTrace();

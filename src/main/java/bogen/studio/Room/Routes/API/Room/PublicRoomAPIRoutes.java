@@ -49,20 +49,22 @@ public class PublicRoomAPIRoutes {
     @ResponseBody
     public String list(HttpServletRequest request,
                        @PathVariable @ObjectIdConstraint ObjectId boomId,
-                       @RequestParam(value = "passengers", required = false) @Positive @Max(20) Integer passengers,
+                       @RequestParam(value = "adults", required = false) @Positive @Max(20) Integer adults,
                        @RequestParam(value = "infants", required = false) @Min(0) @Max(5) Integer infants,
+                       @RequestParam(value = "children", required = false) @Min(0) @Max(5) Integer children,
                        @RequestParam(value = "nights", required = false) @Positive @Max(10) Integer nights,
                        @RequestParam(value = "startDate", required = false) String startDate) {
         if (
-                (passengers == null) == (nights != null) ||
-                        (passengers == null) == (startDate != null) ||
-                        (passengers == null) == (infants != null)
+                (adults == null) == (nights != null) ||
+                        (adults == null) == (startDate != null) ||
+                        (adults == null) == (infants != null) ||
+                        (adults == null) == (children != null)
         )
             return generateErr("لطفا تعداد مسافرین و تعداد شب های اقامت و تاریخ شروع اقامت را وارد نمایید");
 
         TripRequestDTO dto = null;
 
-        if (passengers != null) {
+        if (adults != null) {
 
             if(!DateValidator.isValid2(startDate))
                 return generateErr("تاریخ وارد شده معتبر نمی باشد");
@@ -75,7 +77,7 @@ public class PublicRoomAPIRoutes {
             if(!DateValidator.gte(futureLimit, startDate))
                 return generateErr("امکان رزرو تاریخ مدنظر هنوز باز نشده است");
 
-            dto = new TripRequestDTO(passengers, infants, startDate.replace("-", "/"), nights);
+            dto = new TripRequestDTO(adults, children, infants, startDate.replace("-", "/"), nights);
         }
 
         return roomService.publicList(boomId, dto);

@@ -18,8 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.Utility.generateErr;
-import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
+import static bogen.studio.Room.Utility.Utility.*;
 
 @Service
 public class ReservationRequestService extends AbstractService<ReservationRequests, ReservationRequestDTO> {
@@ -51,22 +50,60 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return reservationRequests.orElse(null);
     }
 
+    public String getOwnerActiveRequests(ObjectId roomId, int userId) {
+
+        List<ReservationRequests> reservationRequests = reservationRequestsRepository.getActiveReservationsByRoomIdAndOwnerId(roomId, userId);
+
+        JSONArray jsonArray = new JSONArray();
+
+        reservationRequests.forEach(x -> jsonArray.put(convertReqToJSON(x, null, false)));
+
+        return generateSuccessMsg("data", jsonArray);
+    }
+
+    public String getOwnerAllActiveRequests(int userId) {
+
+        List<ReservationRequests> reservationRequests = reservationRequestsRepository.getActiveReservationsByOwnerId(userId);
+        List<Room> rooms = roomRepository.findDigestForOwnerByIds(
+                reservationRequests.stream().map(ReservationRequests::getRoomId).collect(Collectors.toList())
+        );
+
+        JSONArray jsonArray = new JSONArray();
+
+        reservationRequests.forEach(x -> {
+
+            Room r = null;
+
+            for (Room room : rooms) {
+
+                if (x.getRoomId().equals(room.get_id())) {
+                    r = room;
+                    break;
+                }
+            }
+
+            jsonArray.put(convertReqToJSON(x, r, true));
+        });
+
+        return generateSuccessMsg("data", jsonArray);
+    }
+
     public String answerToRequest(ObjectId reqId, int userId, String status) {
 
-        if(!status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()) &&
+        if (!status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()) &&
                 !status.equalsIgnoreCase(ReservationStatus.REJECT.getName())
         )
             return JSON_NOT_VALID_PARAMS;
 
         ReservationRequests reservationRequests = findById(reqId);
 
-        if(reservationRequests == null)
+        if (reservationRequests == null)
             return JSON_NOT_VALID_ID;
 
-        if(reservationRequests.getOwnerId() != userId)
+        if (reservationRequests.getOwnerId() != userId)
             return JSON_NOT_ACCESS;
 
-        if(!reservationRequests.getStatus().equals(ReservationStatus.PENDING) &&
+        if (!reservationRequests.getStatus().equals(ReservationStatus.PENDING) &&
                 !reservationRequests.getStatus().equals(ReservationStatus.ACCEPT)
         )
             return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
@@ -77,7 +114,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         reservationRequests.setAnswerAt(new Date());
 
-        if(status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()))
+        if (status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()))
             reservationRequests.setReserveExpireAt(System.currentTimeMillis() + PAY_WAIT_MSEC);
 
         reservationRequestsRepository.save(reservationRequests);
@@ -88,14 +125,14 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         ReservationRequests reservationRequests = findById(reqId);
 
-        if(reservationRequests == null)
+        if (reservationRequests == null)
             return JSON_NOT_VALID_ID;
 
         //todo: check userId
 //        if(!reservationRequests.getUserId().equals(userId))
 //            return JSON_NOT_ACCESS;
 
-        if(!reservationRequests.getStatus().equals(ReservationStatus.PENDING) &&
+        if (!reservationRequests.getStatus().equals(ReservationStatus.PENDING) &&
                 !reservationRequests.getStatus().equals(ReservationStatus.ACCEPT)
         )
             return generateErr("امکان کنسل کردن این درخواست وجود ندارد");
@@ -110,6 +147,41 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return JSON_OK;
     }
 
+    private JSONObject convertReqToJSON(ReservationRequests reservationRequests, Room r, boolean forAdmin) {
+
+        JSONObject jsonObject = new JSONObject(reservationRequests);
+
+        jsonObject.put("id", reservationRequests.get_id().toString());
+        jsonObject.remove("_id");
+        jsonObject.remove("roomId");
+
+        jsonObject.put("createdAt", convertDateToJalali(reservationRequests.getCreatedAt()));
+
+        if(jsonObject.has("reserveExpireAt"))
+            jsonObject.put("reserveExpireAt", convertDateToJalali(reservationRequests.getReserveExpireAt()));
+
+        if (jsonObject.has("payAt"))
+            jsonObject.put("payAt", convertDateToJalali(reservationRequests.getPayAt()));
+
+        if(jsonObject.has("answerAt"))
+            jsonObject.put("answerAt", convertDateToJalali(reservationRequests.getAnswerAt()));
+
+        if (r != null) {
+
+            JSONObject roomJSON = new JSONObject()
+                    .put("title", r.getTitle())
+                    .put("image", ASSET_URL + RoomService.FOLDER + "/" + r.getImage());
+
+            if(forAdmin)
+                roomJSON.put("no", r.getNo())
+                        .put("id", r.get_id().toString());
+
+            jsonObject.put("room", roomJSON);
+        }
+
+        return jsonObject;
+    }
+
     public String getMyActiveReq(ObjectId userId) {
 
         List<ReservationRequests> reservationRequests = reservationRequestsRepository.getActiveReservationsByUserId(userId);
@@ -121,26 +193,17 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         reservationRequests.forEach(x -> {
 
-            JSONObject jsonObject = new JSONObject(x);
-
-            jsonObject.put("id", x.get_id().toString());
-            jsonObject.remove("_id");
-            jsonObject.remove("roomId");
-
             Room r = null;
 
-            for(Room room : rooms) {
+            for (Room room : rooms) {
 
-                if(x.getRoomId().equals(room.get_id())) {
+                if (x.getRoomId().equals(room.get_id())) {
                     r = room;
                     break;
                 }
             }
 
-            if(r != null)
-                jsonObject.put("room", new JSONObject(r));
-
-            jsonArray.put(jsonObject);
+            jsonArray.put(convertReqToJSON(x, r, false));
 
         });
 
@@ -153,18 +216,11 @@ public class ReservationRequestService extends AbstractService<ReservationReques
                 reservationRequestsRepository.getReservationsByUserIdAndId(userId, reqId) :
                 reservationRequestsRepository.getReservationsByUserIdAndTrackingCode(userId, trackingCode);
 
-        if(reservationRequest == null)
+        if (reservationRequest == null)
             return JSON_NOT_ACCESS;
 
-        JSONObject jsonObject = new JSONObject(reservationRequest);
-
-        jsonObject.put("id", reservationRequest.get_id().toString());
-        jsonObject.remove("_id");
-        jsonObject.remove("roomId");
-
         Room r = roomRepository.findDigestById(reservationRequest.getRoomId());
-        if(r != null)
-            jsonObject.put("room", new JSONObject(r));
+        JSONObject jsonObject = convertReqToJSON(reservationRequest, r, false);
 
         return generateSuccessMsg("data", jsonObject);
 
