@@ -21,8 +21,12 @@ public class Network {
                     .body(data)
                     .asJson();
 
+            System.out.println("koochita res status " + jsonResponse.getStatus());
+
             if(jsonResponse.getStatus() != 200)
                 return null;
+
+            System.out.println("koochita res " + jsonResponse.getBody().getObject());
 
             return jsonResponse.getBody().getObject();
 
