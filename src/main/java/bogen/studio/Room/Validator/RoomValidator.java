@@ -105,7 +105,7 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
         }
 
         if(!validateEnumArray(value.getWelfares(), Welfare.class)) {
-            errs.put("welfare", "امکانات رفاهی وارد شده نامعتبر است");
+            errs.put("welfares", "امکانات رفاهی وارد شده نامعتبر است");
             isErrored = true;
         }
 

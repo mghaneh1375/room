@@ -16,7 +16,7 @@ public class StaticValues {
     public final static String PASSENGER_URL = "https://passenger.bogenstudio.com/api/";
     public final static String ASSET_URL = "https://static.koochita.com/";
 
-    public final static ObjectId FAKE_USER_ID = new ObjectId("64e0af975bfd9f7e5ec45dcf");
+    public final static ObjectId FAKE_USER_ID = new ObjectId("64c8d42a845d720b734b9b7f");
 
     public final static long ONE_DAY_MSEC = 60 * 60 * 24 * 1000;
 
