@@ -104,7 +104,7 @@ public class OwnerRoomAPIRoutes {
                     optionals = {
                             "description", "limitations", "sleepFeatures",
                             "accessibilityFeatures", "weekendPrice",
-                            "vacationPrice", "foodFacilities", "welfare",
+                            "vacationPrice", "foodFacilities", "welfares",
                             "additionalFacilities"
                     },
                     optionalsType = {

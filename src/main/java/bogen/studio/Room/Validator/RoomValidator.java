@@ -89,32 +89,32 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if(!validateEnumArray(value.getLimitations(), Limitation.class)) {
+        if(value.getLimitations() == null || !validateEnumArray(value.getLimitations(), Limitation.class)) {
             errs.put("limitations", "محدودیت وارد شده نامعتبر است");
             isErrored = true;
         }
 
-        if(!validateEnumArray(value.getFoodFacilities(), FoodFacility.class)) {
+        if(value.getFoodFacilities() == null || !validateEnumArray(value.getFoodFacilities(), FoodFacility.class)) {
             errs.put("foodFacilities", "امکانات غذایی وارد شده نامعتبر است");
             isErrored = true;
         }
 
-        if(!validateEnumArray(value.getSleepFeatures(), SleepFeature.class)) {
+        if(value.getSleepFeatures() == null || !validateEnumArray(value.getSleepFeatures(), SleepFeature.class)) {
             errs.put("sleepFeatures", "وضعیت خواب وارد شده نامعتبر است");
             isErrored = true;
         }
 
-        if(!validateEnumArray(value.getWelfares(), Welfare.class)) {
+        if(value.getWelfares() == null || !validateEnumArray(value.getWelfares(), Welfare.class)) {
             errs.put("welfares", "امکانات رفاهی وارد شده نامعتبر است");
             isErrored = true;
         }
 
-        if(!validateEnumArray(value.getAdditionalFacilities(), AdditionalFacility.class)) {
+        if(value.getAdditionalFacilities() == null || !validateEnumArray(value.getAdditionalFacilities(), AdditionalFacility.class)) {
             errs.put("additionalFacilities", "امکانات جانبی وارد شده نامعتبر است");
             isErrored = true;
         }
 
-        if(!validateEnumArray(value.getAccessibilityFeatures(), AccessibilityFeature.class)) {
+        if(value.getAccessibilityFeatures() == null || !validateEnumArray(value.getAccessibilityFeatures(), AccessibilityFeature.class)) {
             errs.put("accessibilityFeatures", "وضعیت دسترس پذیری وارد شده نامعتبر است");
             isErrored = true;
         }
