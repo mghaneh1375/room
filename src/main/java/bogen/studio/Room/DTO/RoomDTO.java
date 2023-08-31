@@ -17,10 +17,15 @@ public class RoomDTO {
     private Integer maxCap;
     private Integer cap;
 
-    private Integer capPrice;
     private Integer price;
     private Integer weekendPrice;
     private Integer vacationPrice;
+
+    private Integer capPrice;
+    private Integer weekendCapPrice;
+    private Integer vacationCapPrice;
+
+    private Integer count;
 
     private List<String> limitations;
     private List<String> welfares;

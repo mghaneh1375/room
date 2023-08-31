@@ -28,9 +28,11 @@ public class Room {
     @Field("_id")
     private ObjectId _id;
 
+    private int no;
     private String title;
     private String description;
     private String image;
+    private boolean main = false;
 
     private Integer cap;
 
@@ -39,6 +41,12 @@ public class Room {
 
     @Field("cap_price")
     private Integer capPrice;
+
+    @Field("vacation_cap_price")
+    private Integer vacationCapPrice;
+
+    @Field("weekend_cap_price")
+    private Integer weekendCapPrice;
 
     private Integer price;
 

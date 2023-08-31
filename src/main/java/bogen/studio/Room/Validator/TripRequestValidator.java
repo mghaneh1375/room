@@ -1,9 +1,6 @@
 package bogen.studio.Room.Validator;
 
-import bogen.studio.Room.DTO.ReservationRequestDTO;
-import bogen.studio.Room.DTO.RoomDTO;
-import bogen.studio.Room.Enums.FoodFacility;
-import bogen.studio.Room.Enums.Limitation;
+import bogen.studio.Room.DTO.TripRequestDTO;
 import bogen.studio.Room.Utility.Utility;
 import org.json.JSONObject;
 import org.springframework.util.ObjectUtils;
@@ -11,15 +8,15 @@ import org.springframework.util.ObjectUtils;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-public class ReservationRequestValidator implements ConstraintValidator<ValidatedReservationRequest, ReservationRequestDTO> {
+public class TripRequestValidator implements ConstraintValidator<ValidatedTripRequest, TripRequestDTO> {
 
     @Override
-    public void initialize(ValidatedReservationRequest constraintAnnotation) {
+    public void initialize(ValidatedTripRequest constraintAnnotation) {
         ConstraintValidator.super.initialize(constraintAnnotation);
     }
 
     @Override
-    public boolean isValid(ReservationRequestDTO value, ConstraintValidatorContext context) {
+    public boolean isValid(TripRequestDTO value, ConstraintValidatorContext context) {
 
         boolean isErrored = false;
         JSONObject errs = new JSONObject();
@@ -44,28 +41,23 @@ public class ReservationRequestValidator implements ConstraintValidator<Validate
             isErrored = true;
         }
 
-        if(value.getNights() == null || value.getNights() < 0) {
+        if(value.getAdults() == null || value.getAdults() < 1) {
+            errs.put("passengers", "لطفا تعداد مسافران را وارد نمایید");
+            isErrored = true;
+        }
+
+        if(value.getNights() == null) {
             errs.put("nights", "لطفا تعداد شب اقامت را وارد نمایید");
             isErrored = true;
         }
 
-//        if(value.getAdults() == null || value.getAdults() < 1) {
-//            errs.put("adults", "لطفا تعداد مسافران را وارد نمایید");
-//            isErrored = true;
-//        }
-//
-//        if(value.getInfants() != null && value.getInfants() < 0) {
-//            errs.put("infants", "تعداد خردسال معتبر نمی باشد");
-//            isErrored = true;
-//        }
-//
-//        if(value.getChildren() != null && value.getChildren() < 0) {
-//            errs.put("children", "تعداد کودک معتبر نمی باشد");
-//            isErrored = true;
-//        }
+        if(value.getInfants() != null && value.getInfants() < 0) {
+            errs.put("infants", "تعداد نوزاد معتبر نمی باشد");
+            isErrored = true;
+        }
 
-        if(value.getPassengersId() == null) {
-            errs.put("passengersId", "لطفا آی دی مسافران را وارد نمایید");
+        if(value.getChildren() != null && value.getChildren() < 0) {
+            errs.put("children", "تعداد خردسال معتبر نمی باشد");
             isErrored = true;
         }
 

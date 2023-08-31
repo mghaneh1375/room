@@ -1,5 +1,6 @@
 package bogen.studio.Room.Models;
 
+import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.Enums.ReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,13 +34,26 @@ public class ReservationRequests {
     @Field("total_amount")
     private Integer totalAmount;
 
-    private Integer passengers;
+    @Field("passengers_id")
+    private ObjectId passengersId;
 
-    private List<String> nights;
-    private List<Integer> prices;
+    @Field("owner_id")
+    private Integer ownerId;
+
+    @Field("gift_id")
+    private ObjectId giftId;
 
     @Field("off_id")
     private ObjectId offId;
+
+    @Field("tracking_code")
+    private String trackingCode;
+
+    private Integer infants;
+    private Integer children;
+    private Integer adults;
+
+    private List<DatePrice> prices;
 
     @Field("off_amount")
     private Integer offAmount;
@@ -55,12 +69,18 @@ public class ReservationRequests {
     private Date createdAt;
 
     @Field("answer_at")
-    private Date acceptAt;
+    private Date answerAt;
+
+    @Field("cancel_at")
+    private Date cancelAt;
 
     @Field("pay_at")
     private Date payAt;
 
     @Field("reserve_expire_at")
     private Long reserveExpireAt;
+
+    private List<org.bson.Document> passengers;
+    private org.bson.Document creator;
 
 }

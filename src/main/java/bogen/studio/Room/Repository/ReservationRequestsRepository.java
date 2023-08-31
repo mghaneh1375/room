@@ -13,10 +13,45 @@ import java.util.List;
 public interface ReservationRequestsRepository extends MongoRepository<ReservationRequests, ObjectId>, FilterableRepository<ReservationRequests, Boom> {
 
     //todo: reserved or accept
-    @Query(value = "{ 'room_id' : ?0, $or: [ { 'status': 'RESERVED' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ], 'nights': {$in:  ?1} }", fields = "{ '_id': 1, 'availability': 1, 'visibility': 1, 'createdAt': 1 }")
-    List<ReservationRequests> findActiveReservations(ObjectId roomId, List<String> dates);
+    @Query(value = "{ 'room_id' : ?0, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ], 'prices.date': {$in:  ?1} }", count = true)
+    Integer findActiveReservations(ObjectId roomId, List<String> dates);
 
     @Query(value = "{ 'room_id': ?0, 'status': ?1 }", count = true)
     Integer countByRoomIdAndStatus(ObjectId roomId, String status);
+
+    @Query(value = "{ 'room_id': ?0,  $or: [ { 'status': 'PENDING' }, { 'status': 'RESERVED' }, { 'status': 'PAID' }, { 'status': 'FINISH' }, { 'status': 'ACCEPT' }, { 'status': 'REFUND' } ] }", count = true)
+    Integer countAllActiveReservationsByRoomId(ObjectId roomId);
+
+    @Query(value = "{ 'owner_id': ?0, 'status': ?1 }", count = true)
+    Integer countByOwnerIdAndStatus(int userId, String status);
+
+    @Query(value = "{ 'reserve_expire_at': { $lt: ?0 }, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'ACCEPT' } ] }")
+    List<ReservationRequests> getExpiredReservations(Long curr);
+
+    //todo: user_id filter
+    // 'user_id': ?0,
+    @Query(value = "{ $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
+    List<ReservationRequests> getActiveReservationsByUserId(ObjectId userId);
+
+    @Query(value = "{ 'room_id': ?0, 'owner_id': ?1, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+            fields = "{ 'owner_id': 0, 'user_id': 0, 'room_id': 0, 'passengersId': 0  }")
+    List<ReservationRequests> getActiveReservationsByRoomIdAndOwnerId(ObjectId roomId, int ownerId);
+
+    @Query(value = "{ 'owner_id': ?0, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+            fields = "{ 'owner_id': 0, 'user_id': 0, 'passengersId': 0  }")
+    List<ReservationRequests> getActiveReservationsByOwnerId(int ownerId);
+
+    //todo: user_id filter
+    // 'user_id': ?0,
+    @Query(value = "{ '_id': ?1 }",
+            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
+    ReservationRequests getReservationsByUserIdAndId(ObjectId userId, ObjectId id);
+
+    //todo: user_id filter
+    // 'user_id': ?0,
+    @Query(value = "{ 'tracking_code': ?1 }",
+            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
+    ReservationRequests getReservationsByUserIdAndTrackingCode(ObjectId userId, String trackingCode);
 
 }

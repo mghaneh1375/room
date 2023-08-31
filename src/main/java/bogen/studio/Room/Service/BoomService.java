@@ -17,8 +17,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.Utility.generateErr;
-import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
+import static bogen.studio.Room.Utility.Utility.*;
 
 @Service
 public class BoomService extends AbstractService<Boom, BoomDTO> {
@@ -70,7 +69,7 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
 
                             return new JSONObject()
                                     .put("id", id)
-                                    .put("created_at", x.getCreatedAt().toString())
+                                    .put("createdAt", convertDateToJalali(x.getCreatedAt()))
                                     .put("place", place)
                                     .put("rooms", roomRepository.countRoomByBoomId(x.get_id()))
                                     .put("availability", x.isAvailability());

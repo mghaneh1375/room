@@ -48,7 +48,8 @@ public class OwnerRoomAPIRoutes {
     public String setPic(HttpServletRequest request,
                          @PathVariable @ObjectIdConstraint ObjectId id,
                          final @RequestBody @ValidatedRegularImage MultipartFile file) {
-        return roomService.setPic(id, file);
+        //todo: userId
+        return roomService.setPic(id, userId, file);
     }
 
     @PutMapping(value = "setDatePrice/{id}")
@@ -56,7 +57,8 @@ public class OwnerRoomAPIRoutes {
     public String setDatePrice(HttpServletRequest request,
                                @PathVariable @ObjectIdConstraint ObjectId id,
                                final @RequestBody @Valid DatePrice datePrice) {
-        return roomService.addDatePrice(id, datePrice);
+        //todo: userId
+        return roomService.addDatePrice(id, userId, datePrice);
     }
 
     @DeleteMapping(value = "removeDatePrice/{id}/{date}")
@@ -64,7 +66,8 @@ public class OwnerRoomAPIRoutes {
     public String removeDatePrice(HttpServletRequest request,
                                   @PathVariable @ObjectIdConstraint ObjectId id,
                                   @PathVariable @DateConstraint String date) {
-        return roomService.removeDatePrice(id, date.replace("-", "/"));
+        //todo: userId
+        return roomService.removeDatePrice(id, userId, date.replace("-", "/"));
     }
 
     @PutMapping(value = "/toggleAccessibility/{id}")
@@ -72,7 +75,8 @@ public class OwnerRoomAPIRoutes {
     public String toggleAccessibility(HttpServletRequest request,
                                       @PathVariable @ObjectIdConstraint ObjectId id
     ) {
-        return roomService.toggleAccessibility(id);
+        //todo: userId
+        return roomService.toggleAccessibility(id, userId);
     }
 
     @PostMapping(value = "store/{boomId}")
@@ -84,15 +88,17 @@ public class OwnerRoomAPIRoutes {
                     params = {
                             "title", "maxCap", "capPrice",
                             "cap", "price", "availability",
+                            "count"
                     },
                     paramsType = {
                             String.class, Positive.class, Positive.class,
                             Positive.class, Positive.class, Boolean.class,
+                            Positive.class
                     },
                     optionals = {
                             "description", "limitations", "sleepFeatures",
                             "accessibilityFeatures", "weekendPrice",
-                            "vacationPrice", "foodFacilities", "welfare",
+                            "vacationPrice", "foodFacilities", "welfares",
                             "additionalFacilities"
                     },
                     optionalsType = {
@@ -129,5 +135,13 @@ public class OwnerRoomAPIRoutes {
     @ResponseBody
     public String get(@PathVariable @ObjectIdConstraint ObjectId id) {
         return roomService.get(id, userId);
+    }
+
+    @DeleteMapping(value = "remove/{id}")
+    @ResponseBody
+    public String remove(HttpServletRequest request,
+                         @PathVariable @ObjectIdConstraint ObjectId id
+    ) {
+        return roomService.remove(id, userId);
     }
 }

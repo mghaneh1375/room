@@ -1,22 +1,32 @@
 package bogen.studio.Room.Utility;
 
-import org.bson.Document;
 import org.json.JSONObject;
 
+import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import static bogen.studio.Room.Utility.StaticValues.ONE_DAY_MSEC;
 
 public class Utility {
 
-    private static final Pattern justNumPattern = Pattern.compile("^\\d+$");
-    private static final Pattern passwordStrengthPattern = Pattern.compile("^(?=.*[0-9])(?=.*[A-z])(?=\\S+$).{8,}$");
+    public static String convertDateToJalali(Date date) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String[] dateTime = simpleDateFormat.format(date).split(" ");
+        String[] splited = dateTime[0].split("-");
+        return JalaliCalendar.gregorianToJalali(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2])).format("/") + " - " + dateTime[1];
+    }
+
+    public static String convertDateToJalali(long time) {
+        Date d = new Date(time);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String[] dateTime = simpleDateFormat.format(d).split(" ");
+        String[] splited = dateTime[0].split("-");
+        return JalaliCalendar.gregorianToJalali(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2])).format("/") + " - " + dateTime[1];
+    }
 
     public static String getPast(String delimeter, String solarDate, int days) {
 
@@ -54,72 +64,6 @@ public class Utility {
         SolarCalendar sc = new SolarCalendar();
         return String.valueOf(sc.year) + delimeter + String.format(loc, "%02d",
                 sc.month) + delimeter + String.format(loc, "%02d", sc.date);
-    }
-
-    public static Document searchInDocumentsKeyVal(List<Document> arr, String key, Object val) {
-
-        if (arr == null)
-            return null;
-
-        for (Document doc : arr) {
-            if (doc.containsKey(key) && doc.get(key).equals(val))
-                return doc;
-        }
-
-        return null;
-    }
-
-    public static Document searchInDocumentsKeyVal(List<Document> arr, String key, Object val,
-                                                   String key2, Object val2) {
-
-        if (arr == null)
-            return null;
-
-        for (Document doc : arr) {
-            if (doc.containsKey(key) && doc.get(key).equals(val) &&
-                    doc.containsKey(key2) && (
-                    (val2 == null && doc.get(key2) == null) ||
-                            (doc.get(key2) != null && doc.get(key2).equals(val2))
-            ))
-                return doc;
-        }
-
-        return null;
-    }
-
-    public static int searchInDocumentsKeyValIdx(List<Document> arr, String key, Object val,
-                                                 String key2, Object val2) {
-
-        if (arr == null)
-            return -1;
-
-        for (int i = 0; i < arr.size(); i++) {
-            Document doc = arr.get(i);
-            if (doc.containsKey(key) && doc.get(key).equals(val) && (
-                    (val2 == null && doc.get(key2) == null) ||
-                            (doc.get(key2) != null && doc.get(key2).equals(val2))
-            ))
-                return i;
-        }
-
-        return -1;
-    }
-
-    public static int searchInDocumentsKeyValIdx(List<Document> arr, String key, Object val) {
-
-        if (arr == null)
-            return -1;
-
-        for (int i = 0; i < arr.size(); i++) {
-            if (arr.get(i).containsKey(key) && arr.get(i).get(key).equals(val))
-                return i;
-        }
-
-        return -1;
-    }
-
-    public static String convertStringToDate(String date, String delimeter) {
-        return date.substring(0, 4) + delimeter + date.substring(4, 6) + delimeter + date.substring(6, 8);
     }
 
     public static int convertStringToDate(String date) {
@@ -207,42 +151,31 @@ public class Utility {
 
     }
 
-    public static boolean validationNationalCode(String code) {
-
-        if (code.length() != 10)
-            return false;
-
-        try {
-            long nationalCode = Long.parseLong(code);
-            byte[] arrayNationalCode = new byte[10];
-
-            //extract digits from number
-            for (int i = 0; i < 10; i++) {
-                arrayNationalCode[i] = (byte) (nationalCode % 10);
-                nationalCode = nationalCode / 10;
-            }
-
-            //Checking the control digit
-            int sum = 0;
-            for (int i = 9; i > 0; i--)
-                sum += arrayNationalCode[i] * (i + 1);
-            int temp = sum % 11;
-            if (temp < 2)
-                return arrayNationalCode[0] == temp;
-            else
-                return arrayNationalCode[0] == 11 - temp;
-        }
-        catch (Exception e) {
-            return false;
-        }
-    }
-
     public static void printException(Exception x) {
 
+        x.printStackTrace();
         System.out.println(x.getMessage());
         int limit = x.getStackTrace().length > 5 ? 5 : x.getStackTrace().length;
         for (int i = 0; i < limit; i++)
             System.out.println(x.getStackTrace()[i]);
 
+    }
+
+    public static boolean isLargerThanToday(String date) {
+        int d = Utility.convertStringToDate(date);
+        int today = Utility.convertStringToDate(Utility.getToday("/"));
+        return today < d;
+    }
+
+    private static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static SecureRandom rnd = new SecureRandom();
+
+    public static String randomString(int len) {
+
+        StringBuilder sb = new StringBuilder(len);
+        for(int i = 0; i < len; i++)
+            sb.append(AB.charAt(rnd.nextInt(AB.length())));
+
+        return sb.toString();
     }
 }

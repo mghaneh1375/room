@@ -11,7 +11,7 @@ import java.nio.file.StandardCopyOption;
 
 public class FileUtils {
 
-    public final static String uploadDir = "/var/www/statics/";
+    public final static String uploadDir = "/var/www/assets/";
 
     public static PairValue getFileType(String filename) throws InvalidFileTypeException {
 

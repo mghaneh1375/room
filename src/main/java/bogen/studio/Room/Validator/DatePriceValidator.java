@@ -29,6 +29,11 @@ public class DatePriceValidator implements ConstraintValidator<ValidatedDatePric
             isErrored = true;
         }
 
+        if (value.getCapPrice() != null && value.getPrice() < 0) {
+            errs.put("capPrice", "قیمت ظرفیت اضافه نامعتبر است");
+            isErrored = true;
+        }
+
         if(isErrored) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(errs.toString()).addConstraintViolation();
