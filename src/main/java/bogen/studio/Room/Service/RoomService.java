@@ -156,7 +156,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                 roomRepository.countRoomByBoomIdAndTitle(room.getBoomId(), room.getTitle()) > 0)
             return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
 
-        roomRepository.save(room);
+        roomRepository.saveAll(Collections.singletonList(room));
         return JSON_OK;
     }
 
@@ -196,7 +196,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         FileUtils.removeFile(room.getImage(), FOLDER);
         room.setImage(filename);
-        roomRepository.save(room);
+
+        roomRepository.saveAll(Collections.singletonList(room));
 
         return JSON_OK;
     }
@@ -229,7 +230,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             return JSON_NOT_ACCESS;
 
         datePrices.remove(idx);
-        roomRepository.save(room);
+        roomRepository.saveAll(Collections.singletonList(room));
 
         return JSON_OK;
     }
@@ -265,7 +266,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         room.setDatePrices(datePrices);
 
-        roomRepository.save(room);
+        roomRepository.saveAll(Collections.singletonList(room));
         return JSON_OK;
     }
 
@@ -522,7 +523,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             return JSON_NOT_VALID_ID;
 
         room.setAvailability(!room.isAvailability());
-        roomRepository.save(room);
+        roomRepository.saveAll(Collections.singletonList(room));
 
         return JSON_OK;
     }

@@ -7,12 +7,19 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends MongoRepository<Room, ObjectId>, FilterableRepository<Room, bogen.studio.Room.DTO.Digests.Authorized.Room> {
 
     @Query(value = "{ 'date_prices.0': {$exists: true} }")
     List<Room> findHasDatePrices();
+
+    @Query(value = "{ '_id': ?0 }")
+    Optional<Room> findById(ObjectId id);
+
+    @Query(value = "{ '_id': ?0 }", delete = true)
+    void deleteById(ObjectId id);
 
     @Query(value = "{ 'user_id': ?0, 'boom_id': ?1 }",
             fields = "{ '_id': 1, 'availability': 1, 'created_at': 1, 'title': 1, 'image': 1 , 'cap': 1, 'price': 1, 'max_cap': 1, 'cap_price': 1, 'online_reservation': 1}"

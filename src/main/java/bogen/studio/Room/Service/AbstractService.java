@@ -42,7 +42,7 @@ public abstract class AbstractService <T, D> {
     T populateEntity(T t, D d) {
         try {
             return (T) objectMapper.readValue(new JSONObject(d).toString(), t.getClass());
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

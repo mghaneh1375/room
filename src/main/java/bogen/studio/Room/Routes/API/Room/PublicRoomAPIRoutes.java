@@ -8,12 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
-import java.util.ArrayList;
-
-import static bogen.studio.Room.Routes.API.Room.OwnerRoomAPIRoutes.userId;
 
 @RestController
 @RequestMapping(path = "/api/public/room")

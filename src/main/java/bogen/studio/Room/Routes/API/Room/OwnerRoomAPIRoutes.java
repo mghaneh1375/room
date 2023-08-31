@@ -2,31 +2,25 @@ package bogen.studio.Room.Routes.API.Room;
 
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.DTO.RoomDTO;
-import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Service.RoomService;
 import bogen.studio.Room.Utility.Positive;
 import bogen.studio.Room.Validator.DateConstraint;
 import bogen.studio.Room.Validator.ObjectIdConstraint;
 import bogen.studio.Room.Validator.StrongJSONConstraint;
 import bogen.studio.Room.Validator.ValidatedRegularImage;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
 import java.util.ArrayList;
-
-import static bogen.studio.Room.Utility.StaticValues.JSON_NOT_VALID_ID;
-import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
 
 @RestController
 @RequestMapping(path = "/api/manage/room")
@@ -115,8 +109,7 @@ public class OwnerRoomAPIRoutes {
         try {
             roomDTO = objectMapper.readValue(jsonObject, RoomDTO.class);
             return roomService.store(roomDTO, userId, boomId, file);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             return e.toString();
         }
     }
