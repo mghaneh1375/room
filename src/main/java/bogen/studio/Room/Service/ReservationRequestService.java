@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
 import static bogen.studio.Room.Utility.Utility.*;
+import static bogen.studio.commonkoochita.Utility.Statics.*;
+import static bogen.studio.commonkoochita.Utility.Utility.*;
 
 @Service
 public class ReservationRequestService extends AbstractService<ReservationRequests, ReservationRequestDTO> {
@@ -35,7 +37,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     }
 
     @Override
-    public String update(ObjectId id, Object userId, ReservationRequestDTO dto) {
+    public String update(ObjectId id, ObjectId userId, ReservationRequestDTO dto) {
         return null;
     }
 
@@ -50,7 +52,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return reservationRequests.orElse(null);
     }
 
-    public String getOwnerActiveRequests(ObjectId roomId, int userId) {
+    public String getOwnerActiveRequests(ObjectId roomId, ObjectId userId) {
 
         List<ReservationRequests> reservationRequests = reservationRequestsRepository.getActiveReservationsByRoomIdAndOwnerId(roomId, userId);
 
@@ -61,7 +63,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return generateSuccessMsg("data", jsonArray);
     }
 
-    public String getOwnerAllActiveRequests(int userId) {
+    public String getOwnerAllActiveRequests(ObjectId userId) {
 
         List<ReservationRequests> reservationRequests = reservationRequestsRepository.getActiveReservationsByOwnerId(userId);
         List<Room> rooms = roomRepository.findDigestForOwnerByIds(
@@ -88,7 +90,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return generateSuccessMsg("data", jsonArray);
     }
 
-    public String answerToRequest(ObjectId reqId, int userId, String status) {
+    public String answerToRequest(ObjectId reqId, ObjectId userId, String status) {
 
         if (!status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()) &&
                 !status.equalsIgnoreCase(ReservationStatus.REJECT.getName())
@@ -128,9 +130,8 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         if (reservationRequests == null)
             return JSON_NOT_VALID_ID;
 
-        //todo: check userId
-//        if(!reservationRequests.getUserId().equals(userId))
-//            return JSON_NOT_ACCESS;
+        if(!reservationRequests.getUserId().equals(userId))
+            return JSON_NOT_ACCESS;
 
         if (!reservationRequests.getStatus().equals(ReservationStatus.PENDING) &&
                 !reservationRequests.getStatus().equals(ReservationStatus.ACCEPT)

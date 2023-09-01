@@ -38,7 +38,7 @@ public class ReservationRequests {
     private ObjectId passengersId;
 
     @Field("owner_id")
-    private Integer ownerId;
+    private ObjectId ownerId;
 
     @Field("gift_id")
     private ObjectId giftId;

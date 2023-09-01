@@ -3,6 +3,7 @@ package bogen.studio.Room.Models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
 public class User implements UserDetails {
 
     @Id
-    private String id;
+    private ObjectId id;
 
     @NotNull
     @Size(min = 4, max = 24)

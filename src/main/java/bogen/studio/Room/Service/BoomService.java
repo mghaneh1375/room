@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.Utility.*;
+import static bogen.studio.commonkoochita.Utility.Statics.*;
+import static bogen.studio.commonkoochita.Utility.Utility.*;
 
 @Service
 public class BoomService extends AbstractService<Boom, BoomDTO> {
@@ -31,7 +31,7 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
     @Override
     public String list(List<String> filters) {
 
-        int userId = Integer.parseInt(filters.get(0));
+        ObjectId userId = new ObjectId(filters.get(0));
         List<Boom> all = boomRepository.findByUserIdIncludeEmbeddedFields(userId);
 
         JSONArray jsonArray = new JSONArray();
@@ -103,7 +103,7 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
     }
 
     @Override
-    public String update(ObjectId id, Object userId, BoomDTO dto) {
+    public String update(ObjectId id, ObjectId userId, BoomDTO dto) {
         return null;
     }
 

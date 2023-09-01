@@ -1,44 +1,44 @@
 package bogen.studio.Room.Routes.API.ReservationAPIRoutes;
 
+import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.ReservationRequestService;
-import bogen.studio.Room.Validator.ObjectIdConstraint;
+import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotBlank;
 
-import static bogen.studio.Room.Routes.API.Room.OwnerRoomAPIRoutes.userId;
+import java.security.Principal;
 
 @RestController
 @RequestMapping(path = "/api/manage/reserve")
 @Validated
-public class OwnerReserveAPIRoutes {
+public class OwnerReserveAPIRoutes extends Router {
 
     @Autowired
     ReservationRequestService reservationRequestService;
 
     @PutMapping(value = "answerToRequest/{id}/{status}")
     @ResponseBody
-    public String answerToRequest(HttpServletRequest request,
+    public String answerToRequest(Principal principal,
                                   @PathVariable @ObjectIdConstraint ObjectId id,
                                   @PathVariable @NotBlank String status) {
-        return reservationRequestService.answerToRequest(id, userId, status);
+        return reservationRequestService.answerToRequest(id, getUserId(principal), status);
     }
 
     @GetMapping(value = "getActiveRequests/{roomId}")
     @ResponseBody
-    public String getActiveRequests(HttpServletRequest request,
+    public String getActiveRequests(Principal principal,
                                     @PathVariable @ObjectIdConstraint ObjectId roomId) {
-        return reservationRequestService.getOwnerActiveRequests(roomId, userId);
+        return reservationRequestService.getOwnerActiveRequests(roomId, getUserId(principal));
     }
 
     @GetMapping(value = "getAllActiveRequests")
     @ResponseBody
-    public String getOwnerAllActiveRequests(HttpServletRequest request) {
-        return reservationRequestService.getOwnerAllActiveRequests(userId);
+    public String getOwnerAllActiveRequests(Principal principal) {
+        return reservationRequestService.getOwnerAllActiveRequests(getUserId(principal));
     }
 
 

@@ -9,7 +9,9 @@ import bogen.studio.Room.Repository.RoomRepository;
 
 import java.util.*;
 
-import static bogen.studio.Room.Utility.StaticValues.ONE_DAY_MSEC;
+import static bogen.studio.commonkoochita.Utility.Statics.ONE_DAY_MSEC;
+import static bogen.studio.commonkoochita.Utility.Utility.convertStringToDate;
+import static bogen.studio.commonkoochita.Utility.Utility.getToday;
 
 public class Jobs implements Runnable {
 
@@ -37,7 +39,7 @@ public class Jobs implements Runnable {
             List<Room> rooms = roomRepository.findHasDatePrices();
             List<Room> modified = new ArrayList<>();
 
-            int today = Utility.convertStringToDate(Utility.getToday("/"));
+            int today = convertStringToDate(getToday("/"));
 
             for(Room room : rooms) {
 
@@ -49,7 +51,7 @@ public class Jobs implements Runnable {
                 while (i.hasNext()) {
                     DatePrice datePrice = i.next();
 
-                    int d = Utility.convertStringToDate(datePrice.getDate());
+                    int d = convertStringToDate(datePrice.getDate());
 
                     if(d < today) {
                         modify = true;

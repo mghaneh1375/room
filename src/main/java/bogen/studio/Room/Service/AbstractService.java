@@ -1,18 +1,14 @@
 package bogen.studio.Room.Service;
 
 import bogen.studio.Room.Models.PaginatedResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import org.bson.types.ObjectId;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-import static bogen.studio.Room.Utility.Utility.generateSuccessMsg;
 
 public abstract class AbstractService <T, D> {
 
@@ -35,7 +31,7 @@ public abstract class AbstractService <T, D> {
 
     abstract String list(List<String> filters);
 
-    public abstract String update(ObjectId id, Object userId, D dto);
+    public abstract String update(ObjectId id, ObjectId userId, D dto);
 
     public abstract String store(D dto, Object ...additionalFields);
 

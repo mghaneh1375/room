@@ -1,12 +1,14 @@
 package bogen.studio.Room.Validator;
 
 import bogen.studio.Room.DTO.TripRequestDTO;
-import bogen.studio.Room.Utility.Utility;
+import bogen.studio.commonkoochita.Validator.DateValidator;
 import org.json.JSONObject;
 import org.springframework.util.ObjectUtils;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+
+import static bogen.studio.commonkoochita.Utility.Utility.*;
 
 public class TripRequestValidator implements ConstraintValidator<ValidatedTripRequest, TripRequestDTO> {
 
@@ -26,15 +28,15 @@ public class TripRequestValidator implements ConstraintValidator<ValidatedTripRe
             isErrored = true;
         }
 
-        int d = Utility.convertStringToDate(value.getStartDate());
-        int today = Utility.convertStringToDate(Utility.getToday("/"));
+        int d = convertStringToDate(value.getStartDate());
+        int today = convertStringToDate(getToday("/"));
 
         if(d < today) {
             errs.put("startDate", "تاریخ شروع باید از امروز بزرگتر باشد");
             isErrored = true;
         }
 
-        int futureLimit = Utility.convertStringToDate(Utility.getPast("/", -60));
+        int futureLimit = convertStringToDate(getPast("/", -60));
 
         if(futureLimit < d) {
             errs.put("startDate", "امکان رزرو تاریخ مورد نظر هنوز باز نشده است");

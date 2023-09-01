@@ -12,6 +12,6 @@ public class Boom {
     private boolean visibility;
     private Date createdAt;
 
-    private int user_id;
+    private ObjectId user_id;
 
 }

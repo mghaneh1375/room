@@ -15,7 +15,7 @@ public interface BoomRepository extends
         MongoRepository<Boom, ObjectId>, FilterableRepository<Boom, bogen.studio.Room.DTO.Digests.Authorized.Boom> {
 
     @Query(value = "{ 'userId' : ?0 }", fields = "{ '_id': 1, 'availability': 1, 'createdAt': 1, 'place_id': 1 }")
-    List<Boom> findByUserIdIncludeEmbeddedFields(Integer userId);
+    List<Boom> findByUserIdIncludeEmbeddedFields(ObjectId userId);
 
     @Query(value = "{ '_id': ?0 }")
     Optional<Boom> findById(ObjectId id);

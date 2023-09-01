@@ -77,7 +77,7 @@ public class Room {
     private boolean availability = false;
 
     @Field("user_id")
-    private Integer userId;
+    private ObjectId userId;
 
     @Field("online_reservation")
     private boolean onlineReservation = false;

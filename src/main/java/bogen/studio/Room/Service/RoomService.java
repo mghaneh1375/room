@@ -12,9 +12,8 @@ import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
-import bogen.studio.Room.Utility.JalaliCalendar;
-import bogen.studio.Room.Utility.PairValue;
-import bogen.studio.Room.Utility.Utility;
+import bogen.studio.commonkoochita.Utility.JalaliCalendar;
+import bogen.studio.commonkoochita.Utility.PairValue;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -34,7 +33,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.Utility.*;
+import static bogen.studio.commonkoochita.Utility.Statics.*;
+import static bogen.studio.commonkoochita.Utility.Utility.*;
 
 @Service
 public class RoomService extends AbstractService<Room, RoomDTO> {
@@ -51,13 +51,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     public String list(List<String> filters) {
 
         ObjectId boomId = new ObjectId(filters.get(0));
-        int userId = Integer.parseInt(filters.get(1));
+        ObjectId userId = new ObjectId(filters.get(1));
 
         List<Room> rooms = roomRepository.findByUserIdAndBoomId(userId, boomId);
 
         return generateSuccessMsg("data", rooms.stream()
                 .map(x -> {
-
                             String id = x.get_id().toString();
 
                             JSONObject jsonObject = new JSONObject()
@@ -184,7 +183,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
-    private Room canModify(ObjectId id, int userId) throws InvalidFieldsException {
+    private Room canModify(ObjectId id, ObjectId userId) throws InvalidFieldsException {
 
         Room room = findById(id);
 
@@ -216,11 +215,11 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     }
 
     @Override
-    public String update(ObjectId id, Object userId, RoomDTO dto) {
+    public String update(ObjectId id, ObjectId userId, RoomDTO dto) {
 
         Room room;
         try {
-            room = canModify(id, (Integer) userId);
+            room = canModify(id, userId);
         } catch (InvalidFieldsException e) {
             return generateErr(e.getMessage());
         }
@@ -270,7 +269,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     public String store(RoomDTO dto, Object... additionalFields) {
 
         ObjectId boomId = (ObjectId) additionalFields[1];
-        int userId = (Integer) additionalFields[0];
+        ObjectId userId = (ObjectId) additionalFields[0];
 
         if (roomRepository.countRoomByBoomIdAndTitle(boomId, dto.getTitle()) > 0)
             return generateErr("اتاقی با این نام در بوم گردی شما موجود است.");
@@ -299,7 +298,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return generateSuccessMsg("ids", jsonArray);
     }
 
-    public String setPic(ObjectId id, Integer userId, MultipartFile file) {
+    public String setPic(ObjectId id, ObjectId userId, MultipartFile file) {
 
         Room room;
         try {
@@ -321,7 +320,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return JSON_OK;
     }
 
-    public String removeDatePrice(ObjectId id, int userId, String date) {
+    public String removeDatePrice(ObjectId id, ObjectId userId, String date) {
 
         Room room;
         try {
@@ -357,7 +356,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return JSON_OK;
     }
 
-    public String addDatePrice(ObjectId id, int userId, DatePrice datePrice) {
+    public String addDatePrice(ObjectId id, ObjectId userId, DatePrice datePrice) {
 
         if (!isLargerThanToday(datePrice.getDate()))
             return generateErr("تاریخ باید بزرگ تر از امروز باشد");
@@ -533,7 +532,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return room.orElse(null);
     }
 
-    public String get(ObjectId id, int userId) {
+    public String get(ObjectId id, ObjectId userId) {
 
         Room room = findById(id);
 
@@ -556,7 +555,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return generateSuccessMsg("data", jsonObject);
     }
 
-    public String remove(ObjectId id, int userId) {
+    public String remove(ObjectId id, ObjectId userId) {
 
 
         Room room = findById(id);
@@ -599,7 +598,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         dates.add(dto.getStartDate());
 
         for (int i = 1; i < dto.getNights(); i++)
-            dates.add(Utility.getPast("/", dto.getStartDate(), -1 * i));
+            dates.add(getPast("/", dto.getStartDate(), -1 * i));
 
         if (reservationRequestsRepository.findActiveReservations(room.get_id(), dates) > 0)
             throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
@@ -675,7 +674,6 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             String[] splited = date.split("\\/");
             int dayOfWeek = JalaliCalendar.dayOfWeek(new JalaliCalendar.YearMonthDate(splited[0], splited[1], splited[2]));
 
-
             if (room.getWeekendPrice() != null && weekends.contains(dayOfWeek)) {
 
                 if(exceedPassenger > 0)
@@ -729,7 +727,6 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         try {
 
-            userId = FAKE_USER_ID;
             ObjectId passengersId = dto.getPassengersId();
 
             JSONObject passengerServiceResponse = Network.sendGetReq(PASSENGER_URL + "system/trip/getTripPassengers/" + passengersId + "/" + userId);
@@ -818,7 +815,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
-    public String toggleAccessibility(ObjectId id, int userId) {
+    public String toggleAccessibility(ObjectId id, ObjectId userId) {
 
         Room room;
         try {

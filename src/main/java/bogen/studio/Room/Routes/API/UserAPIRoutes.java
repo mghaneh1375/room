@@ -1,13 +1,14 @@
 package bogen.studio.Room.Routes.API;
 
-import bogen.studio.Room.Utility.Utility;
-import jakarta.servlet.http.HttpServletRequest;
 import org.json.JSONObject;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.UUID;
+
+import static bogen.studio.commonkoochita.Utility.Utility.generateSuccessMsg;
 
 @RestController
 @RequestMapping(path = "/api/user")
@@ -23,7 +24,7 @@ public class UserAPIRoutes {
         JSONObject jsonObject = new JSONObject(token);
         UUID uuid = UUID.randomUUID();
         tokens.put(uuid.toString(), jsonObject.getString("token"));
-        return Utility.generateSuccessMsg("data", uuid.toString());
+        return generateSuccessMsg("data", uuid.toString());
     }
 
     @GetMapping(value = "getToken")

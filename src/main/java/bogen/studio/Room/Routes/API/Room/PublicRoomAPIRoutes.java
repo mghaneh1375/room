@@ -2,39 +2,39 @@ package bogen.studio.Room.Routes.API.Room;
 
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.DTO.TripRequestDTO;
+import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.RoomService;
-import bogen.studio.Room.Utility.Utility;
-import bogen.studio.Room.Validator.DateValidator;
-import bogen.studio.Room.Validator.ObjectIdConstraint;
+import bogen.studio.commonkoochita.Validator.DateValidator;
+import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Positive;
 
-import static bogen.studio.Room.Utility.Utility.generateErr;
-import static bogen.studio.Room.Utility.Utility.getPast;
+import java.security.Principal;
+
+import static bogen.studio.commonkoochita.Utility.Utility.*;
 
 @RestController
 @RequestMapping(path = "/api/public/room")
 @Validated
-public class PublicRoomAPIRoutes {
+public class PublicRoomAPIRoutes extends Router {
 
     @Autowired
     RoomService roomService;
 
     @PostMapping(value = "reserve/{id}")
     @ResponseBody
-    public String reserve(HttpServletRequest request,
+    public String reserve(Principal principal,
                           @PathVariable @ObjectIdConstraint ObjectId id,
                           @RequestBody @Valid ReservationRequestDTO dto) {
-        //todo: userId
-        return roomService.reserve(id, dto, new ObjectId());
+        return roomService.reserve(id, dto, getUserId(principal));
     }
 
     @PostMapping(value = "calcPrice/{id}")
@@ -69,7 +69,7 @@ public class PublicRoomAPIRoutes {
             if(!DateValidator.isValid2(startDate))
                 return generateErr("تاریخ وارد شده معتبر نمی باشد");
 
-            if(!DateValidator.gte(startDate, Utility.getToday("/")))
+            if(!DateValidator.gte(startDate, getToday("/")))
                 return generateErr("تاریخ باید از امروز بزرگ تر باشد");
 
             String futureLimit = getPast("/", -60);
