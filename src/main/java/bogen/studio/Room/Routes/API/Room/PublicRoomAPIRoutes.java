@@ -46,8 +46,7 @@ public class PublicRoomAPIRoutes extends Router {
 
     @GetMapping(value = "list/{boomId}")
     @ResponseBody
-    public String list(HttpServletRequest request,
-                       @PathVariable @ObjectIdConstraint ObjectId boomId,
+    public String list(@PathVariable ObjectId boomId, //@ObjectIdConstraint
                        @RequestParam(value = "adults", required = false) @Positive @Max(20) Integer adults,
                        @RequestParam(value = "infants", required = false) @Min(0) @Max(5) Integer infants,
                        @RequestParam(value = "children", required = false) @Min(0) @Max(5) Integer children,
