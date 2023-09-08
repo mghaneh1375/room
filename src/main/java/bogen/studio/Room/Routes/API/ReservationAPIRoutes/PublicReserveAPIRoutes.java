@@ -1,8 +1,8 @@
 package bogen.studio.Room.Routes.API.ReservationAPIRoutes;
 
-import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.ReservationRequestService;
-import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
+import my.common.commonkoochita.Router.Router;
+import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -24,27 +24,27 @@ public class PublicReserveAPIRoutes extends Router {
     @ResponseBody
     public String cancelMyReq(Principal principal,
                               @PathVariable @ObjectIdConstraint ObjectId id) {
-        return reservationRequestService.cancelMyReq(id, getUserId(principal));
+        return reservationRequestService.cancelMyReq(id, new ObjectId(getUserId(principal)));
     }
 
     @GetMapping(value = "getMyActiveReq")
     @ResponseBody
     public String getMyActiveReq(Principal principal) {
-        return reservationRequestService.getMyActiveReq(getUserId(principal));
+        return reservationRequestService.getMyActiveReq(new ObjectId(getUserId(principal)));
     }
 
     @GetMapping(value = "getMyReqByTrackingCode/{trackingCode}")
     @ResponseBody
     public String getMyReqByTrackingCode(Principal principal,
                            @PathVariable @NotBlank @Size(min = 6, max = 6) String trackingCode) {
-        return reservationRequestService.getMyReq(getUserId(principal), trackingCode, null);
+        return reservationRequestService.getMyReq(new ObjectId(getUserId(principal)), trackingCode, null);
     }
 
     @GetMapping(value = "getMyReqById/{id}")
     @ResponseBody
     public String getMyReqById(Principal principal,
                            @PathVariable @ObjectIdConstraint ObjectId id) {
-        return reservationRequestService.getMyReq(getUserId(principal), null, id);
+        return reservationRequestService.getMyReq(new ObjectId(getUserId(principal)), null, id);
     }
 
 

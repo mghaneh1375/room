@@ -1,7 +1,7 @@
 package bogen.studio.Room.Validator;
 
 import bogen.studio.Room.DTO.DatePrice;
-import bogen.studio.commonkoochita.Validator.DateValidator;
+import my.common.commonkoochita.Validator.DateValidator;
 import org.json.JSONObject;
 
 import javax.validation.ConstraintValidator;

@@ -1,14 +1,13 @@
 package bogen.studio.Room.Routes.API.BoomAPIRoutes;
 
-import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.BoomService;
-import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
+import my.common.commonkoochita.Router.Router;
+import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.Collections;
 
@@ -23,15 +22,15 @@ public class OwnerBoomAPIRoutes extends Router {
     @GetMapping(value = "/list")
     @ResponseBody
     public String list(Principal principal) {
-        return boomService.list(Collections.singletonList(getUserId(principal).toString()));
+        return boomService.list(Collections.singletonList(getUserId(principal)));
     }
 
     @PutMapping(value = "/toggleAccessibility/{id}")
     @ResponseBody
-    public String toggleAccessibility(HttpServletRequest request,
+    public String toggleAccessibility(Principal principal,
                                       @PathVariable @ObjectIdConstraint ObjectId id
     ) {
-        return boomService.toggleAccessibility(id);
+        return boomService.toggleAccessibility(new ObjectId(getUserId(principal)), id);
     }
 
 }

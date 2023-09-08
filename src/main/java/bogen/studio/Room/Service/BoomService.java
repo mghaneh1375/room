@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static bogen.studio.commonkoochita.Utility.Statics.*;
-import static bogen.studio.commonkoochita.Utility.Utility.*;
+import static my.common.commonkoochita.Utility.Statics.*;
+import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
 public class BoomService extends AbstractService<Boom, BoomDTO> {
@@ -78,7 +78,7 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
         );
     }
 
-    public String toggleAccessibility(ObjectId id) {
+    public String toggleAccessibility(ObjectId userId, ObjectId id) {
 
         Optional<Boom> roomOptional = boomRepository.findById(id);
 
@@ -86,6 +86,9 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
 
         if(boom == null)
             return JSON_NOT_VALID_ID;
+
+        if(!boom.getUserId().equals(userId))
+            return JSON_NOT_ACCESS;
 
         boolean newStatus = !boom.isAvailability();
 

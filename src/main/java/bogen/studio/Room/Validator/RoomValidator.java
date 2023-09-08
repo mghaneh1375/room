@@ -2,7 +2,7 @@ package bogen.studio.Room.Validator;
 
 import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Enums.*;
-import bogen.studio.commonkoochita.Validator.EnumValidatorImp;
+import my.common.commonkoochita.Validator.EnumValidatorImp;
 import org.json.JSONObject;
 
 import javax.validation.ConstraintValidator;

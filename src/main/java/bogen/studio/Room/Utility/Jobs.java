@@ -9,9 +9,9 @@ import bogen.studio.Room.Repository.RoomRepository;
 
 import java.util.*;
 
-import static bogen.studio.commonkoochita.Utility.Statics.ONE_DAY_MSEC;
-import static bogen.studio.commonkoochita.Utility.Utility.convertStringToDate;
-import static bogen.studio.commonkoochita.Utility.Utility.getToday;
+import static my.common.commonkoochita.Utility.Statics.ONE_DAY_MSEC;
+import static my.common.commonkoochita.Utility.Utility.convertStringToDate;
+import static my.common.commonkoochita.Utility.Utility.getToday;
 
 public class Jobs implements Runnable {
 

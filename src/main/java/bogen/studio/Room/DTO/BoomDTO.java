@@ -10,7 +10,7 @@ import org.bson.types.ObjectId;
 @Setter
 public class BoomDTO {
 
-    private Integer userId;
+    private ObjectId userId;
     private ObjectId placeId;
     private Integer businessId;
 //    private BoomData data;

@@ -2,12 +2,12 @@ package bogen.studio.Room.Routes.API.Room;
 
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.DTO.RoomDTO;
-import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.RoomService;
-import bogen.studio.commonkoochita.Utility.Positive;
-import bogen.studio.commonkoochita.Validator.DateConstraint;
-import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
-import bogen.studio.commonkoochita.Validator.StrongJSONConstraint;
+import my.common.commonkoochita.Router.Router;
+import my.common.commonkoochita.Utility.Positive;
+import my.common.commonkoochita.Validator.DateConstraint;
+import my.common.commonkoochita.Validator.ObjectIdConstraint;
+import my.common.commonkoochita.Validator.StrongJSONConstraint;
 import bogen.studio.Room.Validator.ValidatedRegularImage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
@@ -39,7 +39,7 @@ public class OwnerRoomAPIRoutes extends Router {
     public String update(Principal principal,
                          @PathVariable @ObjectIdConstraint ObjectId id,
                          final @RequestBody @Valid RoomDTO roomDTO) {
-        return roomService.update(id, getUserId(principal), roomDTO);
+        return roomService.update(id, new ObjectId(getUserId(principal)), roomDTO);
     }
 
     @PutMapping(value = "setPic/{id}")
@@ -47,7 +47,7 @@ public class OwnerRoomAPIRoutes extends Router {
     public String setPic(Principal principal,
                          @PathVariable @ObjectIdConstraint ObjectId id,
                          final @RequestBody @ValidatedRegularImage MultipartFile file) {
-        return roomService.setPic(id, getUserId(principal), file);
+        return roomService.setPic(id, new ObjectId(getUserId(principal)), file);
     }
 
     @PutMapping(value = "setDatePrice/{id}")
@@ -55,7 +55,7 @@ public class OwnerRoomAPIRoutes extends Router {
     public String setDatePrice(Principal principal,
                                @PathVariable @ObjectIdConstraint ObjectId id,
                                final @RequestBody @Valid DatePrice datePrice) {
-        return roomService.addDatePrice(id, getUserId(principal), datePrice);
+        return roomService.addDatePrice(id, new ObjectId(getUserId(principal)), datePrice);
     }
 
     @DeleteMapping(value = "removeDatePrice/{id}/{date}")
@@ -63,7 +63,7 @@ public class OwnerRoomAPIRoutes extends Router {
     public String removeDatePrice(Principal principal,
                                   @PathVariable @ObjectIdConstraint ObjectId id,
                                   @PathVariable @DateConstraint String date) {
-        return roomService.removeDatePrice(id, getUserId(principal), date.replace("-", "/"));
+        return roomService.removeDatePrice(id, new ObjectId(getUserId(principal)), date.replace("-", "/"));
     }
 
     @PutMapping(value = "/toggleAccessibility/{id}")
@@ -71,7 +71,7 @@ public class OwnerRoomAPIRoutes extends Router {
     public String toggleAccessibility(Principal principal,
                                       @PathVariable @ObjectIdConstraint ObjectId id
     ) {
-        return roomService.toggleAccessibility(id, getUserId(principal));
+        return roomService.toggleAccessibility(id, new ObjectId(getUserId(principal)));
     }
 
     @PostMapping(value = "store/{boomId}")
@@ -109,7 +109,7 @@ public class OwnerRoomAPIRoutes extends Router {
 
         try {
             roomDTO = objectMapper.readValue(jsonObject, RoomDTO.class);
-            return roomService.store(roomDTO, getUserId(principal), boomId, file);
+            return roomService.store(roomDTO, new ObjectId(getUserId(principal)), boomId, file);
         } catch (Exception e) {
             return e.toString();
         }
@@ -122,7 +122,7 @@ public class OwnerRoomAPIRoutes extends Router {
                        @PathVariable @ObjectIdConstraint ObjectId boomId) {
         ArrayList<String> filters = new ArrayList<>();
         filters.add(boomId.toString());
-        filters.add(getUserId(principal).toString());
+        filters.add(new ObjectId(getUserId(principal)).toString());
         return roomService.list(filters);
     }
 
@@ -130,7 +130,7 @@ public class OwnerRoomAPIRoutes extends Router {
     @ResponseBody
     public String get(Principal principal,
                       @PathVariable @ObjectIdConstraint ObjectId id) {
-        return roomService.get(id, getUserId(principal));
+        return roomService.get(id, new ObjectId(getUserId(principal)));
     }
 
     @DeleteMapping(value = "remove/{id}")
@@ -138,6 +138,6 @@ public class OwnerRoomAPIRoutes extends Router {
     public String remove(Principal principal,
                          @PathVariable @ObjectIdConstraint ObjectId id
     ) {
-        return roomService.remove(id, getUserId(principal));
+        return roomService.remove(id, new ObjectId(getUserId(principal)));
     }
 }

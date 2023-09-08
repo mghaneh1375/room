@@ -12,8 +12,8 @@ import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
-import bogen.studio.commonkoochita.Utility.JalaliCalendar;
-import bogen.studio.commonkoochita.Utility.PairValue;
+import my.common.commonkoochita.Utility.JalaliCalendar;
+import my.common.commonkoochita.Utility.PairValue;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -33,8 +33,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.commonkoochita.Utility.Statics.*;
-import static bogen.studio.commonkoochita.Utility.Utility.*;
+import static my.common.commonkoochita.Utility.Statics.*;
+import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
 public class RoomService extends AbstractService<Room, RoomDTO> {

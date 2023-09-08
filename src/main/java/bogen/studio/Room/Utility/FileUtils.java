@@ -1,7 +1,7 @@
 package bogen.studio.Room.Utility;
 
 import bogen.studio.Room.Exception.InvalidFileTypeException;
-import bogen.studio.commonkoochita.Utility.PairValue;
+import my.common.commonkoochita.Utility.PairValue;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;

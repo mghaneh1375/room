@@ -25,7 +25,7 @@ public class Boom {
     private boolean availability = false;
 
     @Field("user_id")
-    private Integer userId;
+    private ObjectId userId;
 
     @Field("place_id")
     private ObjectId placeId;

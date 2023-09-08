@@ -1,8 +1,8 @@
 package bogen.studio.Room.Routes.API.ReservationAPIRoutes;
 
-import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.ReservationRequestService;
-import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
+import my.common.commonkoochita.Router.Router;
+import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -25,20 +25,20 @@ public class OwnerReserveAPIRoutes extends Router {
     public String answerToRequest(Principal principal,
                                   @PathVariable @ObjectIdConstraint ObjectId id,
                                   @PathVariable @NotBlank String status) {
-        return reservationRequestService.answerToRequest(id, getUserId(principal), status);
+        return reservationRequestService.answerToRequest(id, new ObjectId(getUserId(principal)), status);
     }
 
     @GetMapping(value = "getActiveRequests/{roomId}")
     @ResponseBody
     public String getActiveRequests(Principal principal,
                                     @PathVariable @ObjectIdConstraint ObjectId roomId) {
-        return reservationRequestService.getOwnerActiveRequests(roomId, getUserId(principal));
+        return reservationRequestService.getOwnerActiveRequests(roomId, new ObjectId(getUserId(principal)));
     }
 
     @GetMapping(value = "getAllActiveRequests")
     @ResponseBody
     public String getOwnerAllActiveRequests(Principal principal) {
-        return reservationRequestService.getOwnerAllActiveRequests(getUserId(principal));
+        return reservationRequestService.getOwnerAllActiveRequests(new ObjectId(getUserId(principal)));
     }
 
 

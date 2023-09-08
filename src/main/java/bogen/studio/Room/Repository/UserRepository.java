@@ -1,6 +1,6 @@
 package bogen.studio.Room.Repository;
 
-import bogen.studio.Room.Models.User;
+import my.common.commonkoochita.Model.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;

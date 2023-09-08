@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.UUID;
 
-import static bogen.studio.commonkoochita.Utility.Utility.generateSuccessMsg;
+import static my.common.commonkoochita.Utility.Utility.generateSuccessMsg;
 
 @RestController
 @RequestMapping(path = "/api/user")

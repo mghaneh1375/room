@@ -1,14 +1,14 @@
 package bogen.studio.Room.Validator;
 
 import bogen.studio.Room.DTO.TripRequestDTO;
-import bogen.studio.commonkoochita.Validator.DateValidator;
+import my.common.commonkoochita.Validator.DateValidator;
 import org.json.JSONObject;
 import org.springframework.util.ObjectUtils;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-import static bogen.studio.commonkoochita.Utility.Utility.*;
+import static my.common.commonkoochita.Utility.Utility.*;
 
 public class TripRequestValidator implements ConstraintValidator<ValidatedTripRequest, TripRequestDTO> {
 

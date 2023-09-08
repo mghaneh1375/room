@@ -2,10 +2,10 @@ package bogen.studio.Room.Routes.API.Room;
 
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.DTO.TripRequestDTO;
-import bogen.studio.Room.Routes.Router;
 import bogen.studio.Room.Service.RoomService;
-import bogen.studio.commonkoochita.Validator.DateValidator;
-import bogen.studio.commonkoochita.Validator.ObjectIdConstraint;
+import my.common.commonkoochita.Router.Router;
+import my.common.commonkoochita.Validator.DateValidator;
+import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -19,7 +19,7 @@ import javax.validation.constraints.Positive;
 
 import java.security.Principal;
 
-import static bogen.studio.commonkoochita.Utility.Utility.*;
+import static my.common.commonkoochita.Utility.Utility.*;
 
 @RestController
 @RequestMapping(path = "/api/public/room")
@@ -34,13 +34,12 @@ public class PublicRoomAPIRoutes extends Router {
     public String reserve(Principal principal,
                           @PathVariable @ObjectIdConstraint ObjectId id,
                           @RequestBody @Valid ReservationRequestDTO dto) {
-        return roomService.reserve(id, dto, getUserId(principal));
+        return roomService.reserve(id, dto, new ObjectId(getUserId(principal)));
     }
 
     @PostMapping(value = "calcPrice/{id}")
     @ResponseBody
-    public String calcPrice(HttpServletRequest request,
-                            @PathVariable @ObjectIdConstraint ObjectId id,
+    public String calcPrice(@PathVariable @ObjectIdConstraint ObjectId id,
                             @RequestBody @Valid TripRequestDTO dto) {
         return roomService.calcPrice(id, dto);
     }

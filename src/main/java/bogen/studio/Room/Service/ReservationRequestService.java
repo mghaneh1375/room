@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
 import static bogen.studio.Room.Utility.Utility.*;
-import static bogen.studio.commonkoochita.Utility.Statics.*;
-import static bogen.studio.commonkoochita.Utility.Utility.*;
+import static my.common.commonkoochita.Utility.Statics.*;
+import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
 public class ReservationRequestService extends AbstractService<ReservationRequests, ReservationRequestDTO> {
