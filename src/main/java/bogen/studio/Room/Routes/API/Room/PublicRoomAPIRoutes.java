@@ -3,7 +3,6 @@ package bogen.studio.Room.Routes.API.Room;
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.DTO.TripRequestDTO;
 import bogen.studio.Room.Service.RoomService;
-import my.common.commonkoochita.Router.Router;
 import my.common.commonkoochita.Validator.DateValidator;
 import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -19,12 +17,13 @@ import javax.validation.constraints.Positive;
 
 import java.security.Principal;
 
+import static bogen.studio.Room.Routes.Utility.getUserId;
 import static my.common.commonkoochita.Utility.Utility.*;
 
 @RestController
 @RequestMapping(path = "/api/public/room")
 @Validated
-public class PublicRoomAPIRoutes extends Router {
+public class PublicRoomAPIRoutes {
 
     @Autowired
     RoomService roomService;
@@ -34,7 +33,7 @@ public class PublicRoomAPIRoutes extends Router {
     public String reserve(Principal principal,
                           @PathVariable @ObjectIdConstraint ObjectId id,
                           @RequestBody @Valid ReservationRequestDTO dto) {
-        return roomService.reserve(id, dto, new ObjectId(getUserId(principal)));
+        return roomService.reserve(id, dto, getUserId(principal));
     }
 
     @PostMapping(value = "calcPrice/{id}")
@@ -46,7 +45,7 @@ public class PublicRoomAPIRoutes extends Router {
 
     @GetMapping(value = "list/{boomId}")
     @ResponseBody
-    public String list(@PathVariable ObjectId boomId, //@ObjectIdConstraint
+    public String list(@PathVariable @ObjectIdConstraint ObjectId boomId,
                        @RequestParam(value = "adults", required = false) @Positive @Max(20) Integer adults,
                        @RequestParam(value = "infants", required = false) @Min(0) @Max(5) Integer infants,
                        @RequestParam(value = "children", required = false) @Min(0) @Max(5) Integer children,

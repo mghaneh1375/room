@@ -1,7 +1,6 @@
 package bogen.studio.Room.Routes.API.ReservationAPIRoutes;
 
 import bogen.studio.Room.Service.ReservationRequestService;
-import my.common.commonkoochita.Router.Router;
 import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +11,12 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.security.Principal;
 
+import static bogen.studio.Room.Routes.Utility.getUserId;
+
 @RestController
 @RequestMapping(path = "/api/public/reserve")
 @Validated
-public class PublicReserveAPIRoutes extends Router {
+public class PublicReserveAPIRoutes {
 
     @Autowired
     ReservationRequestService reservationRequestService;
@@ -24,27 +25,27 @@ public class PublicReserveAPIRoutes extends Router {
     @ResponseBody
     public String cancelMyReq(Principal principal,
                               @PathVariable @ObjectIdConstraint ObjectId id) {
-        return reservationRequestService.cancelMyReq(id, new ObjectId(getUserId(principal)));
+        return reservationRequestService.cancelMyReq(id, getUserId(principal));
     }
 
     @GetMapping(value = "getMyActiveReq")
     @ResponseBody
     public String getMyActiveReq(Principal principal) {
-        return reservationRequestService.getMyActiveReq(new ObjectId(getUserId(principal)));
+        return reservationRequestService.getMyActiveReq(getUserId(principal));
     }
 
     @GetMapping(value = "getMyReqByTrackingCode/{trackingCode}")
     @ResponseBody
     public String getMyReqByTrackingCode(Principal principal,
                            @PathVariable @NotBlank @Size(min = 6, max = 6) String trackingCode) {
-        return reservationRequestService.getMyReq(new ObjectId(getUserId(principal)), trackingCode, null);
+        return reservationRequestService.getMyReq(getUserId(principal), trackingCode, null);
     }
 
     @GetMapping(value = "getMyReqById/{id}")
     @ResponseBody
     public String getMyReqById(Principal principal,
                            @PathVariable @ObjectIdConstraint ObjectId id) {
-        return reservationRequestService.getMyReq(new ObjectId(getUserId(principal)), null, id);
+        return reservationRequestService.getMyReq(getUserId(principal), null, id);
     }
 
 

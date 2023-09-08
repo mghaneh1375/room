@@ -1,7 +1,6 @@
 package bogen.studio.Room.Routes.API;
 
 import bogen.studio.Room.Service.AccountantService;
-import my.common.commonkoochita.Router.Router;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -12,10 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 
+import static bogen.studio.Room.Routes.Utility.getUserId;
+
 @RestController
 @RequestMapping(path = "/api/manage/accountant")
 @Validated
-public class AccountantAPIRoutes extends Router {
+public class AccountantAPIRoutes {
 
     @Autowired
     AccountantService accountantService;
@@ -23,7 +24,7 @@ public class AccountantAPIRoutes extends Router {
     @GetMapping(value = "getPendingCount")
     @ResponseBody
     public String getPendingCount(Principal principal) {
-        return accountantService.getPendingCount(new ObjectId(getUserId(principal)));
+        return accountantService.getPendingCount(getUserId(principal));
     }
 
 }
