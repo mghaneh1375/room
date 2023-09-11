@@ -32,38 +32,40 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header == null || !header.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
+            response.setStatus(401);
             return;
         }
-
-        String username;
 
         try {
-            username = getUsernameFromToken(header);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+
+            String username = getUsernameFromToken(header);
+
+            UserDetails userDetails = myUserDetails.loadUserByUsername(username);
+
+            if(userDetails == null) {
+                response.setStatus(401);
+                return;
+            }
+
+            UsernamePasswordAuthenticationToken
+                    authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails, null,
+                    userDetails.getAuthorities()
+            );
+
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             chain.doFilter(request, response);
-            return;
+
+        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-
-        UserDetails userDetails = myUserDetails.loadUserByUsername(username);
-
-        if (userDetails == null) {
-            chain.doFilter(request, response);
-            return;
+        catch (RuntimeException ex) {
+            response.setStatus(401);
         }
-
-        UsernamePasswordAuthenticationToken
-                authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null,
-                userDetails.getAuthorities()
-        );
-
-        authentication.setDetails(
-                new WebAuthenticationDetailsSource().buildDetails(request)
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        chain.doFilter(request, response);
 
     }
 }
