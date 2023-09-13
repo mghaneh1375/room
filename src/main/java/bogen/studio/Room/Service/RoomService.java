@@ -539,6 +539,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (room == null)
             return JSON_NOT_VALID_ID;
 
+        System.out.println(userId);
+        System.out.println(room.getUserId());
+        
         if (room.getUserId() != userId)
             return JSON_NOT_ACCESS;
 
