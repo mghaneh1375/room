@@ -100,7 +100,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         jsonObject.put("welfares", x.getWelfares() == null ? new JSONArray() :
                 x.getWelfares().stream()
-                        .map(Welfare::toFarsi)
+                        .map(item -> new JSONObject()
+                                .put("name", item.toFarsi())
+                                .put("value", item.getName()))
                         .collect(Collectors.toList()));
 
         jsonObject.put("accessibilityFeatures", x.getAccessibilityFeatures() == null ? new JSONArray() :
