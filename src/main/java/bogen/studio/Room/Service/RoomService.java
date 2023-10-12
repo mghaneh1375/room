@@ -199,7 +199,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (room == null)
             throw new InvalidFieldsException("id is not correct");
 
-        if(room.getUserId() != userId)
+        if(!room.getUserId().equals(userId))
             throw new InvalidFieldsException("access dined");
 
         if(justMain && !room.isMain())
