@@ -26,10 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
@@ -183,7 +180,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
-    private Room canModify(ObjectId id, ObjectId userId) throws InvalidFieldsException {
+    private Room canModify(ObjectId id, ObjectId userId, boolean justMain) throws InvalidFieldsException {
 
         Room room = findById(id);
 
@@ -193,7 +190,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if(room.getUserId() != userId)
             throw new InvalidFieldsException("access dined");
 
-        if(!room.isMain())
+        if(justMain && !room.isMain())
             throw new InvalidFieldsException("تنها می توانید اتاق های اصلی را ویرایش کنید");
 
         return room;
@@ -219,7 +216,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room;
         try {
-            room = canModify(id, userId);
+            room = canModify(id, userId, true);
         } catch (InvalidFieldsException e) {
             return generateErr(e.getMessage());
         }
@@ -233,6 +230,30 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         saveAllSimilar(oldTitle, populateEntity(room, dto));
 
         return JSON_OK;
+    }
+
+    public String getDatePrice(ObjectId id, ObjectId userId) {
+
+        Room room;
+        try {
+            room = canModify(id, userId, false);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
+
+        List<DatePrice> datePrices = room.getDatePrices();
+        JSONArray jsonArray = new JSONArray();
+
+        for(DatePrice datePrice : datePrices) {
+            jsonArray.put(new JSONObject()
+                    .put("date", datePrice.getDate())
+                    .put("capPrice", datePrice.getCapPrice())
+                    .put("price", datePrice.getPrice())
+                    .put("tag", datePrice.getTag())
+            );
+        }
+
+        return generateSuccessMsg("data", jsonArray);
     }
 
     private void copy(Room main, Room room) {
@@ -302,7 +323,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room;
         try {
-            room = canModify(id, userId);
+            room = canModify(id, userId, true);
         } catch (InvalidFieldsException e) {
             return generateErr(e.getMessage());
         }
@@ -324,7 +345,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room;
         try {
-            room = canModify(id, userId);
+            room = canModify(id, userId, true);
         } catch (InvalidFieldsException e) {
             return generateErr(e.getMessage());
         }
@@ -363,7 +384,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room;
         try {
-            room = canModify(id, userId);
+            room = canModify(id, userId, true);
         } catch (InvalidFieldsException e) {
             return generateErr(e.getMessage());
         }
@@ -819,7 +840,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room;
         try {
-            room = canModify(id, userId);
+            room = canModify(id, userId, true);
         } catch (InvalidFieldsException e) {
             return generateErr(e.getMessage());
         }

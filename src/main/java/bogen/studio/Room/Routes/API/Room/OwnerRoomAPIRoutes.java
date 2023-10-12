@@ -51,6 +51,13 @@ public class OwnerRoomAPIRoutes {
         return roomService.setPic(id, getUserId(principal), file);
     }
 
+    @GetMapping(value = "getDatePrice/{id}")
+    @ResponseBody
+    public String getDatePrice(Principal principal,
+                               @PathVariable @ObjectIdConstraint ObjectId id) {
+        return roomService.getDatePrice(id, getUserId(principal));
+    }
+
     @PutMapping(value = "setDatePrice/{id}")
     @ResponseBody
     public String setDatePrice(Principal principal,
