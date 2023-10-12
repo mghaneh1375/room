@@ -86,12 +86,16 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         jsonObject.put("foodFacilities", x.getFoodFacilities() == null ? new JSONArray() :
                 x.getFoodFacilities().stream()
-                        .map(FoodFacility::toFarsi)
+                        .map(item -> new JSONObject()
+                                .put("name", item.toFarsi())
+                                .put("value", item.getName()))
                         .collect(Collectors.toList()));
 
         jsonObject.put("limitations", x.getLimitations() == null ? new JSONArray() :
                 x.getLimitations().stream()
-                        .map(Limitation::toFarsi)
+                        .map(item -> new JSONObject()
+                                .put("name", item.toFarsi())
+                                .put("value", item.getName()))
                         .collect(Collectors.toList()));
 
         jsonObject.put("welfares", x.getWelfares() == null ? new JSONArray() :
@@ -101,17 +105,23 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         jsonObject.put("accessibilityFeatures", x.getAccessibilityFeatures() == null ? new JSONArray() :
                 x.getAccessibilityFeatures().stream()
-                        .map(AccessibilityFeature::toFarsi)
+                        .map(item -> new JSONObject()
+                                .put("name", item.toFarsi())
+                                .put("value", item.getName()))
                         .collect(Collectors.toList()));
 
         jsonObject.put("additionalFacilities", x.getAdditionalFacilities() == null ? new JSONArray() :
                 x.getAdditionalFacilities().stream()
-                        .map(AdditionalFacility::toFarsi)
+                        .map(item -> new JSONObject()
+                                .put("name", item.toFarsi())
+                                .put("value", item.getName()))
                         .collect(Collectors.toList()));
 
         jsonObject.put("sleepFeatures", x.getSleepFeatures() == null ? new JSONArray() :
                 x.getSleepFeatures().stream()
-                        .map(SleepFeature::toFarsi)
+                        .map(item -> new JSONObject()
+                                .put("name", item.toFarsi())
+                                .put("value", item.getName()))
                         .collect(Collectors.toList()));
 
     }
