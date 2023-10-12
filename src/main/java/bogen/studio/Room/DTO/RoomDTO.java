@@ -34,6 +34,8 @@ public class RoomDTO {
     private List<String> accessibilityFeatures;
     private List<String> foodFacilities;
 
+    private Boolean onlineReservation;
+
     private MultipartFile image;
 
 }

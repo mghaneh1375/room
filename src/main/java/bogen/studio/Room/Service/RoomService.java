@@ -429,6 +429,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         room.setWeekendPrice(roomDTO.getWeekendPrice());
         room.setVacationPrice(roomDTO.getVacationPrice());
 
+        if(roomDTO.getOnlineReservation() != null)
+            room.setOnlineReservation(roomDTO.getOnlineReservation());
+
         if (roomDTO.getLimitations() != null)
             room.setLimitations(roomDTO.getLimitations().stream()
                     .map(String::toUpperCase)
