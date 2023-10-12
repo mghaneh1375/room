@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests( authorizeHttpRequests -> authorizeHttpRequests
                         .antMatchers("/api/user/**").permitAll()
                         .antMatchers("/api/public/**").permitAll()
+                        .antMatchers("/api/boom/system/**").permitAll()
                         .antMatchers("/static/**", "/favicon.ico").permitAll()
                         .anyRequest().authenticated())
         ;
