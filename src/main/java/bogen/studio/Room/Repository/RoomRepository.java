@@ -22,7 +22,7 @@ public interface RoomRepository extends MongoRepository<Room, ObjectId>, Filtera
     void deleteById(ObjectId id);
 
     @Query(value = "{ 'user_id': ?0, 'boom_id': ?1 }",
-            fields = "{ '_id': 1, 'user_id': 1, 'main': 1, 'no': 1, 'availability': 1, 'created_at': 1, 'title': 1, 'image': 1 , 'cap': 1, 'price': 1, 'max_cap': 1, 'cap_price': 1, 'online_reservation': 1}"
+            fields = "{ '_id': 1, 'user_id': 1, 'main': 1, 'gallery': 1, 'no': 1, 'availability': 1, 'created_at': 1, 'title': 1, 'image': 1 , 'cap': 1, 'price': 1, 'max_cap': 1, 'cap_price': 1, 'online_reservation': 1}"
     )
     List<Room> findByUserIdAndBoomId(ObjectId userId, ObjectId boomId);
 

@@ -70,6 +70,15 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                     .put("capPrice", x.getCapPrice())
                                     .put("onlineReservation", x.isOnlineReservation());
 
+                            JSONArray galleryJSON = new JSONArray();
+
+                            if(x.getGalleries() != null) {
+                                for (String pic : x.getGalleries())
+                                    galleryJSON.put(ASSET_URL + FOLDER + "/" + pic);
+                            }
+
+                            jsonObject.put("gallery", galleryJSON);
+
                             if (!x.isOnlineReservation())
                                 jsonObject.put("pendingRequests", reservationRequestsRepository.countByRoomIdAndStatus(x.get_id(),
                                         ReservationStatus.PENDING.getName().toUpperCase())
@@ -638,6 +647,15 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         jsonObject.put("clean", room.isClean());
         jsonObject.put("image", ASSET_URL + FOLDER + "/" + room.getImage());
         jsonObject.remove("_id");
+
+        JSONArray galleryJSON = new JSONArray();
+
+        if(room.getGalleries() != null) {
+            for (String pic : room.getGalleries())
+                galleryJSON.put(ASSET_URL + FOLDER + "/" + pic);
+        }
+
+        jsonObject.put("gallery", galleryJSON);
 
         translateFeatures(jsonObject, room);
 
