@@ -80,6 +80,8 @@ public class ReservationRequests {
     @Field("reserve_expire_at")
     private Long reserveExpireAt;
 
+    private String description;
+
     private List<org.bson.Document> passengers;
     private org.bson.Document creator;
 

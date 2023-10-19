@@ -19,4 +19,6 @@ public class ReservationRequestDTO {
     private String startDate;
 
     private Integer nights;
+
+    private String description;
 }

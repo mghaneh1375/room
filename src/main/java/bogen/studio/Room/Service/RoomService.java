@@ -887,6 +887,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             reservationRequests.setChildren(children);
             reservationRequests.setInfants(infants);
 
+            if(dto.getDescription() != null)
+                reservationRequests.setDescription(dto.getDescription());
+
             reservationRequests.setPassengersId(passengersId);
             reservationRequests.setPrices((List<DatePrice>) p.getValue());
             reservationRequests.setTotalAmount(totalAmount);

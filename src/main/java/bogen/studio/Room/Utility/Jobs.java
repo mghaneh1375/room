@@ -28,7 +28,7 @@ public class Jobs implements Runnable {
     public void run() {
         Timer timer = new Timer();
         timer.schedule(new RemoveRedundantDatePrices(), 0, ONE_DAY_MSEC);
-        timer.schedule(new CheckReservationStatus(), 0, 1000 * 60 * 5);
+        timer.schedule(new CheckReservationStatus(), 0, 1000 * 60 * 60);
     }
 
     private class RemoveRedundantDatePrices extends TimerTask {
