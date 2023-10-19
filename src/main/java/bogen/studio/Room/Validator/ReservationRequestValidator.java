@@ -31,19 +31,23 @@ public class ReservationRequestValidator implements ConstraintValidator<Validate
             isErrored = true;
         }
 
-        int d = convertStringToDate(value.getStartDate());
-        int today = convertStringToDate(getToday("/"));
+        if(!isErrored) {
 
-        if(d < today) {
-            errs.put("startDate", "تاریخ شروع باید از امروز بزرگتر باشد");
-            isErrored = true;
-        }
+            int d = convertStringToDate(value.getStartDate());
+            int today = convertStringToDate(getToday("/"));
 
-        int futureLimit = convertStringToDate(getPast("/", -60));
+            if (d < today) {
+                errs.put("startDate", "تاریخ شروع باید از امروز بزرگتر باشد");
+                isErrored = true;
+            }
 
-        if(futureLimit < d) {
-            errs.put("startDate", "امکان رزرو تاریخ مورد نظر هنوز باز نشده است");
-            isErrored = true;
+            int futureLimit = convertStringToDate(getPast("/", -60));
+
+            if (futureLimit < d) {
+                errs.put("startDate", "امکان رزرو تاریخ مورد نظر هنوز باز نشده است");
+                isErrored = true;
+            }
+
         }
 
         if(value.getNights() == null || value.getNights() < 0) {
