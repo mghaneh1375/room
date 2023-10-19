@@ -23,7 +23,10 @@ public class ReservationRequestValidator implements ConstraintValidator<Validate
         boolean isErrored = false;
         JSONObject errs = new JSONObject();
 
-        if (ObjectUtils.isEmpty(value.getStartDate()) || !DateValidator.isValid(value.getStartDate())) {
+        if (value.getStartDate() == null ||
+                ObjectUtils.isEmpty(value.getStartDate()) ||
+                !DateValidator.isValid(value.getStartDate())
+        ) {
             errs.put("startDate", "لطفا تاریخ شروع اقامت خود را وارد نمایید");
             isErrored = true;
         }
