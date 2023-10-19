@@ -670,7 +670,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (room == null)
             return JSON_NOT_VALID_ID;
 
-        if(room.getUserId() != userId)
+        if(!room.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
         if(reservationRequestsRepository.countAllActiveReservationsByRoomId(id) > 0)

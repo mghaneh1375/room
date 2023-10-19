@@ -102,7 +102,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         if (reservationRequests == null)
             return JSON_NOT_VALID_ID;
 
-        if (reservationRequests.getOwnerId() != userId)
+        if (!reservationRequests.getOwnerId().equals(userId))
             return JSON_NOT_ACCESS;
 
         if (!reservationRequests.getStatus().equals(ReservationStatus.PENDING) &&
