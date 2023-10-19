@@ -51,6 +51,24 @@ public class OwnerRoomAPIRoutes {
         return roomService.setPic(id, getUserId(principal), file);
     }
 
+    @PutMapping(value = "addToGallery/{id}")
+    @ResponseBody
+    public String addToGallery(Principal principal,
+                               @PathVariable @ObjectIdConstraint ObjectId id,
+                               final @RequestBody @ValidatedRegularImage MultipartFile file) {
+        return roomService.addToGallery(id, getUserId(principal), file);
+    }
+
+    @DeleteMapping(value = "removeFromGallery/{id}/{filename}")
+    @ResponseBody
+    public String removeFromGallery(Principal principal,
+                                    @PathVariable @ObjectIdConstraint ObjectId id,
+                                    @PathVariable @NotBlank String filename
+    ) {
+        return roomService.removeFromGallery(id, getUserId(principal), filename);
+    }
+
+
     @GetMapping(value = "getDatePrice/{id}")
     @ResponseBody
     public String getDatePrice(Principal principal,
@@ -80,6 +98,14 @@ public class OwnerRoomAPIRoutes {
                                       @PathVariable @ObjectIdConstraint ObjectId id
     ) {
         return roomService.toggleAccessibility(id, getUserId(principal));
+    }
+
+    @PutMapping(value = "/toggleClean/{id}")
+    @ResponseBody
+    public String toggleClean(Principal principal,
+                              @PathVariable @ObjectIdConstraint ObjectId id
+    ) {
+        return roomService.toggleClean(id, getUserId(principal));
     }
 
     @PostMapping(value = "store/{boomId}")
@@ -148,4 +174,6 @@ public class OwnerRoomAPIRoutes {
     ) {
         return roomService.remove(id, getUserId(principal));
     }
+
+
 }

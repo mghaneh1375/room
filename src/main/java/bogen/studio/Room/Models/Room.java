@@ -33,6 +33,7 @@ public class Room {
     private String description;
     private String image;
     private boolean main = false;
+    private boolean clean = true;
 
     private Integer cap;
 
@@ -73,6 +74,8 @@ public class Room {
 
     @Field("accessibility_features")
     private List<AccessibilityFeature> accessibilityFeatures;
+
+    private List<String> galleries;
 
     private boolean availability = false;
 

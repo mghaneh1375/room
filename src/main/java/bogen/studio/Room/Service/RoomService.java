@@ -353,6 +353,58 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return JSON_OK;
     }
 
+    public String addToGallery(ObjectId id, ObjectId userId, MultipartFile file) {
+
+        Room room;
+        try {
+            room = canModify(id, userId, true);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
+
+        List<String> galleries = room.getGalleries() == null ? new ArrayList<>() : room.getGalleries();
+
+        if(galleries.size() == 5)
+            return generateErr("تنها 5 فایل به عنوان گالری می توان افزود");
+
+        String filename = FileUtils.uploadFile(file, FOLDER);
+        if (filename == null)
+            return JSON_UNKNOWN_UPLOAD_FILE;
+
+        galleries.add(filename);
+        room.setGalleries(galleries);
+
+        roomRepository.saveAll(Collections.singletonList(room));
+
+        saveAllSimilar(room.getTitle(), room);
+        return generateSuccessMsg("url", ASSET_URL + FOLDER + "/" + filename);
+    }
+
+    public String removeFromGallery(ObjectId id, ObjectId userId, String filename) {
+
+        Room room;
+        try {
+            room = canModify(id, userId, true);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
+
+        List<String> galleries = room.getGalleries();
+
+        if(galleries == null || !galleries.contains(filename))
+            return JSON_NOT_ACCESS;
+
+        FileUtils.removeFile(filename, FOLDER);
+
+        galleries.remove(filename);
+        room.setGalleries(galleries);
+
+        roomRepository.saveAll(Collections.singletonList(room));
+
+        saveAllSimilar(room.getTitle(), room);
+        return JSON_OK;
+    }
+
     public String removeDatePrice(ObjectId id, ObjectId userId, String date) {
 
         Room room;
@@ -583,6 +635,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         jsonObject.put("id", room.get_id().toString());
         jsonObject.remove("userId");
         jsonObject.put("createdAt", convertDateToJalali(room.getCreatedAt()));
+        jsonObject.put("clean", room.isClean());
         jsonObject.put("image", ASSET_URL + FOLDER + "/" + room.getImage());
         jsonObject.remove("_id");
 
@@ -862,6 +915,21 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         room.setAvailability(!room.isAvailability());
         saveAllSimilar(room.getTitle(), room);
+
+        return JSON_OK;
+    }
+
+    public String toggleClean(ObjectId id, ObjectId userId) {
+
+        Room room;
+        try {
+            room = canModify(id, userId, false);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
+
+        room.setClean(!room.isClean());
+        roomRepository.save(room);
 
         return JSON_OK;
     }
