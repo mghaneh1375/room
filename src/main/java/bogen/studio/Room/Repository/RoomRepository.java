@@ -49,6 +49,9 @@ public interface RoomRepository extends MongoRepository<Room, ObjectId>, Filtera
     @Query(value = "{ 'main': false, 'title': ?0, 'boom_id': ?1 }")
     List<Room> findByNonMainByTitleAndBoomId(String title, ObjectId boomId);
 
+    @Query(value = "{ 'main': false, 'title': ?0, 'boom_id': ?1 }", count = true)
+    Integer countByNonMainByTitleAndBoomId(String title, ObjectId boomId);
+
     @Query(value = "{ 'title': ?0, 'boom_id': ?1 }", delete = true)
     void deleteByTitleAndBoomId(String title, ObjectId boomId);
 

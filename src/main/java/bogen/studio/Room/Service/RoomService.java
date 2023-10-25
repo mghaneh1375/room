@@ -642,6 +642,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         JSONObject jsonObject = new JSONObject(room);
         jsonObject.put("boomId", room.getBoomId().toString());
         jsonObject.put("id", room.get_id().toString());
+        jsonObject.put("count", roomRepository.countByNonMainByTitleAndBoomId(room.getTitle(), room.getBoomId()));
         jsonObject.remove("userId");
         jsonObject.put("createdAt", convertDateToJalali(room.getCreatedAt()));
         jsonObject.put("clean", room.isClean());
