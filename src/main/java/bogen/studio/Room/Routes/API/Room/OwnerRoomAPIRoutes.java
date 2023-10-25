@@ -59,6 +59,13 @@ public class OwnerRoomAPIRoutes {
         return roomService.addToGallery(id, getUserId(principal), file);
     }
 
+    @GetMapping(value = "getGalleries/{id}")
+    @ResponseBody
+    public String getGalleries(Principal principal,
+                               @PathVariable @ObjectIdConstraint ObjectId id) {
+        return roomService.getGalleries(id, getUserId(principal));
+    }
+
     @DeleteMapping(value = "removeFromGallery/{id}/{filename}")
     @ResponseBody
     public String removeFromGallery(Principal principal,

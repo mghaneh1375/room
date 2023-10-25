@@ -362,6 +362,21 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return JSON_OK;
     }
 
+    public String getGalleries(ObjectId id, ObjectId userId) {
+
+        Room room;
+        try {
+            room = canModify(id, userId, true);
+        } catch (InvalidFieldsException e) {
+            return generateErr(e.getMessage());
+        }
+
+        return generateSuccessMsg("data", (room.getGalleries() == null ? new ArrayList<>() : room.getGalleries())
+                .stream().map(e -> ASSET_URL + FOLDER + "/" + e)
+                .collect(Collectors.toList())
+        );
+    }
+
     public String addToGallery(ObjectId id, ObjectId userId, MultipartFile file) {
 
         Room room;
