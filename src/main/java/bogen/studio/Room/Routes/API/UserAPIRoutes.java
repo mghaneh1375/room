@@ -37,4 +37,9 @@ public class UserAPIRoutes {
 
         return token;
     }
+
+    @GetMapping("/greet")
+    public String sayHello() {
+        return "hello";
+    }
 }
