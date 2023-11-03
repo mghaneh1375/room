@@ -2,8 +2,11 @@ package bogen.studio.Room.Security;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.bson.types.ObjectId;
+import org.springdoc.core.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,6 +64,10 @@ public class SecurityConfig {
 
         return http.build();
 
+    }
+
+    static {
+        SpringDocUtils.getConfig().replaceWithSchema(ObjectId.class, new StringSchema());
     }
 
     private SecurityScheme createAPIKeyScheme() {
