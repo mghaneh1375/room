@@ -9,7 +9,8 @@ import java.util.List;
 
 public class StaticValues {
 
-    public final static String PASSENGER_URL = "https://passenger.bogenstudio.com/api/";
+    //public final static String PASSENGER_URL = "https://passenger.bogenstudio.com/api/";
+    public final static String PASSENGER_URL = "http://localhost:8091/api/";
     public final static String ASSET_URL = "https://static.koochita.com/";
 
     public final static long BANK_WAIT_MSEC = 60 * 1000 * 15;

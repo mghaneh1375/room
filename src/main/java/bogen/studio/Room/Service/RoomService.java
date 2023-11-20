@@ -321,9 +321,14 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         String filename = "";
 
         if(rooms.size() > 0) {
-            filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
-            if (filename == null)
-                return JSON_UNKNOWN_UPLOAD_FILE;
+
+            if (additionalFields[2] != null) {
+                filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
+                if (filename == null)
+                    return JSON_UNKNOWN_UPLOAD_FILE;
+            }
+
+
         }
 
         JSONArray jsonArray = new JSONArray();
@@ -395,6 +400,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (filename == null)
             return JSON_UNKNOWN_UPLOAD_FILE;
 
+        //todo: create boom folder
         galleries.add(filename);
         room.setGalleries(galleries);
 
@@ -723,6 +729,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         for (int i = 1; i < dto.getNights(); i++)
             dates.add(getPast("/", dto.getStartDate(), -1 * i));
 
+        //todo: check for concurrency
         if (reservationRequestsRepository.findActiveReservations(room.get_id(), dates) > 0)
             throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
 
@@ -921,6 +928,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             reservationRequests.setRoomId(room.get_id());
 
             String trackingCode = randomString(6);
+            //todo: check for uniqueness
 
             reservationRequests.setTrackingCode(trackingCode);
 
@@ -936,6 +944,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             );
 
         } catch (Exception x) {
+            //todo: rollback consideration
             return generateErr(x.getMessage());
         }
 

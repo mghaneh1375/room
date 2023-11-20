@@ -14,7 +14,7 @@ public class TripRequestDTO {
     private Integer adults;
     private Integer children;
     private Integer infants;
-    private String startDate;
+    private String startDate; // "1402/09/01"
     private Integer nights;
 
 }

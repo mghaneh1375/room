@@ -25,40 +25,42 @@ public class RegularImageValidator implements
     @Override
     public boolean isValid(MultipartFile file, ConstraintValidatorContext context) {
 
-        boolean isErrored = false;
-        JSONObject errs = new JSONObject();
+        return true;
 
-        if(file == null) {
-            isErrored = true;
-            errs.put("max_length_err", "لطفا تصویر موردنظر خود را بارگذاری فرمایید.");
-        }
-
-        if (file.getSize() > MAX_FILE_SIZE) {
-            isErrored = true;
-            errs.put("max_length_err", "حداکثر حجم مجاز، 5 مگ است.");
-        }
-
-
-        try {
-
-            String fileType = (String) FileUtils.getFileType(Objects.requireNonNull(file.getOriginalFilename())).getKey();
-
-            if(!fileType.equals("image")) {
-                isErrored = true;
-                errs.put("file_type_err", "تنها مجاز به بارگذاری تصویر هستید.");
-            }
-
-
-        } catch (InvalidFileTypeException e) {
-            isErrored = true;
-            errs.put("unknown_err", "خطا در بارگذاری");
-        }
-
-        if(isErrored) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(errs.toString()).addConstraintViolation();
-        }
-
-        return !isErrored;
+//        boolean isErrored = false;
+//        JSONObject errs = new JSONObject();
+//
+//        if(file == null) {
+//            isErrored = true;
+//            errs.put("max_length_err", "لطفا تصویر موردنظر خود را بارگذاری فرمایید.");
+//        }
+//
+//        if (file.getSize() > MAX_FILE_SIZE) {
+//            isErrored = true;
+//            errs.put("max_length_err", "حداکثر حجم مجاز، 5 مگ است.");
+//        }
+//
+//
+//        try {
+//
+//            String fileType = (String) FileUtils.getFileType(Objects.requireNonNull(file.getOriginalFilename())).getKey();
+//
+//            if(!fileType.equals("image")) {
+//                isErrored = true;
+//                errs.put("file_type_err", "تنها مجاز به بارگذاری تصویر هستید.");
+//            }
+//
+//
+//        } catch (InvalidFileTypeException e) {
+//            isErrored = true;
+//            errs.put("unknown_err", "خطا در بارگذاری");
+//        }
+//
+//        if(isErrored) {
+//            context.disableDefaultConstraintViolation();
+//            context.buildConstraintViolationWithTemplate(errs.toString()).addConstraintViolation();
+//        }
+//
+//        return !isErrored;
     }
 }

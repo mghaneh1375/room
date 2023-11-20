@@ -50,7 +50,7 @@ public class PublicRoomAPIRoutes {
                        @RequestParam(value = "infants", required = false) @Min(0) @Max(5) Integer infants,
                        @RequestParam(value = "children", required = false) @Min(0) @Max(5) Integer children,
                        @RequestParam(value = "nights", required = false) @Positive @Max(10) Integer nights,
-                       @RequestParam(value = "startDate", required = false) String startDate) {
+                       @RequestParam(value = "startDate", required = false) String startDate) { // "1402-09-01"
         if (
                 (adults == null) == (nights != null) ||
                         (adults == null) == (startDate != null) ||

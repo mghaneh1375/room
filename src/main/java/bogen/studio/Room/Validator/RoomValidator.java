@@ -90,14 +90,14 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if (value.getLimitations() == null || (
+        if (value.getLimitations() != null && (
                 value.getLimitations().size() > 0 && !validateEnumArray(value.getLimitations(), Limitation.class)
         )) {
             errs.put("limitations", "محدودیت وارد شده نامعتبر است");
             isErrored = true;
         }
 
-        if (value.getFoodFacilities() == null || (
+        if (value.getFoodFacilities() != null && (
                 value.getFoodFacilities().size() > 0 &&
                         !validateEnumArray(value.getFoodFacilities(), FoodFacility.class)
         )) {
@@ -105,7 +105,7 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if (value.getSleepFeatures() == null || (
+        if (value.getSleepFeatures() != null && (
                 value.getSleepFeatures().size() > 0 &&
                         !validateEnumArray(value.getSleepFeatures(), SleepFeature.class)
         )) {
@@ -113,7 +113,7 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if (value.getWelfares() == null || (
+        if (value.getWelfares() != null && (
                 value.getWelfares().size() > 0 &&
                         !validateEnumArray(value.getWelfares(), Welfare.class)
         )) {
@@ -121,7 +121,7 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if (value.getAdditionalFacilities() == null || (
+        if (value.getAdditionalFacilities() != null && (
                 value.getAdditionalFacilities().size() > 0 &&
                         !validateEnumArray(value.getAdditionalFacilities(), AdditionalFacility.class)
         )) {
@@ -129,7 +129,7 @@ public class RoomValidator implements ConstraintValidator<ValidatedRoom, RoomDTO
             isErrored = true;
         }
 
-        if (value.getAccessibilityFeatures() == null || (
+        if (value.getAccessibilityFeatures() != null && (
                 value.getAccessibilityFeatures().size() > 0 &&
                         !validateEnumArray(value.getAccessibilityFeatures(), AccessibilityFeature.class)
         )) {

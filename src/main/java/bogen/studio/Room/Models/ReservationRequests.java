@@ -28,6 +28,7 @@ public class ReservationRequests {
     @Field("_id")
     private ObjectId _id;
 
+    //todo: consideration ReservationStatus.PENDING;
     private ReservationStatus status = ReservationStatus.RESERVED;
     private Integer paid;
 
