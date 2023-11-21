@@ -12,6 +12,7 @@ import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
+import lombok.RequiredArgsConstructor;
 import my.common.commonkoochita.Utility.JalaliCalendar;
 import my.common.commonkoochita.Utility.PairValue;
 import com.mashape.unirest.http.HttpResponse;
@@ -24,6 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -34,15 +36,18 @@ import static my.common.commonkoochita.Utility.Statics.*;
 import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
+@RequiredArgsConstructor
 public class RoomService extends AbstractService<Room, RoomDTO> {
 
     public final static String FOLDER = "rooms";
 
-    @Autowired
-    private RoomRepository roomRepository;
+    //@Autowired
+    private final RoomRepository roomRepository;
 
-    @Autowired
-    private ReservationRequestsRepository reservationRequestsRepository;
+    //@Autowired
+    private final ReservationRequestsRepository reservationRequestsRepository;
+
+    private final RoomDateReservationStateService roomDateReservationStateService;
 
     @Override
     public String list(List<String> filters) {
@@ -308,6 +313,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     }
 
     @Override
+    @Transactional
     public String store(RoomDTO dto, Object... additionalFields) {
 
         ObjectId boomId = (ObjectId) additionalFields[1];
@@ -336,6 +342,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             jsonArray.put(room.get_id().toString());
         }
+
+        // Build RoomDateReservationState Documents for newly created rooms
+        roomDateReservationStateService.createRoomDateReservationStateDocuments();
 
         return generateSuccessMsg("ids", jsonArray);
     }

@@ -8,11 +8,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 import java.util.TimeZone;
 
 @SpringBootApplication
 @OpenAPIDefinition(info = @Info(title = "Koochita Boom API", version = "2.0", description = "Koochita Information"))
 @EnableMongoAuditing
+@EnableScheduling
 public class RoomApplication {
 
     public static void main(String[] args) {
