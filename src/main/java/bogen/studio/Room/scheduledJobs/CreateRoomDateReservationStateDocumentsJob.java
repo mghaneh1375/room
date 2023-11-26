@@ -13,7 +13,7 @@ public class CreateRoomDateReservationStateDocumentsJob {
 
     private final RoomDateReservationStateService roomDateReservationStateService;
 
-    @Scheduled(cron = "1 * * * * ?")
+    @Scheduled(cron = "1 0 0 * * ?")
     private void createSomeDocuments() {
 
         roomDateReservationStateService.createRoomDateReservationStateDocuments();

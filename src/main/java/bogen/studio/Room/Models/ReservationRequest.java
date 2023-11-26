@@ -21,7 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "reservation_request")
-public class ReservationRequests {
+public class ReservationRequest {
 
     @Id
     @MongoId

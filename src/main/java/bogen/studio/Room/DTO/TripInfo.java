@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @ValidatedTripRequest
-public class TripRequestDTO {
+public class TripInfo {
 
     private Integer adults;
     private Integer children;

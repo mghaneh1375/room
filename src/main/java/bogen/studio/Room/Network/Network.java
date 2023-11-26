@@ -4,9 +4,11 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+@Slf4j
 public class Network {
 
     private static final String KOOCHITA_SERVER = "https://koochita-server.bogenstudio.com/api/";
@@ -101,7 +103,7 @@ public class Network {
             return jsonObject;
 
         } catch (UnirestException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
 
         return null;

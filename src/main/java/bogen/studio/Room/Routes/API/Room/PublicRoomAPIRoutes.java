@@ -1,7 +1,7 @@
 package bogen.studio.Room.Routes.API.Room;
 
 import bogen.studio.Room.DTO.ReservationRequestDTO;
-import bogen.studio.Room.DTO.TripRequestDTO;
+import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Service.RoomService;
 import my.common.commonkoochita.Validator.DateValidator;
 import my.common.commonkoochita.Validator.ObjectIdConstraint;
@@ -39,7 +39,7 @@ public class PublicRoomAPIRoutes {
     @PostMapping(value = "calcPrice/{id}")
     @ResponseBody
     public String calcPrice(@PathVariable @ObjectIdConstraint ObjectId id,
-                            @RequestBody @Valid TripRequestDTO dto) {
+                            @RequestBody @Valid TripInfo dto) {
         return roomService.calcPrice(id, dto);
     }
 
@@ -59,7 +59,7 @@ public class PublicRoomAPIRoutes {
         )
             return generateErr("لطفا تعداد مسافرین و تعداد شب های اقامت و تاریخ شروع اقامت را وارد نمایید");
 
-        TripRequestDTO dto = null;
+        TripInfo dto = null;
 
         if (adults != null) {
 
@@ -74,7 +74,7 @@ public class PublicRoomAPIRoutes {
             if(!DateValidator.gte(futureLimit, startDate))
                 return generateErr("امکان رزرو تاریخ مدنظر هنوز باز نشده است");
 
-            dto = new TripRequestDTO(adults, children, infants, startDate.replace("-", "/"), nights);
+            dto = new TripInfo(adults, children, infants, startDate.replace("-", "/"), nights);
         }
 
         return roomService.publicList(boomId, dto);

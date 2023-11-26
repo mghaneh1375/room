@@ -70,7 +70,7 @@ public class ReservationRequestValidator implements ConstraintValidator<Validate
 //            isErrored = true;
 //        }
 
-        if(value.getPassengersId() == null) {
+        if(value.getTripId() == null) {
             errs.put("passengersId", "لطفا آی دی مسافران را وارد نمایید");
             isErrored = true;
         }

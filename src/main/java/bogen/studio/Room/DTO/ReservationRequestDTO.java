@@ -12,7 +12,7 @@ import javax.validation.constraints.Size;
 @Setter
 public class ReservationRequestDTO {
 
-    private ObjectId passengersId;
+    private ObjectId tripId;
     private ObjectId giftId;
 
     @Size(min = 10, max = 10)

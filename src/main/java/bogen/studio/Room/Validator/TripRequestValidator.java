@@ -1,6 +1,6 @@
 package bogen.studio.Room.Validator;
 
-import bogen.studio.Room.DTO.TripRequestDTO;
+import bogen.studio.Room.DTO.TripInfo;
 import my.common.commonkoochita.Validator.DateValidator;
 import org.json.JSONObject;
 import org.springframework.util.ObjectUtils;
@@ -10,7 +10,7 @@ import javax.validation.ConstraintValidatorContext;
 
 import static my.common.commonkoochita.Utility.Utility.*;
 
-public class TripRequestValidator implements ConstraintValidator<ValidatedTripRequest, TripRequestDTO> {
+public class TripRequestValidator implements ConstraintValidator<ValidatedTripRequest, TripInfo> {
 
     @Override
     public void initialize(ValidatedTripRequest constraintAnnotation) {
@@ -18,7 +18,7 @@ public class TripRequestValidator implements ConstraintValidator<ValidatedTripRe
     }
 
     @Override
-    public boolean isValid(TripRequestDTO value, ConstraintValidatorContext context) {
+    public boolean isValid(TripInfo value, ConstraintValidatorContext context) {
 
         boolean isErrored = false;
         JSONObject errs = new JSONObject();

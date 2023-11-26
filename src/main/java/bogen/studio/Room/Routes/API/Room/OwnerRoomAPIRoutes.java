@@ -143,7 +143,7 @@ public class OwnerRoomAPIRoutes {
                             JSONArray.class, JSONArray.class, JSONArray.class
                     }
             ) @NotBlank String jsonObject,
-            final @RequestPart(value = "file", required = false) @ValidatedRegularImage MultipartFile file) {
+            final @RequestPart(value = "file", required = true) @ValidatedRegularImage MultipartFile file) {
 
 
         RoomDTO roomDTO;

@@ -3,15 +3,17 @@ package bogen.studio.Room.Service;
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.DTO.RoomDTO;
-import bogen.studio.Room.DTO.TripRequestDTO;
+import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Enums.*;
-import bogen.studio.Room.Exception.InvalidFieldsException;
-import bogen.studio.Room.Models.ReservationRequests;
+import bogen.studio.Room.Exception.*;
+import bogen.studio.Room.Models.PassengersExtractedData;
+import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
+import bogen.studio.Room.documents.RoomDateReservationState;
 import lombok.RequiredArgsConstructor;
 import my.common.commonkoochita.Utility.JalaliCalendar;
 import my.common.commonkoochita.Utility.PairValue;
@@ -23,14 +25,17 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static bogen.studio.Room.Enums.RoomStatus.FREE;
+import static bogen.studio.Room.Enums.RoomStatus.RESERVED;
 import static bogen.studio.Room.Utility.StaticValues.*;
 import static my.common.commonkoochita.Utility.Statics.*;
 import static my.common.commonkoochita.Utility.Utility.*;
@@ -77,7 +82,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
                             JSONArray galleryJSON = new JSONArray();
 
-                            if(x.getGalleries() != null) {
+                            if (x.getGalleries() != null) {
                                 for (String pic : x.getGalleries())
                                     galleryJSON.put(ASSET_URL + FOLDER + "/" + pic);
                             }
@@ -142,31 +147,31 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     }
 
-    public String publicList(ObjectId boomId, TripRequestDTO dto) {
+    public String publicList(ObjectId boomId, TripInfo dto) {
 
         JSONArray jsonArray = new JSONArray();
 
         roomRepository.findByBoomId(boomId).forEach(x -> {
 
-            for(int i = 0; i < jsonArray.length(); i++) {
+            for (int i = 0; i < jsonArray.length(); i++) {
 
                 JSONObject tmp = jsonArray.getJSONObject(i);
 
-                if(tmp.getString("title").equals(x.getTitle())) {
+                if (tmp.getString("title").equals(x.getTitle())) {
 
-                    if(dto != null) {
+                    if (dto != null) {
                         try {
 
                             List<String> dates = canReserve(x, dto);
                             tmp.getJSONArray("freeRoomIds").put(x.get_id().toString());
 
-                            if(tmp.getInt("totalPrice") == -1) {
+                            if (tmp.getInt("totalPrice") == -1) {
                                 tmp.put("totalPrice",
                                         (int) calcPrice(x, dates, dto.getAdults(), dto.getChildren()).getKey()
                                 );
                             }
+                        } catch (Exception ignore) {
                         }
-                        catch (Exception ignore) {}
                     }
 
                     return;
@@ -184,15 +189,14 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             translateFeatures(jsonObject, x);
 
-            if(dto != null) {
+            if (dto != null) {
 
                 JSONArray freeRoomIds = new JSONArray();
 
                 try {
                     jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getAdults(), dto.getChildren()).getKey());
                     freeRoomIds.put(x.get_id().toString());
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     jsonObject.put("totalPrice", -1);
                 }
 
@@ -213,10 +217,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (room == null)
             throw new InvalidFieldsException("id is not correct");
 
-        if(!room.getUserId().equals(userId))
+        if (!room.getUserId().equals(userId))
             throw new InvalidFieldsException("access dined");
 
-        if(justMain && !room.isMain())
+        if (justMain && !room.isMain())
             throw new InvalidFieldsException("تنها می توانید اتاق های اصلی را ویرایش کنید");
 
         return room;
@@ -229,7 +233,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         List<Room> modified = new ArrayList<>();
         modified.add(main);
 
-        for(Room itr : similarRooms)
+        for (Room itr : similarRooms)
             copy(main, itr);
 
         modified.addAll(similarRooms);
@@ -270,7 +274,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         List<DatePrice> datePrices = room.getDatePrices();
         JSONArray jsonArray = new JSONArray();
 
-        for(DatePrice datePrice : datePrices) {
+        for (DatePrice datePrice : datePrices) {
             jsonArray.put(new JSONObject()
                     .put("date", datePrice.getDate())
                     .put("capPrice", datePrice.getCapPrice())
@@ -326,7 +330,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         String filename = "";
 
-        if(rooms.size() > 0) {
+        if (rooms.size() > 0) {
             filename = FileUtils.uploadFile((MultipartFile) additionalFields[2], FOLDER);
             if (filename == null)
                 return JSON_UNKNOWN_UPLOAD_FILE;
@@ -334,7 +338,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         JSONArray jsonArray = new JSONArray();
 
-        for(Room room : rooms) {
+        for (Room room : rooms) {
             room.setUserId(userId);
             room.setBoomId(boomId);
             room.setImage(filename);
@@ -397,7 +401,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         List<String> galleries = room.getGalleries() == null ? new ArrayList<>() : room.getGalleries();
 
-        if(galleries.size() == 5)
+        if (galleries.size() == 5)
             return generateErr("تنها 5 فایل به عنوان گالری می توان افزود");
 
         String filename = FileUtils.uploadFile(file, FOLDER);
@@ -424,7 +428,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         List<String> galleries = room.getGalleries();
 
-        if(galleries == null || !galleries.contains(filename))
+        if (galleries == null || !galleries.contains(filename))
             return JSON_NOT_ACCESS;
 
         FileUtils.removeFile(filename, FOLDER);
@@ -526,7 +530,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         room.setWeekendPrice(roomDTO.getWeekendPrice());
         room.setVacationPrice(roomDTO.getVacationPrice());
 
-        if(roomDTO.getOnlineReservation() != null)
+        if (roomDTO.getOnlineReservation() != null)
             room.setOnlineReservation(roomDTO.getOnlineReservation());
 
         if (roomDTO.getLimitations() != null)
@@ -579,11 +583,11 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         List<Room> rooms = new ArrayList<>();
 
-        for(int i = 0; i < roomDTO.getCount(); i++) {
+        for (int i = 0; i < roomDTO.getCount(); i++) {
 
             Room room = new Room();
 
-            if(i == 0)
+            if (i == 0)
                 room.setMain(true);
 
             room.setTitle(roomDTO.getTitle());
@@ -675,7 +679,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         JSONArray galleryJSON = new JSONArray();
 
-        if(room.getGalleries() != null) {
+        if (room.getGalleries() != null) {
             for (String pic : room.getGalleries())
                 galleryJSON.put(ASSET_URL + FOLDER + "/" + pic);
         }
@@ -695,13 +699,13 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (room == null)
             return JSON_NOT_VALID_ID;
 
-        if(!room.getUserId().equals(userId))
+        if (!room.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
-        if(reservationRequestsRepository.countAllActiveReservationsByRoomId(id) > 0)
+        if (reservationRequestsRepository.countAllActiveReservationsByRoomId(id) > 0)
             return generateErr("امکان حذف این اتاق به دلیل وجود اقامت فعال وجود ندارد");
 
-        if(room.isMain())
+        if (room.isMain())
             roomRepository.deleteByTitleAndBoomId(room.getTitle(), room.getBoomId());
         else
             roomRepository.delete(room);
@@ -709,28 +713,129 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return JSON_OK;
     }
 
-    private PairValue canReserve(ObjectId id, TripRequestDTO dto) throws InvalidFieldsException {
 
-        Room room = findById(id);
+    private PairValue canReserve(ObjectId roomId, TripInfo tripInfo, boolean calculatePriceUsage) throws InvalidFieldsException {
+
+        Room room = findById(roomId);
         if (room == null)
-            throw new InvalidFieldsException("id is not valid");
-
-        return new PairValue(room, canReserve(room, dto));
-    }
-
-    private List<String> canReserve(Room room, TripRequestDTO dto) throws InvalidFieldsException {
+            throw new IdInvalidException("آیدی اتاق نامعتبر است");
 
         if (!room.isAvailability())
-            throw new InvalidFieldsException("has not access");
+            throw new RoomUnavailableByOwnerException("اتاق توسط مالک غیر قابل دسترس تنظیم شده است");
 
-        if (room.getMaxCap() < (dto.getAdults() + dto.getChildren()))
+        if (room.getMaxCap() < (tripInfo.getAdults() + tripInfo.getChildren()))
+            throw new RoomExceedCapacityException("حداکثر ظرفیت اتاق: ", room.getMaxCap());
+
+        List<String> jalaliDates = new ArrayList<>();
+        jalaliDates.add(tripInfo.getStartDate());
+
+        for (int i = 1; i < tripInfo.getNights(); i++)
+            jalaliDates.add(getPast("/", tripInfo.getStartDate(), -1 * i));
+
+
+        /* This method is replaced with the following method */
+//        if (reservationRequestsRepository.findActiveReservations(room.get_id(), jalaliDates) > 0)
+//            throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
+
+        // Check room date reserve status collection to see whether room is free or not, then make the RoomStatus to RESERVED
+        checkRoomDateStatus(roomId, jalaliDates, calculatePriceUsage);
+
+        return new PairValue(room, jalaliDates);
+    }
+
+    private void checkRoomDateStatus(ObjectId roomId, List<String> jalaliDates, boolean calcPriceUsage) {
+        /* Check room date reserve status collection to see whether room is free or not, then make the RoomStatus to
+         * RESERVED */
+
+        // Convert input jalali dates to gregorian dates
+        List<LocalDateTime> gregorianDates = convertJalaliDatesListToGregorian(jalaliDates);
+
+        // According to input roomId and gregorian dates find the list of target RoomDateReservationState documents
+        List<RoomDateReservationState> roomDateReservationStateList = roomDateReservationStateService.findRoomDateReservationStateForTargetDates(roomId, gregorianDates);
+
+        // Throw exception if room is not free in target dates
+        throwExceptionIfRoomIsNotFreeForAnyTargetDate(roomDateReservationStateList);
+
+        // In database change the RoomStatus to RESERVED
+        if (!calcPriceUsage) { // Do not change the RoomStatus in DB if the process in calculating the room price
+            changeRoomDataStatusesToReserved(roomDateReservationStateList);
+        }
+
+
+    }
+
+    private void changeRoomDataStatusesToReserved(List<RoomDateReservationState> roomDateReservationStateList) {
+
+        // Set RoomStatus of input items to RESERVED
+        for (RoomDateReservationState roomDateReservationState : roomDateReservationStateList) {
+            roomDateReservationState.setRoomStatus(RESERVED);
+        }
+
+        // Create a safetyList in order to handle rollback if optimistic lock activates
+        List<RoomDateReservationState> safetyList = new ArrayList<>();
+
+        for (RoomDateReservationState roomDateReservationState : roomDateReservationStateList) {
+
+            try {
+                roomDateReservationStateService.save(roomDateReservationState);
+                safetyList.add(roomDateReservationState);
+
+            } catch (OptimisticLockingFailureException e) {
+
+                // Rollback edited documents, Since @Transactional needs Replica set and we do not have it yet
+                for (RoomDateReservationState roomDateReservationState1 : safetyList) {
+                    roomDateReservationState1.setRoomStatus(FREE);
+                    roomDateReservationStateService.save(roomDateReservationState1);
+                }
+
+                throw new RoomNotFreeException("اتاق در تاریخ های انتخاب شده قابل رزرو نیست");
+            }
+        }
+    }
+
+    private void throwExceptionIfRoomIsNotFreeForAnyTargetDate(List<RoomDateReservationState> roomDateReservationStateList) {
+
+        // Extract list of RoomStatus
+        List<RoomStatus> roomStatusList = new ArrayList<>();
+        roomDateReservationStateList.stream().forEach(item -> roomStatusList.add(item.getRoomStatus()));
+
+        if (roomStatusList.contains(RoomStatus.BOOKED) || roomStatusList.contains(RESERVED)) {
+            throw new RoomNotFreeException("اتاق در تاریخ های انتخاب شده خالی نیست");
+        }
+    }
+
+    private List<LocalDateTime> convertJalaliDatesListToGregorian(List<String> jalaliDates) {
+        /* Input dates format: 1402/09/21 */
+
+        List<LocalDateTime> output = new ArrayList<>();
+
+        for (String date : jalaliDates) {
+
+            String[] jalaliDateValues = date.split("/");
+            JalaliCalendar.YearMonthDate gregorianDate = JalaliCalendar.jalaliToGregorian(new JalaliCalendar.YearMonthDate(jalaliDateValues[0], jalaliDateValues[1], jalaliDateValues[2]));
+            int year = gregorianDate.getYear();
+            int month = gregorianDate.getMonth() + 1;
+            int day = gregorianDate.getDate();
+            output.add(LocalDateTime.of(year, month, day, 0, 0, 0, 0));
+        }
+
+        return output;
+
+    }
+
+    private List<String> canReserve(Room room, TripInfo tripInfo) throws InvalidFieldsException {
+
+        if (!room.isAvailability())
+            throw new InvalidFieldsException("اتاق توسط مالک غیر قابل دسترس تنظیم شده است");
+
+        if (room.getMaxCap() < (tripInfo.getAdults() + tripInfo.getChildren()))
             throw new InvalidFieldsException("حداکثر ظرفیت برای این اتاق " + room.getMaxCap() + " می باشد.");
 
         List<String> dates = new ArrayList<>();
-        dates.add(dto.getStartDate());
+        dates.add(tripInfo.getStartDate());
 
-        for (int i = 1; i < dto.getNights(); i++)
-            dates.add(getPast("/", dto.getStartDate(), -1 * i));
+        for (int i = 1; i < tripInfo.getNights(); i++)
+            dates.add(getPast("/", tripInfo.getStartDate(), -1 * i));
 
         if (reservationRequestsRepository.findActiveReservations(room.get_id(), dates) > 0)
             throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
@@ -738,11 +843,11 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return dates;
     }
 
-    public String calcPrice(ObjectId id, TripRequestDTO dto) {
+    public String calcPrice(ObjectId id, TripInfo dto) {
 
         try {
 
-            PairValue pairValue = canReserve(id, dto);
+            PairValue pairValue = canReserve(id, dto, true);
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
@@ -784,7 +889,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             int additionalPassengerPrice = 0;
 
-            if(datePrices != null) {
+            if (datePrices != null) {
                 for (DatePrice datePrice : datePrices) {
                     if (datePrice.getDate().equals(date)) {
                         nightPrice = datePrice.getPrice();
@@ -808,15 +913,14 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
             if (room.getWeekendPrice() != null && weekends.contains(dayOfWeek)) {
 
-                if(exceedPassenger > 0)
+                if (exceedPassenger > 0)
                     additionalPassengerPrice = room.getWeekendCapPrice() != null ?
                             exceedPassenger * room.getWeekendCapPrice() :
                             exceedPassenger * room.getCapPrice();
 
                 pricesDetail.add(new DatePrice(room.getWeekendPrice(), additionalPassengerPrice, date, "weekend"));
                 totalPrice += room.getWeekendPrice() + additionalPassengerPrice;
-            }
-            else {
+            } else {
 
                 boolean isHoliday = false;
 
@@ -836,7 +940,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     }
                 }
 
-                if(exceedPassenger > 0)
+                if (exceedPassenger > 0)
                     additionalPassengerPrice = isHoliday && room.getVacationCapPrice() != null ?
                             exceedPassenger * room.getVacationCapPrice() :
                             exceedPassenger * room.getCapPrice();
@@ -855,98 +959,150 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return new PairValue(totalPrice, pricesDetail);
     }
 
-    public String reserve(ObjectId id, ReservationRequestDTO dto, ObjectId userId) {
+    @Transactional
+    public String reserve(ObjectId roomId, ReservationRequestDTO reservationRequestDTO, ObjectId userId) {
 
         try {
 
-            ObjectId passengersId = dto.getPassengersId();
+            ObjectId tripId = reservationRequestDTO.getTripId();
 
-            JSONObject passengerServiceResponse = Network.sendGetReq(PASSENGER_URL + "system/trip/getTripPassengers/" + passengersId + "/" + userId);
-            if(passengerServiceResponse == null)
-                return generateErr("passengersId is not valid");
+            // Get passengers and creator data from Passenger backend
+            JSONObject passengerServiceResponse = getPassengersAndCreatorData(tripId, userId);
 
-            int children = 0, adults = 0, infants = 0;
+            // Extract Passengers data
+            PassengersExtractedData passengersExtractedData = getPassengersData(passengerServiceResponse);
 
-            JSONArray passengersJSON = passengerServiceResponse.getJSONObject("data").getJSONArray("passengers");
-            List<Document> passengers = new ArrayList<>();
 
-            for(int j = 0; j < passengersJSON.length(); j++) {
-                Document doc = Document.parse(passengersJSON.getJSONObject(j).toString());
-                switch (doc.getString("ageType")) {
-                    case "بزرگسال":
-                    default:
-                        adults++;
-                        break;
-                    case "خردسال":
-                        children++;
-                        break;
-                    case "نوزاد":
-                        infants++;
-                        break;
-                }
-                passengers.add(doc);
-            }
-
-            if(adults == 0)
-                return generateErr("تعداد بزرگسال نمی تواند 0 باشد");
-
-            TripRequestDTO tripRequestDTO = new TripRequestDTO(
-                    adults, children, infants,
-                    dto.getStartDate(), dto.getNights()
+            TripInfo tripInfo = new TripInfo(
+                    passengersExtractedData.getAdults(),
+                    passengersExtractedData.getChildren(),
+                    passengersExtractedData.getInfants(),
+                    reservationRequestDTO.getStartDate(),
+                    reservationRequestDTO.getNights()
             );
 
-            PairValue pairValue = canReserve(id, tripRequestDTO);
+            PairValue canReservePairValue = canReserve(roomId, tripInfo, false);
 
-            Room room = (Room) pairValue.getKey();
-            List<String> dates = (List<String>) pairValue.getValue();
+            Room room = (Room) canReservePairValue.getKey();
+            List<String> dates = (List<String>) canReservePairValue.getValue();
 
-            PairValue p = calcPrice(room, dates, adults, children);
-            int totalAmount = (int) p.getKey();
+            PairValue pricePairValue = calcPrice(room, dates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
+            int totalAmount = (int) pricePairValue.getKey();
 
-            ReservationRequests reservationRequests = new ReservationRequests();
-
-            reservationRequests.setCreator(Document.parse(passengerServiceResponse.getJSONObject("data").getJSONObject("creator").toString()));
-            reservationRequests.setPassengers(passengers);
-
-            reservationRequests.setAdults(adults);
-            reservationRequests.setChildren(children);
-            reservationRequests.setInfants(infants);
-
-            if(dto.getDescription() != null)
-                reservationRequests.setDescription(dto.getDescription());
-
-            reservationRequests.setPassengersId(passengersId);
-            reservationRequests.setPrices((List<DatePrice>) p.getValue());
-            reservationRequests.setTotalAmount(totalAmount);
-            reservationRequests.setOwnerId(room.getUserId());
-            reservationRequests.setStatus(room.isOnlineReservation() ?
-                    ReservationStatus.RESERVED : ReservationStatus.PENDING
-            );
-            reservationRequests.setReserveExpireAt(room.isOnlineReservation() ?
-                    System.currentTimeMillis() + BANK_WAIT_MSEC :
-                    System.currentTimeMillis() + ACCEPT_PENDING_WAIT_MSEC
-            );
-            reservationRequests.setUserId(userId);
-            reservationRequests.setRoomId(room.get_id());
-
-            String trackingCode = randomString(6);
-
-            reservationRequests.setTrackingCode(trackingCode);
-
-            reservationRequestsRepository.insert(reservationRequests);
+            ReservationRequest reservationRequest = createReservationRequest(
+                    passengerServiceResponse,
+                    passengersExtractedData,
+                    reservationRequestDTO,
+                    tripId,
+                    userId,
+                    pricePairValue,
+                    room,
+                    totalAmount);
+            reservationRequestsRepository.insert(reservationRequest);
 
             if (room.isOnlineReservation())
                 //todo: go to bank
                 ;
 
             return generateSuccessMsg("data", new JSONObject()
-                    .put("trackingCode", trackingCode)
-                    .put("reservationId", reservationRequests.get_id())
+                    .put("trackingCode", reservationRequest.getTrackingCode())
+                    .put("reservationId", reservationRequest.get_id())
             );
 
+        } catch (RoomNotFreeException | RoomExceedCapacityException | RoomUnavailableByOwnerException |
+                 IdInvalidException e) {
+            throw e;
         } catch (Exception x) {
             return generateErr(x.getMessage());
         }
+
+    }
+
+    private JSONObject getPassengersAndCreatorData(ObjectId tripId, ObjectId userId) {
+        /* This function gets data regarding passengers and the creator fro Passenger backend, by a HTTP call */
+
+        JSONObject passengerServiceResponse = Network.sendGetReq(PASSENGER_URL + "system/trip/getTripPassengers/" + tripId + "/" + userId);
+        if (passengerServiceResponse == null)
+            throw new IdInvalidException("Trip id is not valid");
+
+        return passengerServiceResponse;
+    }
+
+    private PassengersExtractedData getPassengersData(JSONObject passengerServiceResponse) {
+
+        int children = 0, adults = 0, infants = 0;
+
+        JSONArray passengersJSON = passengerServiceResponse.getJSONObject("data").getJSONArray("passengers");
+        List<Document> passengers = new ArrayList<>();
+
+        for (int j = 0; j < passengersJSON.length(); j++) {
+            Document doc = Document.parse(passengersJSON.getJSONObject(j).toString());
+            switch (doc.getString("ageType")) {
+                case "بزرگسال":
+                default:
+                    adults++;
+                    break;
+                case "خردسال":
+                    children++;
+                    break;
+                case "نوزاد":
+                    infants++;
+                    break;
+            }
+            passengers.add(doc);
+        }
+
+        if (adults == 0)
+            throw new NoAdultsInPassengersException("تعداد بزرگسال نمی تواند صفر باشد");
+
+        return PassengersExtractedData.builder()
+                .adults(adults)
+                .children(children)
+                .infants(infants)
+                .passengersInfo(passengers)
+                .build();
+    }
+
+    private ReservationRequest createReservationRequest(JSONObject passengerServiceResponse,
+                                                        PassengersExtractedData passengersExtractedData,
+                                                        ReservationRequestDTO reservationRequestDTO,
+                                                        ObjectId tripId,
+                                                        ObjectId userId,
+                                                        PairValue p,
+                                                        Room room,
+                                                        int totalAmount) {
+
+        ReservationRequest reservationRequest = new ReservationRequest();
+
+        reservationRequest.setCreator(Document.parse(passengerServiceResponse.getJSONObject("data").getJSONObject("creator").toString()));
+        reservationRequest.setPassengers(passengersExtractedData.getPassengersInfo());
+
+        reservationRequest.setAdults(passengersExtractedData.getAdults());
+        reservationRequest.setChildren(passengersExtractedData.getChildren());
+        reservationRequest.setInfants(passengersExtractedData.getInfants());
+
+        if (reservationRequestDTO.getDescription() != null)
+            reservationRequest.setDescription(reservationRequestDTO.getDescription());
+
+        reservationRequest.setPassengersId(tripId);
+        reservationRequest.setPrices((List<DatePrice>) p.getValue());
+        reservationRequest.setTotalAmount(totalAmount);
+        reservationRequest.setOwnerId(room.getUserId());
+        reservationRequest.setStatus(room.isOnlineReservation() ?
+                ReservationStatus.RESERVED : ReservationStatus.PENDING
+        );
+        reservationRequest.setReserveExpireAt(room.isOnlineReservation() ?
+                System.currentTimeMillis() + BANK_WAIT_MSEC :
+                System.currentTimeMillis() + ACCEPT_PENDING_WAIT_MSEC
+        );
+        reservationRequest.setUserId(userId);
+        reservationRequest.setRoomId(room.get_id());
+
+        String trackingCode = randomString(6);
+
+        reservationRequest.setTrackingCode(trackingCode);
+
+        return reservationRequest;
 
     }
 

@@ -11,7 +11,7 @@ public class TimeUtility {
     public static List<LocalDateTime> createLocalDateTimeList(LocalDateTime startDay, int days) {
 
         // Set time of start date to 00:00:00
-        LocalDateTime startDayModified = startDay.with(LocalTime.MIDNIGHT);
+        LocalDateTime startDayModified = startDay.with(LocalDateTime.of(startDay.getYear(), startDay.getMonth(), startDay.getDayOfMonth(), 0, 0, 0, 0));
 
         List<LocalDateTime> output = new ArrayList<>();
 

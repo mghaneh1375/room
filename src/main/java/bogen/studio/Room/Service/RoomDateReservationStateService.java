@@ -65,6 +65,23 @@ public class RoomDateReservationStateService {
             }
         }
 
+        log.info("Job performed: createRoomDateReservationStateDocuments");
+
+    }
+
+    public List<RoomStatus> findRoomStatusInTargetDates(ObjectId roomId, List<LocalDateTime> targetDates) {
+
+        return roomDateReservationStateRepository.findRoomStatusInTargetDates(roomId, targetDates);
+    }
+
+    public List<RoomDateReservationState> findRoomDateReservationStateForTargetDates(ObjectId roomId, List<LocalDateTime> targetDates) {
+
+        return roomDateReservationStateRepository.findRoomDateReservationStateForTargetDates(roomId, targetDates);
+    }
+
+    public void save(RoomDateReservationState input) {
+
+        roomDateReservationStateRepository.save(input);
     }
 
 }

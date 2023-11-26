@@ -2,7 +2,7 @@ package bogen.studio.Room.Utility;
 
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.Enums.ReservationStatus;
-import bogen.studio.Room.Models.ReservationRequests;
+import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Repository.ReservationRequestsRepository;
 import bogen.studio.Room.Repository.RoomRepository;
@@ -72,10 +72,10 @@ public class Jobs implements Runnable {
         @Override
         public void run() {
 
-            List<ReservationRequests> reservationRequests = reservationRequestsRepository
+            List<ReservationRequest> reservationRequests = reservationRequestsRepository
                     .getExpiredReservations(System.currentTimeMillis());
 
-            for(ReservationRequests reservationRequest : reservationRequests) {
+            for(ReservationRequest reservationRequest : reservationRequests) {
                 if(reservationRequest.getStatus().getName()
                         .equalsIgnoreCase(ReservationStatus.ACCEPT.getName())
                 )
