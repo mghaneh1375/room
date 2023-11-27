@@ -15,6 +15,8 @@ public class CreateRoomDateReservationStateDocumentsJob {
 
     @Scheduled(cron = "1 0 0 * * ?")
     private void createSomeDocuments() {
+        /* This job will create RoomDateReservationState documents for the next defined days(in properties file).
+         * The job runs each day once in 00:00:01 local time */
 
         roomDateReservationStateService.createRoomDateReservationStateDocuments();
     }

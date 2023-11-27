@@ -1011,6 +1011,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             setInitialReserveRequestState(roomDateSafetyList, room.isOnlineReservation(), reservationRequest);
 
             if (room.isOnlineReservation())
+                // Todo: Inform the owner: Your room has received a request, Please set your respond
                 //todo: go to bank
                 ;
 

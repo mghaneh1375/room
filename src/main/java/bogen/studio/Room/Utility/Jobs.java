@@ -28,13 +28,15 @@ public class Jobs implements Runnable {
     public void run() {
         Timer timer = new Timer();
         timer.schedule(new RemoveRedundantDatePrices(), 0, ONE_DAY_MSEC);
-        timer.schedule(new CheckReservationStatus(), 0, 1000 * 60 * 60);
+        //timer.schedule(new CheckReservationStatus(), 0, 1000 * 60 * 60);
     }
 
     private class RemoveRedundantDatePrices extends TimerTask {
 
         @Override
         public void run() {
+            /* This job removes datePrice pairs from room document if the date is older than today.
+             * This job runs once every day. I do not know the exact time of job run time. */
 
             List<Room> rooms = roomRepository.findHasDatePrices();
             List<Room> modified = new ArrayList<>();
@@ -72,22 +74,22 @@ public class Jobs implements Runnable {
         @Override
         public void run() {
 
-            List<ReservationRequest> reservationRequests = reservationRequestRepository
-                    .getExpiredReservations(System.currentTimeMillis());
-
-            for(ReservationRequest reservationRequest : reservationRequests) {
-                if(reservationRequest.getStatus().getName()
-                        .equalsIgnoreCase(ReservationStatus.ACCEPT.getName())
-                )
-                    reservationRequest.setStatus(ReservationStatus.ACCEPT_CANCELED);
-                else if(reservationRequest.getStatus().getName()
-                        .equalsIgnoreCase(ReservationStatus.PENDING.getName()))
-                    reservationRequest.setStatus(ReservationStatus.REJECT);
-                else
-                    reservationRequest.setStatus(ReservationStatus.CANCELED);
-            }
-
-            reservationRequestRepository.saveAll(reservationRequests);
+//            List<ReservationRequest> reservationRequests = reservationRequestRepository
+//                    .getExpiredReservations(System.currentTimeMillis());
+//
+//            for(ReservationRequest reservationRequest : reservationRequests) {
+//                if(reservationRequest.getStatus().getName()
+//                        .equalsIgnoreCase(ReservationStatus.ACCEPT.getName())
+//                )
+//                    reservationRequest.setStatus(ReservationStatus.ACCEPT_CANCELED);
+//                else if(reservationRequest.getStatus().getName()
+//                        .equalsIgnoreCase(ReservationStatus.PENDING.getName()))
+//                    reservationRequest.setStatus(ReservationStatus.REJECT);
+//                else
+//                    reservationRequest.setStatus(ReservationStatus.CANCELED);
+//            }
+//
+//            reservationRequestRepository.saveAll(reservationRequests);
         }
     }
 
