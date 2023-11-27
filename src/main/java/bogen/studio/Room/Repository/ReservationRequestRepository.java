@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ReservationRequestsRepository extends MongoRepository<ReservationRequest, ObjectId>, FilterableRepository<ReservationRequest, Boom> {
+public interface ReservationRequestRepository extends MongoRepository<ReservationRequest, ObjectId>, FilterableRepository<ReservationRequest, Boom> {
 
     //todo: reserved or accept
     @Query(value = "{ 'room_id' : ?0, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ], 'prices.date': {$in:  ?1} }", count = true)

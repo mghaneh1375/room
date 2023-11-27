@@ -2,17 +2,18 @@ package bogen.studio.Room.Models;
 
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.Enums.ReservationStatus;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import javax.persistence.Id;
+import javax.persistence.Transient;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class ReservationRequest {
     @Field("_id")
     private ObjectId _id;
 
-    private ReservationStatus status = ReservationStatus.RESERVED;
+    private ReservationStatus status;
     private Integer paid;
 
     @Field("total_amount")
@@ -84,5 +85,20 @@ public class ReservationRequest {
 
     private List<org.bson.Document> passengers;
     private org.bson.Document creator;
+
+    @Setter(value = AccessLevel.NONE)
+    private List<ReservationStatusDate> reservationStatusHistory = new ArrayList<>();
+
+    @Transient
+    public void addToReservationStatusHistory(ReservationStatusDate reservationStatusDate) {
+
+        reservationStatusHistory.add(reservationStatusDate);
+    }
+
+    private LocalDateTime residenceStartDate;
+    private int numberOfStayingNights;
+
+    @Version
+    private long version;
 
 }

@@ -1,6 +1,7 @@
 package bogen.studio.Room.Service;
 
 import bogen.studio.Room.Enums.RoomStatus;
+import bogen.studio.Room.Exception.BackendErrorException;
 import bogen.studio.Room.Models.RoomIdLocalDateTime;
 import bogen.studio.Room.Repository.RoomDateReservationStateRepository;
 import bogen.studio.Room.Repository.RoomRepository2;
@@ -46,11 +47,9 @@ public class RoomDateReservationStateService {
 
                     // Build a model according to roomId and localDateTime values
                     RoomDateReservationState roomDateReservationState = RoomDateReservationState.builder()
-                            .localDateTime(localDateTime)
+                            .targetDate(localDateTime)
                             .roomObjectId(roomId)
                             .roomStatus(RoomStatus.FREE)
-                            .userId(null)
-                            .reservationRequestId(null)
                             .build();
 
                     try {
@@ -76,7 +75,14 @@ public class RoomDateReservationStateService {
 
     public List<RoomDateReservationState> findRoomDateReservationStateForTargetDates(ObjectId roomId, List<LocalDateTime> targetDates) {
 
-        return roomDateReservationStateRepository.findRoomDateReservationStateForTargetDates(roomId, targetDates);
+        List<RoomDateReservationState> output = roomDateReservationStateRepository.findRoomDateReservationStateForTargetDates(roomId, targetDates);
+
+        if (output.size() == 0) {
+            log.error("There is no document for roomId: " + roomId + ", and dates: " + targetDates);
+            throw new BackendErrorException("از شما پوزش می خواهیم. در پردازش درخواست شما مشکلی بوجود آمده است. لطفا با ما تماس بگیرید.");
+        }
+
+        return output;
     }
 
     public void save(RoomDateReservationState input) {

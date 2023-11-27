@@ -4,7 +4,7 @@ import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.Room;
-import bogen.studio.Room.Repository.ReservationRequestsRepository;
+import bogen.studio.Room.Repository.ReservationRequestRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 
 import java.util.*;
@@ -17,11 +17,11 @@ public class Jobs implements Runnable {
 
 
     RoomRepository roomRepository;
-    ReservationRequestsRepository reservationRequestsRepository;
+    ReservationRequestRepository reservationRequestRepository;
 
-    public Jobs(RoomRepository r, ReservationRequestsRepository rr) {
+    public Jobs(RoomRepository r, ReservationRequestRepository rr) {
         roomRepository = r;
-        reservationRequestsRepository = rr;
+        reservationRequestRepository = rr;
     }
 
     @Override
@@ -72,7 +72,7 @@ public class Jobs implements Runnable {
         @Override
         public void run() {
 
-            List<ReservationRequest> reservationRequests = reservationRequestsRepository
+            List<ReservationRequest> reservationRequests = reservationRequestRepository
                     .getExpiredReservations(System.currentTimeMillis());
 
             for(ReservationRequest reservationRequest : reservationRequests) {
@@ -87,7 +87,7 @@ public class Jobs implements Runnable {
                     reservationRequest.setStatus(ReservationStatus.CANCELED);
             }
 
-            reservationRequestsRepository.saveAll(reservationRequests);
+            reservationRequestRepository.saveAll(reservationRequests);
         }
     }
 

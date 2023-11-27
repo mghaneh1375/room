@@ -1,9 +1,6 @@
 package bogen.studio.Room.exceptionHandler;
 
-import bogen.studio.Room.Exception.IdInvalidException;
-import bogen.studio.Room.Exception.NoAdultsInPassengersException;
-import bogen.studio.Room.Exception.RoomNotFreeException;
-import bogen.studio.Room.Exception.RoomUnavailableByOwnerException;
+import bogen.studio.Room.Exception.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -33,6 +30,12 @@ public class ExceptionHandlerClass {
 
     @ExceptionHandler(value = RoomNotFreeException.class)
     public ResponseEntity<String> roomNotFreeExceptionHandler(RoomNotFreeException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+    @ExceptionHandler(value = BackendErrorException.class)
+    public ResponseEntity<String> backendErrorExceptionHandler(BackendErrorException e) {
 
         return ResponseEntity.ok(generateErr(e.getMessage()));
     }

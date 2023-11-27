@@ -4,8 +4,10 @@ import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.Room;
-import bogen.studio.Room.Repository.ReservationRequestsRepository;
+import bogen.studio.Room.Repository.ReservationRequestRepository;
+import bogen.studio.Room.Repository.ReservationRequestRepository2;
 import bogen.studio.Room.Repository.RoomRepository;
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,13 +24,16 @@ import static my.common.commonkoochita.Utility.Statics.*;
 import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
+@RequiredArgsConstructor
 public class ReservationRequestService extends AbstractService<ReservationRequest, ReservationRequestDTO> {
 
-    @Autowired
-    private ReservationRequestsRepository reservationRequestsRepository;
+    //@Autowired
+    private final ReservationRequestRepository reservationRequestRepository;
 
-    @Autowired
-    private RoomRepository roomRepository;
+    //@Autowired
+    private final RoomRepository roomRepository;
+
+    private final ReservationRequestRepository2 reservationRequestRepository2;
 
     @Override
     String list(List<String> filters) {
@@ -47,13 +52,13 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     @Override
     ReservationRequest findById(ObjectId id) {
-        Optional<ReservationRequest> reservationRequests = reservationRequestsRepository.findById(id);
+        Optional<ReservationRequest> reservationRequests = reservationRequestRepository.findById(id);
         return reservationRequests.orElse(null);
     }
 
     public String getOwnerActiveRequests(ObjectId roomId, ObjectId userId) {
 
-        List<ReservationRequest> reservationRequests = reservationRequestsRepository.getActiveReservationsByRoomIdAndOwnerId(roomId, userId);
+        List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByRoomIdAndOwnerId(roomId, userId);
 
         JSONArray jsonArray = new JSONArray();
 
@@ -64,7 +69,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     public String getOwnerAllActiveRequests(ObjectId userId) {
 
-        List<ReservationRequest> reservationRequests = reservationRequestsRepository.getActiveReservationsByOwnerId(userId);
+        List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByOwnerId(userId);
         List<Room> rooms = roomRepository.findDigestForOwnerByIds(
                 reservationRequests.stream().map(ReservationRequest::getRoomId).collect(Collectors.toList())
         );
@@ -118,7 +123,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         if (status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()))
             reservationRequest.setReserveExpireAt(System.currentTimeMillis() + PAY_WAIT_MSEC);
 
-        reservationRequestsRepository.save(reservationRequest);
+        reservationRequestRepository.save(reservationRequest);
         return JSON_OK;
     }
 
@@ -143,7 +148,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         reservationRequest.setCancelAt(new Date());
 
-        reservationRequestsRepository.save(reservationRequest);
+        reservationRequestRepository.save(reservationRequest);
         return JSON_OK;
     }
 
@@ -184,7 +189,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     public String getMyActiveReq(ObjectId userId) {
 
-        List<ReservationRequest> reservationRequests = reservationRequestsRepository.getActiveReservationsByUserId(userId);
+        List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByUserId(userId);
         List<Room> rooms = roomRepository.findDigestByIds(
                 reservationRequests.stream().map(ReservationRequest::getRoomId).collect(Collectors.toList())
         );
@@ -213,8 +218,8 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     public String getMyReq(ObjectId userId, String trackingCode, ObjectId reqId) {
 
         ReservationRequest reservationRequest = trackingCode == null ?
-                reservationRequestsRepository.getReservationsByUserIdAndId(userId, reqId) :
-                reservationRequestsRepository.getReservationsByUserIdAndTrackingCode(userId, trackingCode);
+                reservationRequestRepository.getReservationsByUserIdAndId(userId, reqId) :
+                reservationRequestRepository.getReservationsByUserIdAndTrackingCode(userId, trackingCode);
 
         if (reservationRequest == null)
             return JSON_NOT_ACCESS;
@@ -224,5 +229,10 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         return generateSuccessMsg("data", jsonObject);
 
+    }
+
+    public void changeReservationRequestStatus(ObjectId reservationId, ReservationStatus newStatus) {
+
+        reservationRequestRepository2.changeReservationRequestStatus(reservationId, newStatus);
     }
 }

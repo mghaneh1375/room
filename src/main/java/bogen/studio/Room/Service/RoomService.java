@@ -9,12 +9,14 @@ import bogen.studio.Room.Exception.*;
 import bogen.studio.Room.Models.PassengersExtractedData;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.Room;
+import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Network.Network;
-import bogen.studio.Room.Repository.ReservationRequestsRepository;
+import bogen.studio.Room.Repository.ReservationRequestRepository;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
 import bogen.studio.Room.documents.RoomDateReservationState;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import my.common.commonkoochita.Utility.JalaliCalendar;
 import my.common.commonkoochita.Utility.PairValue;
 import com.mashape.unirest.http.HttpResponse;
@@ -34,6 +36,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static bogen.studio.Room.Enums.ReservationStatus.*;
 import static bogen.studio.Room.Enums.RoomStatus.FREE;
 import static bogen.studio.Room.Enums.RoomStatus.RESERVED;
 import static bogen.studio.Room.Utility.StaticValues.*;
@@ -42,6 +45,7 @@ import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RoomService extends AbstractService<Room, RoomDTO> {
 
     public final static String FOLDER = "rooms";
@@ -50,9 +54,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     private final RoomRepository roomRepository;
 
     //@Autowired
-    private final ReservationRequestsRepository reservationRequestsRepository;
+    private final ReservationRequestRepository reservationRequestRepository;
 
     private final RoomDateReservationStateService roomDateReservationStateService;
+    private final ReservationRequestService reservationRequestService;
 
     @Override
     public String list(List<String> filters) {
@@ -90,7 +95,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                             jsonObject.put("gallery", galleryJSON);
 
                             if (!x.isOnlineReservation())
-                                jsonObject.put("pendingRequests", reservationRequestsRepository.countByRoomIdAndStatus(x.get_id(),
+                                jsonObject.put("pendingRequests", reservationRequestRepository.countByRoomIdAndStatus(x.get_id(),
                                         ReservationStatus.PENDING.getName().toUpperCase())
                                 );
 
@@ -702,7 +707,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (!room.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
-        if (reservationRequestsRepository.countAllActiveReservationsByRoomId(id) > 0)
+        if (reservationRequestRepository.countAllActiveReservationsByRoomId(id) > 0)
             return generateErr("امکان حذف این اتاق به دلیل وجود اقامت فعال وجود ندارد");
 
         if (room.isMain())
@@ -714,7 +719,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     }
 
 
-    private PairValue canReserve(ObjectId roomId, TripInfo tripInfo, boolean calculatePriceUsage) throws InvalidFieldsException {
+    private PairValue canReserve(ObjectId roomId, TripInfo tripInfo, boolean calculatePriceUsage, List<RoomDateReservationState> roomDateSafetyList) throws InvalidFieldsException {
 
         Room room = findById(roomId);
         if (room == null)
@@ -738,12 +743,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 //            throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
 
         // Check room date reserve status collection to see whether room is free or not, then make the RoomStatus to RESERVED
-        checkRoomDateStatus(roomId, jalaliDates, calculatePriceUsage);
+        checkRoomDateStatus(roomId, jalaliDates, calculatePriceUsage, roomDateSafetyList);
 
         return new PairValue(room, jalaliDates);
     }
 
-    private void checkRoomDateStatus(ObjectId roomId, List<String> jalaliDates, boolean calcPriceUsage) {
+    private void checkRoomDateStatus(ObjectId roomId, List<String> jalaliDates, boolean calcPriceUsage, List<RoomDateReservationState> roomDateSafetyList) {
         /* Check room date reserve status collection to see whether room is free or not, then make the RoomStatus to
          * RESERVED */
 
@@ -758,32 +763,30 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         // In database change the RoomStatus to RESERVED
         if (!calcPriceUsage) { // Do not change the RoomStatus in DB if the process in calculating the room price
-            changeRoomDataStatusesToReserved(roomDateReservationStateList);
+            changeRoomDataStatusesToReserved(roomDateReservationStateList, roomDateSafetyList);
         }
 
 
     }
 
-    private void changeRoomDataStatusesToReserved(List<RoomDateReservationState> roomDateReservationStateList) {
+    private void changeRoomDataStatusesToReserved(List<RoomDateReservationState> roomDateReservationStateList, List<RoomDateReservationState> roomDateSafetyList) {
 
         // Set RoomStatus of input items to RESERVED
         for (RoomDateReservationState roomDateReservationState : roomDateReservationStateList) {
             roomDateReservationState.setRoomStatus(RESERVED);
         }
 
-        // Create a safetyList in order to handle rollback if optimistic lock activates
-        List<RoomDateReservationState> safetyList = new ArrayList<>();
 
         for (RoomDateReservationState roomDateReservationState : roomDateReservationStateList) {
 
             try {
                 roomDateReservationStateService.save(roomDateReservationState);
-                safetyList.add(roomDateReservationState);
+                roomDateSafetyList.add(roomDateReservationState);
 
             } catch (OptimisticLockingFailureException e) {
 
                 // Rollback edited documents, Since @Transactional needs Replica set and we do not have it yet
-                for (RoomDateReservationState roomDateReservationState1 : safetyList) {
+                for (RoomDateReservationState roomDateReservationState1 : roomDateSafetyList) {
                     roomDateReservationState1.setRoomStatus(FREE);
                     roomDateReservationStateService.save(roomDateReservationState1);
                 }
@@ -837,7 +840,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         for (int i = 1; i < tripInfo.getNights(); i++)
             dates.add(getPast("/", tripInfo.getStartDate(), -1 * i));
 
-        if (reservationRequestsRepository.findActiveReservations(room.get_id(), dates) > 0)
+        if (reservationRequestRepository.findActiveReservations(room.get_id(), dates) > 0)
             throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
 
         return dates;
@@ -847,7 +850,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         try {
 
-            PairValue pairValue = canReserve(id, dto, true);
+            PairValue pairValue = canReserve(id, dto, true, null);
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
@@ -959,8 +962,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return new PairValue(totalPrice, pricesDetail);
     }
 
-    @Transactional
+    @Transactional // This annotation needs replica set to work
     public String reserve(ObjectId roomId, ReservationRequestDTO reservationRequestDTO, ObjectId userId) {
+
+        List<RoomDateReservationState> roomDateSafetyList = new ArrayList<>();
 
         try {
 
@@ -981,12 +986,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     reservationRequestDTO.getNights()
             );
 
-            PairValue canReservePairValue = canReserve(roomId, tripInfo, false);
+            PairValue canReservePairValue = canReserve(roomId, tripInfo, false, roomDateSafetyList);
 
             Room room = (Room) canReservePairValue.getKey();
-            List<String> dates = (List<String>) canReservePairValue.getValue();
+            List<String> jalaliDates = (List<String>) canReservePairValue.getValue();
 
-            PairValue pricePairValue = calcPrice(room, dates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
+            PairValue pricePairValue = calcPrice(room, jalaliDates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
             int totalAmount = (int) pricePairValue.getKey();
 
             ReservationRequest reservationRequest = createReservationRequest(
@@ -997,8 +1002,13 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     userId,
                     pricePairValue,
                     room,
-                    totalAmount);
-            reservationRequestsRepository.insert(reservationRequest);
+                    totalAmount,
+                    convertJalaliDatesListToGregorian(List.of(jalaliDates.get(0))).get(0),
+                    tripInfo.getNights());
+            reservationRequestRepository.insert(reservationRequest);
+
+            // Set initial state of reserve request
+            setInitialReserveRequestState(roomDateSafetyList, room.isOnlineReservation(), reservationRequest);
 
             if (room.isOnlineReservation())
                 //todo: go to bank
@@ -1010,10 +1020,44 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             );
 
         } catch (RoomNotFreeException | RoomExceedCapacityException | RoomUnavailableByOwnerException |
-                 IdInvalidException e) {
+                 IdInvalidException | BackendErrorException e) {
             throw e;
-        } catch (Exception x) {
-            return generateErr(x.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error: " + e.getMessage());
+            throw new RuntimeException("Unexpected error while reservation process");
+        }
+
+    }
+
+    private void setInitialReserveRequestState(List<RoomDateReservationState> roomDateSafetyList, boolean isRoomDirectReservable, ReservationRequest reservationRequest) {
+        if (isRoomDirectReservable) {
+            try {
+                reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), WAIT_FOR_PAYMENT_1);
+            } catch (OptimisticLockingFailureException e) {
+                rollBackRoomStatusToFree(roomDateSafetyList);
+                reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), SYSTEM_ERROR);
+                log.error("Unexpected optimistic lock: " + e.getMessage());
+                throw new RuntimeException("Unexpected optimistic lock: ");
+            }
+        } else {
+            try {
+
+                reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), WAIT_FOR_OWNER_RESPONSE);
+            } catch (OptimisticLockingFailureException e) {
+                rollBackRoomStatusToFree(roomDateSafetyList);
+                reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), SYSTEM_ERROR);
+                log.error("Unexpected optimistic lock: " + e.getMessage());
+                throw new RuntimeException("Unexpected optimistic lock: ");
+            }
+        }
+    }
+
+    private void rollBackRoomStatusToFree(List<RoomDateReservationState> roomDateReservationStateList) {
+        /* Rollback to Free */
+
+        for (RoomDateReservationState roomDateReservationState : roomDateReservationStateList) {
+            roomDateReservationState.setRoomStatus(FREE);
+            roomDateReservationStateService.save(roomDateReservationState);
         }
 
     }
@@ -1070,7 +1114,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                                         ObjectId userId,
                                                         PairValue p,
                                                         Room room,
-                                                        int totalAmount) {
+                                                        int totalAmount,
+                                                        LocalDateTime residenceStartDate,
+                                                        int numberOfStayingNights) {
 
         ReservationRequest reservationRequest = new ReservationRequest();
 
@@ -1088,9 +1134,14 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         reservationRequest.setPrices((List<DatePrice>) p.getValue());
         reservationRequest.setTotalAmount(totalAmount);
         reservationRequest.setOwnerId(room.getUserId());
-        reservationRequest.setStatus(room.isOnlineReservation() ?
-                ReservationStatus.RESERVED : ReservationStatus.PENDING
+
+        reservationRequest.setStatus(
+                //room.isOnlineReservation() ? ReservationStatus.RESERVED : ReservationStatus.PENDING
+                ReservationStatus.REGISTERED_RESERVE_REQUEST
         );
+
+        reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), ReservationStatus.REGISTERED_RESERVE_REQUEST));
+
         reservationRequest.setReserveExpireAt(room.isOnlineReservation() ?
                 System.currentTimeMillis() + BANK_WAIT_MSEC :
                 System.currentTimeMillis() + ACCEPT_PENDING_WAIT_MSEC
@@ -1101,6 +1152,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         String trackingCode = randomString(6);
 
         reservationRequest.setTrackingCode(trackingCode);
+
+        reservationRequest.setResidenceStartDate(residenceStartDate);
+
+        reservationRequest.setNumberOfStayingNights(numberOfStayingNights);
 
         return reservationRequest;
 

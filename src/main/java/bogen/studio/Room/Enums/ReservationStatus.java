@@ -2,7 +2,7 @@ package bogen.studio.Room.Enums;
 
 public enum ReservationStatus {
 
-    REQUEST_RESERVE,
+    REGISTERED_RESERVE_REQUEST,
     WAIT_FOR_PAYMENT_1,
     CANCEL_BY_PAYMENT_TIMEOUT,
     UNSECCESSFUL_PAYMENT,
@@ -16,6 +16,7 @@ public enum ReservationStatus {
     ACCEPT_BY_OWNER,
     REJECT_BY_OWNER,
     WAIT_FOR_PAYMENT_2,
+    SYSTEM_ERROR,
 
 
     ACCEPT, REJECT, CANCELED, PENDING, RESERVED, REFUND, ACCEPT_CANCELED, PAID, FINISH;

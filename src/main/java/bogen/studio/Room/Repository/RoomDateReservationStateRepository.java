@@ -2,7 +2,6 @@ package bogen.studio.Room.Repository;
 
 import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Models.RoomIdLocalDateTime;
-import bogen.studio.Room.Models.RoomStatusClass;
 import bogen.studio.Room.documents.RoomDateReservationState;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -11,6 +10,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -47,8 +47,8 @@ public class RoomDateReservationStateRepository {
         /* This functions finds the status of the room in input dates */
 
         Criteria criteriaRoomId = Criteria.where("roomObjectId").is(roomId);
-        Criteria criteriaStartDate = Criteria.where("localDateTime").gte(targetDates.get(0));
-        Criteria criteriaEndDate = Criteria.where("localDateTime").lte(targetDates.get(targetDates.size() - 1));
+        Criteria criteriaStartDate = Criteria.where("targetDate").gte(targetDates.get(0));
+        Criteria criteriaEndDate = Criteria.where("targetDate").lte(targetDates.get(targetDates.size() - 1));
 
         Criteria criteria = new Criteria();
         criteria.andOperator(List.of(criteriaRoomId, criteriaStartDate, criteriaEndDate));
@@ -69,8 +69,8 @@ public class RoomDateReservationStateRepository {
         /* This functions finds the RoomDateReservationState documents of the room for input dates */
 
         Criteria criteriaRoomId = Criteria.where("roomObjectId").is(roomId);
-        Criteria criteriaStartDate = Criteria.where("localDateTime").gte(targetDates.get(0));
-        Criteria criteriaEndDate = Criteria.where("localDateTime").lte(targetDates.get(targetDates.size() - 1));
+        Criteria criteriaStartDate = Criteria.where("targetDate").gte(targetDates.get(0));
+        Criteria criteriaEndDate = Criteria.where("targetDate").lte(targetDates.get(targetDates.size() - 1));
 
         Criteria criteria = new Criteria();
         criteria.andOperator(List.of(criteriaRoomId, criteriaStartDate, criteriaEndDate));
@@ -86,6 +86,5 @@ public class RoomDateReservationStateRepository {
         mongoTemplate.save(roomDateReservationState, mongoTemplate.getCollectionName(RoomDateReservationState.class));
 
     }
-
 
 }
