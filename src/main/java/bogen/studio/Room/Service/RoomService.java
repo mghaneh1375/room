@@ -783,12 +783,23 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                 roomDateReservationStateService.save(roomDateReservationState);
                 roomDateSafetyList.add(roomDateReservationState);
 
+                log.info(String.format("Status of room: %s, in date: %s, changed to: %s",
+                        roomDateReservationState.getRoomObjectId(),
+                        roomDateReservationState.getTargetDate(),
+                        RESERVED));
+
             } catch (OptimisticLockingFailureException e) {
 
+                log.warn("Roll back to room status: FREE, initiated");
                 // Rollback edited documents, Since @Transactional needs Replica set and we do not have it yet
                 for (RoomDateReservationState roomDateReservationState1 : roomDateSafetyList) {
                     roomDateReservationState1.setRoomStatus(FREE);
                     roomDateReservationStateService.save(roomDateReservationState1);
+
+                    log.info(String.format("Status of room: %s, in date: %s, changed to: %s",
+                            roomDateReservationState.getRoomObjectId(),
+                            roomDateReservationState.getTargetDate(),
+                            FREE));
                 }
 
                 throw new RoomNotFreeException("اتاق در تاریخ های انتخاب شده قابل رزرو نیست");

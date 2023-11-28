@@ -2,6 +2,7 @@ package bogen.studio.Room.scheduledJobs;
 
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Service.ReservationRequestService;
+import bogen.studio.Room.Service.RoomDateReservationStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,12 +30,14 @@ public class HandleOwnerResponseTimeoutJob {
 
     private final MongoTemplate mongoTemplate;
     private final ReservationRequestService reservationRequestService;
+    private final RoomDateReservationStateService roomDateReservationStateService;
 
     @Value("${owner.response.timeout}")
     private int ownerResponseTimeout;
 
+    // Todo: This method should be transactional
     @Scheduled(cron = "0 0/30 * * * ?")
-    private void findExpiredReservationRequests () {
+    private void findExpiredReservationRequests() {
         /* This job will change status of the reservation request to CANCEL_BY_OWNER_RESPONSE_TIMEOUT if the owner would
          * not respond to the request by the defined timeout */
 
@@ -42,26 +45,31 @@ public class HandleOwnerResponseTimeoutJob {
 
         if (candidateDocsToChangeStatus.size() == 0) {
             log.info(String.format("There is no reservation request with status: %s, which is expired", WAIT_FOR_OWNER_RESPONSE));
-        }
+        } else {
 
+            for (ReservationRequest reservationRequest : candidateDocsToChangeStatus) {
 
-        for (ReservationRequest reservationRequest : candidateDocsToChangeStatus) {
+                try {
 
-            try {
+                    // Change reservation request status
+                    reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), CANCEL_BY_OWNER_RESPONSE_TIMEOUT);
 
-                reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), CANCEL_BY_OWNER_RESPONSE_TIMEOUT);
-                log.info(String.format("Status for reservation request: %s, changed to: %s", reservationRequest.get_id(), CANCEL_BY_OWNER_RESPONSE_TIMEOUT));
+                    // Change room status to free
+                    roomDateReservationStateService.setRoomDateStatusesToFree(
+                            reservationRequest.getRoomId(),
+                            reservationRequest.getResidenceStartDate(),
+                            reservationRequest.getNumberOfStayingNights(),
+                            CANCEL_BY_OWNER_RESPONSE_TIMEOUT
+                    );
 
-                // Todo: Inform the customer: Owner did not respond to your request in the defined timeout. Please choose another room.
+                    // Todo: Inform the customer: Owner did not respond to your request in the defined timeout. Please choose another room.
 
-            } catch (OptimisticLockingFailureException e) { // Handle optimistic lock activation
+                } catch (OptimisticLockingFailureException e) { // Handle optimistic lock activation
 
-                log.warn("Optimistic lock activated while changing status to CANCEL_BY_OWNER_RESPONSE_TIMEOUT in Reservation_request_id: " + reservationRequest.get_id());
+                    log.warn("Optimistic lock activated while changing status to CANCEL_BY_OWNER_RESPONSE_TIMEOUT in Reservation_request_id: " + reservationRequest.get_id());
+                }
             }
-
         }
-
-
     }
 
     private Instant calculateTimeOutThreshold() {

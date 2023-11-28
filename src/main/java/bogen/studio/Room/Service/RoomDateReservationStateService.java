@@ -1,5 +1,6 @@
 package bogen.studio.Room.Service;
 
+import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Exception.BackendErrorException;
 import bogen.studio.Room.Models.RoomIdLocalDateTime;
@@ -7,13 +8,19 @@ import bogen.studio.Room.Repository.RoomDateReservationStateRepository;
 import bogen.studio.Room.Repository.RoomRepository2;
 import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.RoomDateReservationState;
+import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,6 +30,7 @@ public class RoomDateReservationStateService {
 
     private final RoomRepository2 roomRepository2;
     private final RoomDateReservationStateRepository roomDateReservationStateRepository;
+    private final MongoTemplate mongoTemplate;
 
     @Value("${max.available.days.for.reservation}")
     private String futureDaysReservableThreshold;
@@ -39,8 +47,8 @@ public class RoomDateReservationStateService {
         List<RoomIdLocalDateTime> roomIdLocalDateTimeList = roomDateReservationStateRepository.findListOfInsertedRoomIdLocalDates();
 
 
-        for (ObjectId roomId:roomIds) {
-            for (LocalDateTime localDateTime:localDateTimes) {
+        for (ObjectId roomId : roomIds) {
+            for (LocalDateTime localDateTime : localDateTimes) {
 
                 // If target roomId-localDateTime does not exist in DB, then insert a model
                 if (!roomIdLocalDateTimeList.contains(new RoomIdLocalDateTime(roomId, localDateTime))) {
@@ -53,7 +61,7 @@ public class RoomDateReservationStateService {
                             .build();
 
                     try {
-                        RoomDateReservationState roomDateReservationState1 =  roomDateReservationStateRepository.insert(roomDateReservationState);
+                        RoomDateReservationState roomDateReservationState1 = roomDateReservationStateRepository.insert(roomDateReservationState);
                         log.info("Inserted: " + roomDateReservationState1);
                     } catch (Exception e) {
                         log.error("Failed to insert RoomIdLocalDateTime" + e.getMessage());
@@ -88,6 +96,62 @@ public class RoomDateReservationStateService {
     public void save(RoomDateReservationState input) {
 
         roomDateReservationStateRepository.save(input);
+    }
+
+    public UpdateResult changeRoomStatus(ObjectId roomObjectId, LocalDateTime targetDate, RoomStatus newStatus) {
+
+        Criteria roomIdCriteria = Criteria.where("roomObjectId").gte(roomObjectId);
+        Criteria dateCriteria = Criteria.where("targetDate").is(targetDate);
+        Criteria criteria = new Criteria();
+        criteria.andOperator(List.of(roomIdCriteria, dateCriteria));
+
+        Query query = new Query().addCriteria(criteria);
+
+        Update update = new Update().set("roomStatus", newStatus);
+
+        UpdateResult updateResult = mongoTemplate.updateFirst(
+                query,
+                update,
+                RoomDateReservationState.class,
+                mongoTemplate.getCollectionName(RoomDateReservationState.class)
+        );
+
+        if (updateResult.getModifiedCount() > 0) {
+            log.info(String.format("Status of room: %s, in date: %s, changed to: %s", roomObjectId, targetDate, RoomStatus.FREE));
+        }
+
+        return updateResult;
+
+    }
+
+    public void setRoomDateStatusesToFree(ObjectId roomId, LocalDateTime residenceStartTime, int numberOfStayingNights, ReservationStatus reason) {
+
+        // Build dates of residence
+        List<LocalDateTime> residenceDates = buildResidenceDates(residenceStartTime, numberOfStayingNights);
+
+        for (LocalDateTime residenceDate : residenceDates) {
+
+            try {
+                changeRoomStatus(roomId, residenceDate, RoomStatus.FREE);
+            } catch (Exception e) {
+                log.error(String.format("Error in setting room status to free because of: %s, (for backup operator attention", reason));
+            }
+
+        }
+    }
+
+    private List<LocalDateTime> buildResidenceDates(LocalDateTime startDate, int numberOfStayingNights) {
+        /* According to start date and number of staying nights, this method builds residence dates; */
+
+        List<LocalDateTime> output = new ArrayList<>();
+
+        for (int i = 0; i < numberOfStayingNights; i++) {
+
+            output.add(startDate.plusDays(i));
+        }
+
+        return output;
+
     }
 
 }

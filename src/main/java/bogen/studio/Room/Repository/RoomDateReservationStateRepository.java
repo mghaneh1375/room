@@ -31,7 +31,7 @@ public class RoomDateReservationStateRepository {
     public List<RoomIdLocalDateTime> findListOfInsertedRoomIdLocalDates() {
 
         AggregationOperation match = Aggregation.match(Criteria.where("_id").exists(true));
-        AggregationOperation project = Aggregation.project("roomObjectId", "localDateTime");
+        AggregationOperation project = Aggregation.project("roomObjectId", "targetDate");
 
         Aggregation aggregation = Aggregation.newAggregation(match, project);
 
