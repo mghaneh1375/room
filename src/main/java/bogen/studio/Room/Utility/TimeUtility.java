@@ -1,8 +1,10 @@
 package bogen.studio.Room.Utility;
 
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,5 +25,15 @@ public class TimeUtility {
         return output;
 
     }
+    public static Instant calculateTimeOutThreshold(int timeoutInMinutes) {
+        /* Calculate instance of time out, since created_at filed of reservation request document has a type of Date.
+         * Obviously, for avoiding side effects I did not change the type :)  */
+
+        LocalDateTime timeoutThreshold = LocalDateTime.now().minusMinutes(timeoutInMinutes);
+        ZonedDateTime timeoutThresholdZoned = timeoutThreshold.atZone(ZoneId.systemDefault());
+
+        return timeoutThresholdZoned.toInstant();
+    }
+
 
 }

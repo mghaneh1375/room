@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -20,6 +22,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Utility.StaticValues.*;
+import static bogen.studio.Room.Utility.TimeUtility.calculateTimeOutThreshold;
 import static my.common.commonkoochita.Utility.Statics.*;
 import static my.common.commonkoochita.Utility.Utility.*;
 
@@ -34,6 +37,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     private final RoomRepository roomRepository;
 
     private final ReservationRequestRepository2 reservationRequestRepository2;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     String list(List<String> filters) {
@@ -235,4 +239,24 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         reservationRequestRepository2.changeReservationRequestStatus(reservationId, newStatus);
     }
+
+    public List<ReservationRequest> findExpiredReservationRequests(ReservationStatus currentStatus, int timeoutInMinutes) {
+        /* Find reservation requests, which has input status and are expired according to createdAt field and input
+         * timeout */
+
+        Criteria createdAtCriteria = Criteria.where("created_at").lt(Date.from(calculateTimeOutThreshold(timeoutInMinutes)));
+        Criteria statusCriteria = Criteria.where("status").is(currentStatus);
+        Criteria criteria = new Criteria();
+        criteria.andOperator(List.of(createdAtCriteria, statusCriteria));
+
+        Query query = new Query().addCriteria(criteria);
+
+        return mongoTemplate.find(
+                query,
+                ReservationRequest.class,
+                mongoTemplate.getCollectionName(ReservationRequest.class)
+        );
+
+    }
+
 }
