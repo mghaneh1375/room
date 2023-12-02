@@ -10,8 +10,8 @@ import static my.common.commonkoochita.Utility.Utility.generateErr;
 @RestControllerAdvice
 public class ExceptionHandlerClass {
 
-    @ExceptionHandler(value = IdInvalidException.class)
-    public ResponseEntity<String> idInvalidExceptionHandler(IdInvalidException e) {
+    @ExceptionHandler(value = InvalidIdException.class)
+    public ResponseEntity<String> idInvalidExceptionHandler(InvalidIdException e) {
 
         return ResponseEntity.ok(generateErr(e.getMessage()));
     }
@@ -36,6 +36,24 @@ public class ExceptionHandlerClass {
 
     @ExceptionHandler(value = BackendErrorException.class)
     public ResponseEntity<String> backendErrorExceptionHandler(BackendErrorException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+    @ExceptionHandler(value = InvalidInputException.class)
+    public ResponseEntity<String> invalidInputExceptionHandler(InvalidInputException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+    @ExceptionHandler(value = DocumentVersionChangedException.class)
+    public ResponseEntity<String> documentVersionChangedExceptionHandler(DocumentVersionChangedException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+    @ExceptionHandler(value = InvalidRequestByCustomerException.class)
+    public ResponseEntity<String> invalidRequestByCustomerExceptionHandler(InvalidRequestByCustomerException e) {
 
         return ResponseEntity.ok(generateErr(e.getMessage()));
     }

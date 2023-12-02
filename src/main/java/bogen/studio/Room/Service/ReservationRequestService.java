@@ -2,25 +2,35 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.Enums.ReservationStatus;
+import bogen.studio.Room.Exception.DocumentVersionChangedException;
+import bogen.studio.Room.Exception.InvalidIdException;
+import bogen.studio.Room.Exception.InvalidInputException;
+import bogen.studio.Room.Exception.InvalidRequestByCustomerException;
 import bogen.studio.Room.Models.ReservationRequest;
+import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
 import bogen.studio.Room.Repository.ReservationRequestRepository2;
 import bogen.studio.Room.Repository.RoomRepository;
+import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static bogen.studio.Room.Enums.ReservationStatus.*;
 import static bogen.studio.Room.Utility.StaticValues.*;
 import static bogen.studio.Room.Utility.TimeUtility.calculateTimeOutThreshold;
 import static my.common.commonkoochita.Utility.Statics.*;
@@ -28,6 +38,7 @@ import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationRequestService extends AbstractService<ReservationRequest, ReservationRequestDTO> {
 
     //@Autowired
@@ -35,9 +46,9 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     //@Autowired
     private final RoomRepository roomRepository;
-
     private final ReservationRequestRepository2 reservationRequestRepository2;
     private final MongoTemplate mongoTemplate;
+    private final RoomDateReservationStateService roomDateReservationStateService;
 
     @Override
     String list(List<String> filters) {
@@ -57,12 +68,13 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     @Override
     ReservationRequest findById(ObjectId id) {
         Optional<ReservationRequest> reservationRequests = reservationRequestRepository.findById(id);
-        return reservationRequests.orElse(null);
+        return reservationRequests.orElseThrow(() -> new InvalidIdException("درخواست رزور با این آیدی وجود ندارد"));
     }
 
     public String getOwnerActiveRequests(ObjectId roomId, ObjectId userId) {
 
-        List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByRoomIdAndOwnerId(roomId, userId);
+        //List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByRoomIdAndOwnerId(roomId, userId);
+        List<ReservationRequest> reservationRequests = reservationRequestRepository2.findActiveReservationsByRoomIdAndOwnerId(roomId, userId);
 
         JSONArray jsonArray = new JSONArray();
 
@@ -73,7 +85,8 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     public String getOwnerAllActiveRequests(ObjectId userId) {
 
-        List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByOwnerId(userId);
+        //List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByOwnerId(userId);
+        List<ReservationRequest> reservationRequests = reservationRequestRepository2.findActiveReservationsByOwnerId(userId);
         List<Room> rooms = roomRepository.findDigestForOwnerByIds(
                 reservationRequests.stream().map(ReservationRequest::getRoomId).collect(Collectors.toList())
         );
@@ -98,62 +111,129 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         return generateSuccessMsg("data", jsonArray);
     }
 
+    // Todo : make this method transactional
     public String answerToRequest(ObjectId reqId, ObjectId userId, String status) {
 
-        if (!status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()) &&
-                !status.equalsIgnoreCase(ReservationStatus.REJECT.getName())
-        )
-            return JSON_NOT_VALID_PARAMS;
+        // Validate status
+        checkOwnerResponseToRequestIntegrity(status);
 
+        // Find reservation request
         ReservationRequest reservationRequest = findById(reqId);
 
-        if (reservationRequest == null)
-            return JSON_NOT_VALID_ID;
-
+        // Check whether the API caller owns the room or not
         if (!reservationRequest.getOwnerId().equals(userId))
             return JSON_NOT_ACCESS;
 
-        if (!reservationRequest.getStatus().equals(ReservationStatus.PENDING) &&
-                !reservationRequest.getStatus().equals(ReservationStatus.ACCEPT)
-        )
+        // Check whether current status of the request matches WAIT_FOR_OWNER_RESPONSE
+        if (!reservationRequest.getStatus().equals(WAIT_FOR_OWNER_RESPONSE))
             return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
 
-        reservationRequest.setStatus(status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()) ?
-                ReservationStatus.ACCEPT : ReservationStatus.REJECT
-        );
 
-        reservationRequest.setAnswerAt(new Date());
+        if (status.toLowerCase().equals("accept")) {
+            /* This block is developed to prevent rising optimistic lock activation */
 
-        if (status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()))
-            reservationRequest.setReserveExpireAt(System.currentTimeMillis() + PAY_WAIT_MSEC);
+            // Change reservation status to accept_by_owner
+            UpdateResult updateResult = reservationRequestRepository2
+                    .changeReservationRequestStatusIfCurrentStatusMatched(reservationRequest.get_id(), WAIT_FOR_OWNER_RESPONSE, ACCEPT_BY_OWNER);
 
-        reservationRequestRepository.save(reservationRequest);
+            if (updateResult.getModifiedCount() == 0) {
+                return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
+            } else {
+                reservationRequestRepository2
+                        .changeReservationRequestStatusIfCurrentStatusMatched(reservationRequest.get_id(), ACCEPT_BY_OWNER, WAIT_FOR_PAYMENT_2);
+            }
+
+            // Todo: inform the customer to pay the bill
+        } else {
+
+            UpdateResult updateResult = reservationRequestRepository2
+                    .changeReservationRequestStatusIfCurrentStatusMatched(reservationRequest.get_id(), WAIT_FOR_OWNER_RESPONSE, REJECT_BY_OWNER);
+
+            if (updateResult.getModifiedCount() == 0) {
+                return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
+            } else {
+                // Set reserved rooms to free
+                roomDateReservationStateService.setRoomDateStatusesToFree(
+                        reservationRequest.getRoomId(),
+                        reservationRequest.getResidenceStartDate(),
+                        reservationRequest.getNumberOfStayingNights(),
+                        REJECT_BY_OWNER
+                );
+            }
+        }
+
+
+//        reservationRequest.setAnswerAt(new Date());
+//
+//        if (status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()))
+//            reservationRequest.setReserveExpireAt(System.currentTimeMillis() + PAY_WAIT_MSEC);
+//
+//        reservationRequestRepository.save(reservationRequest);
         return JSON_OK;
     }
 
+    private void checkOwnerResponseToRequestIntegrity(String response) {
+
+        if (!response.toLowerCase().matches("accept") && !response.toLowerCase().matches("reject")) {
+            throw new InvalidInputException("پاسخ ارسالی به درخواست نامعتبر است");
+        }
+
+    }
+
+    // Todo: make this function transactional
     public String cancelMyReq(ObjectId reqId, ObjectId userId) {
 
         ReservationRequest reservationRequest = findById(reqId);
+        ReservationStatus status = reservationRequest.getStatus();
 
-        if (reservationRequest == null)
-            return JSON_NOT_VALID_ID;
-
-        if(!reservationRequest.getUserId().equals(userId))
+        if (!reservationRequest.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
-        if (!reservationRequest.getStatus().equals(ReservationStatus.PENDING) &&
-                !reservationRequest.getStatus().equals(ReservationStatus.ACCEPT)
-        )
-            return generateErr("امکان کنسل کردن این درخواست وجود ندارد");
+        // Customer can only cancel requests with state: booked or wait for owner response
+        checkIfRequestStateIsBookedOrWaitForOwnerResponse(status);
 
-        reservationRequest.setStatus(reservationRequest.getStatus().equals(ReservationStatus.ACCEPT) ?
-                ReservationStatus.ACCEPT_CANCELED : ReservationStatus.CANCELED
-        );
+        boolean isCancelSuccessful = false;
 
-        reservationRequest.setCancelAt(new Date());
 
-        reservationRequestRepository.save(reservationRequest);
+        try {
+
+            if (status.equals(BOOKED)) {
+                reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), CANCEL_BY_CUSTOMER));
+                reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), WAIT_FOR_REFUND));
+                reservationRequest.setStatus(WAIT_FOR_REFUND);
+            } else if (status.equals(WAIT_FOR_OWNER_RESPONSE)) {
+                reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), CANCEL_BY_CUSTOMER));
+                reservationRequest.setStatus(CANCEL_BY_CUSTOMER);
+            }
+            reservationRequestRepository.save(reservationRequest);
+            isCancelSuccessful = true;
+            log.info(String.format("Status for reservation request: %s, changed to: %s", reservationRequest.get_id(), status.equals(BOOKED) ? WAIT_FOR_REFUND : CANCEL_BY_CUSTOMER));
+
+        } catch (OptimisticLockingFailureException e) {
+            log.warn(String.format("Optimistic lock activated for canceling request by customer: %s, requestId: %s", reservationRequest.getUserId(), reservationRequest.get_id()));
+            throw new DocumentVersionChangedException("وضعیت درخواست شما لحظاتی پیش تغییر کرد، لطفا دوباره اقدام کنید.");
+        }
+
+        if (isCancelSuccessful){
+            roomDateReservationStateService.setRoomDateStatusesToFree(
+                    reservationRequest.getRoomId(),
+                    reservationRequest.getResidenceStartDate(),
+                    reservationRequest.getNumberOfStayingNights(),
+                    CANCEL_BY_CUSTOMER
+            );
+        }
+
         return JSON_OK;
+    }
+
+    private void checkIfRequestStateIsBookedOrWaitForOwnerResponse(ReservationStatus status) {
+        /* Customer can only cancel requests with state: booked or wait for owner response */
+
+        if (!status.equals(BOOKED) && !status.equals(WAIT_FOR_OWNER_RESPONSE)) {
+            log.warn(String.format("Invalid request by customer to cancel reservation request by status: %s", status));
+            throw new InvalidRequestByCustomerException("شما قادر به کنسل کردن درخواست رزور در این مرحله نیستید");
+        }
+
     }
 
     private JSONObject convertReqToJSON(ReservationRequest reservationRequest, Room r, boolean forAdmin) {
@@ -166,13 +246,13 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
         jsonObject.put("createdAt", convertDateToJalali(reservationRequest.getCreatedAt()));
 
-        if(jsonObject.has("reserveExpireAt"))
+        if (jsonObject.has("reserveExpireAt"))
             jsonObject.put("reserveExpireAt", convertDateToJalali(reservationRequest.getReserveExpireAt()));
 
         if (jsonObject.has("payAt"))
             jsonObject.put("payAt", convertDateToJalali(reservationRequest.getPayAt()));
 
-        if(jsonObject.has("answerAt"))
+        if (jsonObject.has("answerAt"))
             jsonObject.put("answerAt", convertDateToJalali(reservationRequest.getAnswerAt()));
 
         if (r != null) {
@@ -181,7 +261,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
                     .put("title", r.getTitle())
                     .put("image", ASSET_URL + RoomService.FOLDER + "/" + r.getImage());
 
-            if(forAdmin)
+            if (forAdmin)
                 roomJSON.put("no", r.getNo())
                         .put("id", r.get_id().toString());
 
@@ -193,7 +273,8 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     public String getMyActiveReq(ObjectId userId) {
 
-        List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByUserId(userId);
+        //List<ReservationRequest> reservationRequests = reservationRequestRepository.getActiveReservationsByUserId(userId);
+        List<ReservationRequest> reservationRequests = reservationRequestRepository2.findActiveReservationsByUserId(userId);
         List<Room> rooms = roomRepository.findDigestByIds(
                 reservationRequests.stream().map(ReservationRequest::getRoomId).collect(Collectors.toList())
         );

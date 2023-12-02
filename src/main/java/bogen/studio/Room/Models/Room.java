@@ -79,6 +79,7 @@ public class Room {
 
     private boolean availability = false;
 
+    /* This field is the id of the owner of the boom */
     @Field("user_id")
     private ObjectId userId;
 

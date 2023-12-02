@@ -723,7 +723,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         Room room = findById(roomId);
         if (room == null)
-            throw new IdInvalidException("آیدی اتاق نامعتبر است");
+            throw new InvalidIdException("آیدی اتاق نامعتبر است");
 
         if (!room.isAvailability())
             throw new RoomUnavailableByOwnerException("اتاق توسط مالک غیر قابل دسترس تنظیم شده است");
@@ -1032,7 +1032,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             );
 
         } catch (RoomNotFreeException | RoomExceedCapacityException | RoomUnavailableByOwnerException |
-                 IdInvalidException | BackendErrorException e) {
+                 InvalidIdException | BackendErrorException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error: " + e.getMessage());
@@ -1079,7 +1079,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         JSONObject passengerServiceResponse = Network.sendGetReq(PASSENGER_URL + "system/trip/getTripPassengers/" + tripId + "/" + userId);
         if (passengerServiceResponse == null)
-            throw new IdInvalidException("Trip id is not valid");
+            throw new InvalidIdException("Trip id is not valid");
 
         return passengerServiceResponse;
     }
