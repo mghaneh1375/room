@@ -743,12 +743,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 //            throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
 
         // Check room date reserve status collection to see whether room is free or not, then make the RoomStatus to RESERVED
-        checkRoomDateStatus(roomId, jalaliDates, calculatePriceUsage, roomDateSafetyList);
+        checkRoomDateStatusAndMakeItReservedInDemand(roomId, jalaliDates, calculatePriceUsage, roomDateSafetyList);
 
         return new PairValue(room, jalaliDates);
     }
 
-    private void checkRoomDateStatus(ObjectId roomId, List<String> jalaliDates, boolean calcPriceUsage, List<RoomDateReservationState> roomDateSafetyList) {
+    private void checkRoomDateStatusAndMakeItReservedInDemand(ObjectId roomId, List<String> jalaliDates, boolean doNotSetRoomReserved, List<RoomDateReservationState> roomDateSafetyList) {
         /* Check room date reserve status collection to see whether room is free or not, then make the RoomStatus to
          * RESERVED */
 
@@ -762,7 +762,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         throwExceptionIfRoomIsNotFreeForAnyTargetDate(roomDateReservationStateList);
 
         // In database change the RoomStatus to RESERVED
-        if (!calcPriceUsage) { // Do not change the RoomStatus in DB if the process in calculating the room price
+        if (!doNotSetRoomReserved) { // Do not change the RoomStatus in DB if the process in calculating the room price
             changeRoomDataStatusesToReserved(roomDateReservationStateList, roomDateSafetyList);
         }
 
@@ -851,8 +851,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         for (int i = 1; i < tripInfo.getNights(); i++)
             dates.add(getPast("/", tripInfo.getStartDate(), -1 * i));
 
-        if (reservationRequestRepository.findActiveReservations(room.get_id(), dates) > 0)
-            throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
+        //====================================
+        checkRoomDateStatusAndMakeItReservedInDemand(room.get_id(), dates, true, null);
+//        if (reservationRequestRepository.findActiveReservations(room.get_id(), dates) > 0)
+//            throw new InvalidFieldsException("در زمان خواسته شده، اقامتگاه مدنظر پر می باشد.");
 
         return dates;
     }

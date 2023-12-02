@@ -16,6 +16,7 @@ public enum ReservationStatus {
     ACCEPT_BY_OWNER,
     REJECT_BY_OWNER,
     WAIT_FOR_PAYMENT_2,
+    END_OF_RESIDENCE,
     SYSTEM_ERROR,
 
 

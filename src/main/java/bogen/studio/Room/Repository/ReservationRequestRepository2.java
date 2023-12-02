@@ -13,7 +13,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
-import javax.swing.plaf.PanelUI;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -155,5 +154,15 @@ public class ReservationRequestRepository2 {
 
     }
 
+    public List<ReservationRequest> findBookedReservations() {
+
+        Query query = new Query().addCriteria(Criteria.where("status").is(BOOKED));
+
+        return mongoTemplate.find(
+                query,
+                ReservationRequest.class,
+                mongoTemplate.getCollectionName(ReservationRequest.class)
+        );
+    }
 
 }

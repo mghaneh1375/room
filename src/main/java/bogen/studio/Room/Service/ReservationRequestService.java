@@ -340,4 +340,9 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     }
 
+    public List<ReservationRequest> findBookedReservationRequests() {
+
+        return reservationRequestRepository2.findBookedReservations();
+    }
+
 }
