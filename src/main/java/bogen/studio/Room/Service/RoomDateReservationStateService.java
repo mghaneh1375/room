@@ -3,7 +3,7 @@ package bogen.studio.Room.Service;
 import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Exception.BackendErrorException;
-import bogen.studio.Room.Models.RoomIdLocalDateTime;
+import bogen.studio.Room.Models.RoomIdTargetDay;
 import bogen.studio.Room.Repository.RoomDateReservationStateRepository;
 import bogen.studio.Room.Repository.RoomRepository2;
 import bogen.studio.Room.Utility.TimeUtility;
@@ -40,18 +40,18 @@ public class RoomDateReservationStateService {
         // Get room ids
         List<ObjectId> roomIds = roomRepository2.findDistinctIds();
 
-        // Get list of localDateTimes
+        // Create list of localDateTimes for which, RoomDateReservationRequest docs is need to generate
         List<LocalDateTime> localDateTimes = TimeUtility.createLocalDateTimeList(LocalDateTime.now(), Integer.valueOf(futureDaysReservableThreshold));
 
         // Get inserted roomId-localDateTime pairs
-        List<RoomIdLocalDateTime> roomIdLocalDateTimeList = roomDateReservationStateRepository.findListOfInsertedRoomIdLocalDates();
+        List<RoomIdTargetDay> roomIdTargetDayList = roomDateReservationStateRepository.findListOfInsertedRoomIdTargetDate();
 
 
         for (ObjectId roomId : roomIds) {
             for (LocalDateTime localDateTime : localDateTimes) {
 
                 // If target roomId-localDateTime does not exist in DB, then insert a model
-                if (!roomIdLocalDateTimeList.contains(new RoomIdLocalDateTime(roomId, localDateTime))) {
+                if (!roomIdTargetDayList.contains(new RoomIdTargetDay(roomId, localDateTime))) {
 
                     // Build a model according to roomId and localDateTime values
                     RoomDateReservationState roomDateReservationState = RoomDateReservationState.builder()

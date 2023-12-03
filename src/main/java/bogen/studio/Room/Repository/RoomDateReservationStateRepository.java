@@ -1,7 +1,7 @@
 package bogen.studio.Room.Repository;
 
 import bogen.studio.Room.Enums.RoomStatus;
-import bogen.studio.Room.Models.RoomIdLocalDateTime;
+import bogen.studio.Room.Models.RoomIdTargetDay;
 import bogen.studio.Room.documents.RoomDateReservationState;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,7 +27,7 @@ public class RoomDateReservationStateRepository {
         return mongoTemplate.insert(roomDateReservationState, "room-date-reservation-state");
     }
 
-    public List<RoomIdLocalDateTime> findListOfInsertedRoomIdLocalDates() {
+    public List<RoomIdTargetDay> findListOfInsertedRoomIdTargetDate() {
 
         AggregationOperation match = Aggregation.match(Criteria.where("_id").exists(true));
         AggregationOperation project = Aggregation.project("roomObjectId", "targetDate");
@@ -38,7 +37,7 @@ public class RoomDateReservationStateRepository {
         return mongoTemplate.aggregate(
                 aggregation,
                 mongoTemplate.getCollectionName(RoomDateReservationState.class),
-                RoomIdLocalDateTime.class
+                RoomIdTargetDay.class
         ).getMappedResults();
 
     }

@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoomIdLocalDateTime {
+public class RoomIdTargetDay {
 
     ObjectId roomObjectId;
-    LocalDateTime localDateTime;
+    LocalDateTime targetDate;
 
 }
