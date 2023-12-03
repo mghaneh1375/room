@@ -12,6 +12,7 @@ import bogen.studio.Room.Models.Room;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
+import bogen.studio.Room.Repository.ReservationRequestRepository2;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Utility.FileUtils;
 import bogen.studio.Room.documents.RoomDateReservationState;
@@ -59,6 +60,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     private final RoomDateReservationStateService roomDateReservationStateService;
     private final ReservationRequestService reservationRequestService;
+    private final ReservationRequestRepository2 reservationRequestRepository2;
+
+    @Value("${tracking.code.length}")
+    private int trackingCodeLength;
 
     @Value("${payment1.timeout}")
     private int payment1Timeout;
@@ -1170,9 +1175,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         reservationRequest.setUserId(userId);
         reservationRequest.setRoomId(room.get_id());
 
-        String trackingCode = randomString(6);
-
-        reservationRequest.setTrackingCode(trackingCode);
+        reservationRequest.setTrackingCode(generateTrackingCode());
 
         reservationRequest.setResidenceStartDate(residenceStartDate);
 
@@ -1180,6 +1183,18 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         return reservationRequest;
 
+    }
+
+    private String generateTrackingCode() {
+
+        for (int i = 0; i < 100; i++) {
+            String trackingCode = randomString(trackingCodeLength);
+            if (reservationRequestRepository2.countTrackingCode(trackingCode) == 0) {
+                return trackingCode;
+            }
+        }
+
+        throw new BackendErrorException("Tracking code generation is duplicate for 100 times! Change your tracking code generation algorithm");
     }
 
     public String toggleAccessibility(ObjectId id, ObjectId userId) {

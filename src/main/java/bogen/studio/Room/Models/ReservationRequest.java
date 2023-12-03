@@ -3,6 +3,7 @@ package bogen.studio.Room.Models;
 import bogen.studio.Room.DTO.DatePrice;
 import bogen.studio.Room.Enums.ReservationStatus;
 import lombok.*;
+import my.common.commonkoochita.MongoDB.Indexed;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Version;
@@ -22,6 +23,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "reservation_request")
+
 public class ReservationRequest {
 
     @Id
@@ -48,6 +50,7 @@ public class ReservationRequest {
     private ObjectId offId;
 
     @Field("tracking_code")
+    @Indexed(unique = true)
     private String trackingCode;
 
     private Integer infants;

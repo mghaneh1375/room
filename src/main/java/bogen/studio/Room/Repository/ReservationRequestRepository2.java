@@ -41,7 +41,7 @@ public class ReservationRequestRepository2 {
         );
 
         if (updateResult.getModifiedCount() > 0) {
-            log.info(String.format("Status for reservation request: %s, changed to: %s",reservationId, newStatus));
+            log.info(String.format("Status for reservation request: %s, changed to: %s", reservationId, newStatus));
         }
 
     }
@@ -108,7 +108,7 @@ public class ReservationRequestRepository2 {
     public List<ReservationRequest> findActiveReservationsByUserId(ObjectId userId) {
 
         Criteria activeReservationCriteria = buildActiveReservationCriteria();
-        Criteria userIdCriteria= Criteria.where("user_id").is(userId);
+        Criteria userIdCriteria = Criteria.where("user_id").is(userId);
         Criteria searchCriteria = new Criteria().andOperator(activeReservationCriteria, userIdCriteria);
 
         Query query = new Query().addCriteria(searchCriteria);
@@ -141,8 +141,8 @@ public class ReservationRequestRepository2 {
     public long countWithOwnerIdAndStatus(ObjectId ownerId, ReservationStatus status) {
 
         Criteria ownerIdCriteria = Criteria.where("owner_id").is(ownerId);
-        Criteria statusCriteria  = Criteria.where("status").is(status);
-        Criteria searchCriteria  = new Criteria().andOperator(ownerIdCriteria, statusCriteria);
+        Criteria statusCriteria = Criteria.where("status").is(status);
+        Criteria searchCriteria = new Criteria().andOperator(ownerIdCriteria, statusCriteria);
 
         Query query = new Query().addCriteria(searchCriteria);
 
@@ -159,6 +159,17 @@ public class ReservationRequestRepository2 {
         Query query = new Query().addCriteria(Criteria.where("status").is(status));
 
         return mongoTemplate.find(
+                query,
+                ReservationRequest.class,
+                mongoTemplate.getCollectionName(ReservationRequest.class)
+        );
+    }
+
+    public long countTrackingCode(String trackingCode) {
+
+        Query query = new Query().addCriteria(Criteria.where("tracking_code").is(trackingCode));
+
+        return mongoTemplate.count(
                 query,
                 ReservationRequest.class,
                 mongoTemplate.getCollectionName(ReservationRequest.class)

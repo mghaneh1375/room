@@ -1,6 +1,7 @@
 package bogen.studio.Room.exceptionHandler;
 
 import bogen.studio.Room.Exception.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import static my.common.commonkoochita.Utility.Utility.generateErr;
 
 @RestControllerAdvice
+@Slf4j
 public class ExceptionHandlerClass {
 
     @ExceptionHandler(value = InvalidIdException.class)
@@ -37,7 +39,8 @@ public class ExceptionHandlerClass {
     @ExceptionHandler(value = BackendErrorException.class)
     public ResponseEntity<String> backendErrorExceptionHandler(BackendErrorException e) {
 
-        return ResponseEntity.ok(generateErr(e.getMessage()));
+        log.error(e.getMessage());
+        return ResponseEntity.ok(generateErr("در سامانه خطا رخ داده است. لطفا دوباره تلاش کنید."));
     }
 
     @ExceptionHandler(value = InvalidInputException.class)
