@@ -27,6 +27,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +59,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
     private final RoomDateReservationStateService roomDateReservationStateService;
     private final ReservationRequestService reservationRequestService;
+
+    @Value("${payment1.timeout}")
+    private int payment1Timeout;
+
+    @Value("${owner.response.timeout}")
+    private int ownerResponseTimeout;
 
     @Override
     public String list(List<String> filters) {
@@ -1157,8 +1164,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), ReservationStatus.REGISTERED_RESERVE_REQUEST));
 
         reservationRequest.setReserveExpireAt(room.isOnlineReservation() ?
-                System.currentTimeMillis() + BANK_WAIT_MSEC :
-                System.currentTimeMillis() + ACCEPT_PENDING_WAIT_MSEC
+                System.currentTimeMillis() + ((long) payment1Timeout * 60 * 1000) :
+                System.currentTimeMillis() + ((long) ownerResponseTimeout * 60 * 1000)
         );
         reservationRequest.setUserId(userId);
         reservationRequest.setRoomId(room.get_id());
