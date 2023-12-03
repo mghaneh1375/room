@@ -46,27 +46,27 @@ public class ReservationRequestRepository2 {
 
     }
 
-    public UpdateResult changeReservationRequestStatusIfCurrentStatusMatched(ObjectId reservationId, ReservationStatus currentStatus, ReservationStatus newStatus) {
-
-        Query query = new Query().addCriteria(Criteria.where("_id").is(reservationId).andOperator(Criteria.where("status").is(currentStatus)));
-
-        Update update = new Update();
-        update.set("status", newStatus);
-        update.addToSet("reservationStatusHistory", new ReservationStatusDate(LocalDateTime.now(), newStatus));
-
-        UpdateResult updateResult = mongoTemplate.updateFirst(
-                query,
-                update,
-                ReservationRequest.class,
-                mongoTemplate.getCollectionName(ReservationRequest.class)
-        );
-
-        if (updateResult.getModifiedCount() > 0) {
-            log.info(String.format("Status for reservation request: %s, changed to: %s",reservationId, newStatus));
-        }
-
-        return updateResult;
-    }
+//    public UpdateResult changeReservationRequestStatusIfCurrentStatusMatched(ObjectId reservationId, ReservationStatus currentStatus, ReservationStatus newStatus) {
+//
+//        Query query = new Query().addCriteria(Criteria.where("_id").is(reservationId).andOperator(Criteria.where("status").is(currentStatus)));
+//
+//        Update update = new Update();
+//        update.set("status", newStatus);
+//        update.addToSet("reservationStatusHistory", new ReservationStatusDate(LocalDateTime.now(), newStatus));
+//
+//        UpdateResult updateResult = mongoTemplate.updateFirst(
+//                query,
+//                update,
+//                ReservationRequest.class,
+//                mongoTemplate.getCollectionName(ReservationRequest.class)
+//        );
+//
+//        if (updateResult.getModifiedCount() > 0) {
+//            log.info(String.format("Status for reservation request: %s, changed to: %s",reservationId, newStatus));
+//        }
+//
+//        return updateResult;
+//    }
 
     public List<ReservationRequest> findActiveReservationsByOwnerId(ObjectId ownerId) {
         /* This method returns reservations, which correspond with input ownerId and active-reservation-criteria */

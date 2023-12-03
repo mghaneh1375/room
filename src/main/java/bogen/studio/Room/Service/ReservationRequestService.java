@@ -45,9 +45,9 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     private final ReservationRequestRepository reservationRequestRepository;
 
     //@Autowired
+    private final MongoTemplate mongoTemplate;
     private final RoomRepository roomRepository;
     private final ReservationRequestRepository2 reservationRequestRepository2;
-    private final MongoTemplate mongoTemplate;
     private final RoomDateReservationStateService roomDateReservationStateService;
 
     @Override
@@ -118,57 +118,52 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         checkOwnerResponseToRequestIntegrity(status);
 
         // Find reservation request
-        ReservationRequest reservationRequest = findById(reqId);
+        ReservationRequest request = findById(reqId);
 
         // Check whether the API caller owns the room or not
-        if (!reservationRequest.getOwnerId().equals(userId))
+        if (!request.getOwnerId().equals(userId))
             return JSON_NOT_ACCESS;
 
         // Check whether current status of the request matches WAIT_FOR_OWNER_RESPONSE
-        if (!reservationRequest.getStatus().equals(WAIT_FOR_OWNER_RESPONSE))
+        if (!request.getStatus().equals(WAIT_FOR_OWNER_RESPONSE))
             return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
 
 
-        if (status.toLowerCase().equals("accept")) {
-            /* This block is developed to prevent rising optimistic lock activation */
+        if (status.equalsIgnoreCase("accept")) {
 
-            // Change reservation status to accept_by_owner
-            UpdateResult updateResult = reservationRequestRepository2
-                    .changeReservationRequestStatusIfCurrentStatusMatched(reservationRequest.get_id(), WAIT_FOR_OWNER_RESPONSE, ACCEPT_BY_OWNER);
+            try {
+                request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), ACCEPT_BY_OWNER));
+                request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), WAIT_FOR_PAYMENT_2));
+                request.setStatus(WAIT_FOR_PAYMENT_2);
+                reservationRequestRepository.save(request);
 
-            if (updateResult.getModifiedCount() == 0) {
-                return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
-            } else {
-                reservationRequestRepository2
-                        .changeReservationRequestStatusIfCurrentStatusMatched(reservationRequest.get_id(), ACCEPT_BY_OWNER, WAIT_FOR_PAYMENT_2);
+            }
+            catch (OptimisticLockingFailureException e) {
+                throw new DocumentVersionChangedException("لحظاتی پیش تغییری در وضعیت درخواست ایجاد شد. لطفا دوباره اقدام کنید.");
             }
 
             // Todo: inform the customer to pay the bill
         } else {
 
-            UpdateResult updateResult = reservationRequestRepository2
-                    .changeReservationRequestStatusIfCurrentStatusMatched(reservationRequest.get_id(), WAIT_FOR_OWNER_RESPONSE, REJECT_BY_OWNER);
-
-            if (updateResult.getModifiedCount() == 0) {
-                return generateErr("امکان تغییر وضعیت این درخواست وجود ندارد");
-            } else {
+            try {
+                request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), REJECT_BY_OWNER));
+                request.setStatus(REJECT_BY_OWNER);
+                reservationRequestRepository.save(request);
                 // Set reserved rooms to free
                 roomDateReservationStateService.setRoomDateStatusesToFree(
-                        reservationRequest.getRoomId(),
-                        reservationRequest.getResidenceStartDate(),
-                        reservationRequest.getNumberOfStayingNights(),
+                        request.getRoomId(),
+                        request.getResidenceStartDate(),
+                        request.getNumberOfStayingNights(),
                         REJECT_BY_OWNER
                 );
+
+                // Todo: inform the customer that their response is rejected by boom owner
+
+            } catch (OptimisticLockingFailureException e) {
+                throw new DocumentVersionChangedException("لحظاتی پیش تغییری در وضعیت درخواست ایجاد شد. لطفا دوباره اقدام کنید.");
             }
         }
 
-
-//        reservationRequest.setAnswerAt(new Date());
-//
-//        if (status.equalsIgnoreCase(ReservationStatus.ACCEPT.getName()))
-//            reservationRequest.setReserveExpireAt(System.currentTimeMillis() + PAY_WAIT_MSEC);
-//
-//        reservationRequestRepository.save(reservationRequest);
         return JSON_OK;
     }
 
