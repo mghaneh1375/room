@@ -33,7 +33,7 @@ public class HandleOwnerResponseTimeoutJob {
          * not respond to the request by the defined timeout, then reserved rooms will be set free */
 
         List<ReservationRequest> candidateDocsToChangeStatus = reservationRequestService
-                .findExpiredReservationRequests(WAIT_FOR_OWNER_RESPONSE, ownerResponseTimeout);
+                .findExpiredReservationRequestsRelatedToPayment1Timeout(WAIT_FOR_OWNER_RESPONSE, ownerResponseTimeout);
 
         if (candidateDocsToChangeStatus.size() == 0) {
             log.info(String.format("There is no reservation request with status: %s, which is expired", WAIT_FOR_OWNER_RESPONSE));

@@ -5,9 +5,7 @@ import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
 import bogen.studio.Room.Service.ReservationRequestService;
-import bogen.studio.Room.Service.RoomDateReservationStateService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -23,7 +21,6 @@ import static bogen.studio.Room.Enums.ReservationStatus.END_OF_RESIDENCE;
 public class HandleEndOfResidenceJob {
 
     private final ReservationRequestService reservationRequestService;
-    private final RoomDateReservationStateService roomDateReservationStateService;
     private final ReservationRequestRepository reservationRequestRepository;
 
     @Scheduled(cron = "1 0 0 * * ?")
@@ -31,7 +28,7 @@ public class HandleEndOfResidenceJob {
         /* This job will find the booked reservation requests, then it will check the end of residence situation.
          * In case of end of residence situation status and history of reservation request will be updated. */
 
-        List<ReservationRequest> bookedReservationRequests = reservationRequestService.findBookedReservationRequests();
+        List<ReservationRequest> bookedReservationRequests = reservationRequestService.findByStatus(ReservationStatus.BOOKED);
 
         if (bookedReservationRequests.size() == 0) {
             log.info("There is no reservation request with booked status to check end of residence situation");

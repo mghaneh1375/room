@@ -32,7 +32,7 @@ public class HandlePayment1TimoutJob {
          * not pay the fee by the defined timeout, then reserved rooms will be set free */
 
         List<ReservationRequest> candidateDocsToChangeStatus = reservationRequestService
-                .findExpiredReservationRequests(WAIT_FOR_PAYMENT_1, payment1Timeout);
+                .findExpiredReservationRequestsRelatedToPayment1Timeout(WAIT_FOR_PAYMENT_1, payment1Timeout);
 
         if (candidateDocsToChangeStatus.size() == 0) {
             log.info(String.format("There is no reservation request with status: %s, which is expired", WAIT_FOR_PAYMENT_1));
@@ -43,14 +43,14 @@ public class HandlePayment1TimoutJob {
                 try {
 
                     // Change reservation request status
-                    reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), CANCEL_BY_PAYMENT_TIMEOUT);
+                    reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), CANCEL_BY_PAYMENT_1_TIMEOUT);
 
                     // Change room status to free
                     roomDateReservationStateService.setRoomDateStatusesToFree(
                             reservationRequest.getRoomId(),
                             reservationRequest.getResidenceStartDate(),
                             reservationRequest.getNumberOfStayingNights(),
-                            CANCEL_BY_PAYMENT_TIMEOUT
+                            CANCEL_BY_PAYMENT_1_TIMEOUT
                     );
 
                 } catch (OptimisticLockingFailureException e) { // Handle optimistic lock activation

@@ -321,7 +321,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         reservationRequestRepository2.changeReservationRequestStatus(reservationId, newStatus);
     }
 
-    public List<ReservationRequest> findExpiredReservationRequests(ReservationStatus currentStatus, int timeoutInMinutes) {
+    public List<ReservationRequest> findExpiredReservationRequestsRelatedToPayment1Timeout(ReservationStatus currentStatus, int timeoutInMinutes) {
         /* Find reservation requests, which has input status and are expired according to createdAt field and input
          * timeout */
 
@@ -340,9 +340,9 @@ public class ReservationRequestService extends AbstractService<ReservationReques
 
     }
 
-    public List<ReservationRequest> findBookedReservationRequests() {
+    public List<ReservationRequest> findByStatus(ReservationStatus status) {
 
-        return reservationRequestRepository2.findBookedReservations();
+        return reservationRequestRepository2.findByStatus(status);
     }
 
 }

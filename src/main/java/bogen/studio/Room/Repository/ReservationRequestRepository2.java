@@ -154,9 +154,9 @@ public class ReservationRequestRepository2 {
 
     }
 
-    public List<ReservationRequest> findBookedReservations() {
+    public List<ReservationRequest> findByStatus(ReservationStatus status) {
 
-        Query query = new Query().addCriteria(Criteria.where("status").is(BOOKED));
+        Query query = new Query().addCriteria(Criteria.where("status").is(status));
 
         return mongoTemplate.find(
                 query,
