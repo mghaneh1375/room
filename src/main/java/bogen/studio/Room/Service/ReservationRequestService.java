@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Enums.ReservationStatus.*;
 import static bogen.studio.Room.Utility.StaticValues.*;
-import static bogen.studio.Room.Utility.TimeUtility.calculateTimeOutThreshold;
+import static bogen.studio.Room.Utility.TimeUtility.calculateCreatedAtExpirationTimoutInInstance;
 import static my.common.commonkoochita.Utility.Statics.*;
 import static my.common.commonkoochita.Utility.Utility.*;
 
@@ -319,7 +319,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         /* Find reservation requests, which has input status and are expired according to createdAt field and input
          * timeout */
 
-        Criteria createdAtCriteria = Criteria.where("created_at").lt(Date.from(calculateTimeOutThreshold(timeoutInMinutes)));
+        Criteria createdAtCriteria = Criteria.where("created_at").lt(Date.from(calculateCreatedAtExpirationTimoutInInstance(timeoutInMinutes)));
         Criteria statusCriteria = Criteria.where("status").is(currentStatus);
         Criteria criteria = new Criteria();
         criteria.andOperator(List.of(createdAtCriteria, statusCriteria));

@@ -10,7 +10,9 @@ import java.util.List;
 
 public class TimeUtility {
 
-    public static List<LocalDateTime> createLocalDateTimeList(LocalDateTime startDay, int days) {
+    public static List<LocalDateTime> createDatesForRoomDateReservationDocs(LocalDateTime startDay, int days) {
+        /* This method creates a list containing dates, for which RoomDateReservationStatus docs need to be created. */
+
 
         // Set time of start date to 00:00:00
         LocalDateTime startDayModified = startDay.with(LocalDateTime.of(startDay.getYear(), startDay.getMonth(), startDay.getDayOfMonth(), 0, 0, 0, 0));
@@ -25,7 +27,7 @@ public class TimeUtility {
         return output;
 
     }
-    public static Instant calculateTimeOutThreshold(int timeoutInMinutes) {
+    public static Instant calculateCreatedAtExpirationTimoutInInstance(int timeoutInMinutes) {
         /* Calculate instance of time out, since created_at filed of reservation request document has a type of Date.
          * Obviously, for avoiding side effects I did not change the type :)  */
 

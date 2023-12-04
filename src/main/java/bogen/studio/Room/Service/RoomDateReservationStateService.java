@@ -41,7 +41,7 @@ public class RoomDateReservationStateService {
         List<ObjectId> roomIds = roomRepository2.findDistinctIds();
 
         // Create list of localDateTimes for which, RoomDateReservationRequest docs is need to generate
-        List<LocalDateTime> localDateTimes = TimeUtility.createLocalDateTimeList(LocalDateTime.now(), Integer.valueOf(futureDaysReservableThreshold));
+        List<LocalDateTime> localDateTimes = TimeUtility.createDatesForRoomDateReservationDocs(LocalDateTime.now(), Integer.valueOf(futureDaysReservableThreshold));
 
         // Get inserted roomId-localDateTime pairs
         List<RoomIdTargetDay> roomIdTargetDayList = roomDateReservationStateRepository.findListOfInsertedRoomIdTargetDate();
