@@ -107,8 +107,12 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                             jsonObject.put("gallery", galleryJSON);
 
                             if (!x.isOnlineReservation())
-                                jsonObject.put("pendingRequests", reservationRequestRepository.countByRoomIdAndStatus(x.get_id(),
-                                        ReservationStatus.PENDING.getName().toUpperCase())
+                                jsonObject.put(
+                                        "pendingRequests",
+                                        reservationRequestRepository.countByRoomIdAndStatus(
+                                                x.get_id(),
+                                                WAIT_FOR_OWNER_RESPONSE.toString()
+                                        )
                                 );
 
                             return jsonObject;
@@ -788,7 +792,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         /* Number of fetched RoomDateReservationState docs should be the same as the size of list of requested residence dates */
 
         if (fetchedDocsList.size() != gregorianResidenceDates.size()) {
-            throw new BackendErrorException(String.format("There is not enough RoomDateReservationState for roomId: %s, and target dates: %s. For developers attention",roomId, gregorianResidenceDates));
+            throw new BackendErrorException(String.format("There is not enough RoomDateReservationState for roomId: %s, and target dates: %s. For developers attention", roomId, gregorianResidenceDates));
         }
 
     }

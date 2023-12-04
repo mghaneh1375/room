@@ -6,7 +6,7 @@ public enum ReservationStatus {
     WAIT_FOR_PAYMENT_1,
     CANCEL_BY_PAYMENT_1_TIMEOUT,
     CANCEL_BY_PAYMENT_2_TIMEOUT,
-    UNSECCESSFUL_PAYMENT,
+    UNSUCCESSFUL_PAYMENT,
     BOOKED,
     CANCEL_BY_CUSTOMER,
     WAIT_FOR_REFUND,
@@ -18,21 +18,22 @@ public enum ReservationStatus {
     REJECT_BY_OWNER,
     WAIT_FOR_PAYMENT_2,
     END_OF_RESIDENCE,
-    SYSTEM_ERROR,
+    SYSTEM_ERROR
 
 
-    ACCEPT,
-    REJECT,
-    CANCELED,
-    PENDING,
-    RESERVED,
-    REFUND,
-    ACCEPT_CANCELED,
-    PAID,
-    FINISH;
+    //ACCEPT,
+    //REJECT,
+    //CANCELED,
+    //PENDING,
+    //RESERVED,
+    //REFUND,
+    //ACCEPT_CANCELED,
+    //PAID,
+    //FINISH;
 
-    public String getName() {
-        return name().toLowerCase();
-    }
+    ;
+//    public String getName() {
+//        return name().toLowerCase();
+//    }
 
 }

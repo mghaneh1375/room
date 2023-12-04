@@ -12,9 +12,8 @@ import java.util.List;
 @Repository
 public interface ReservationRequestRepository extends MongoRepository<ReservationRequest, ObjectId>, FilterableRepository<ReservationRequest, Boom> {
 
-    //todo: reserved or accept
-    @Query(value = "{ 'room_id' : ?0, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ], 'prices.date': {$in:  ?1} }", count = true)
-    Integer findActiveReservations(ObjectId roomId, List<String> dates);
+//    @Query(value = "{ 'room_id' : ?0, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ], 'prices.date': {$in:  ?1} }", count = true)
+//    Integer findActiveReservations(ObjectId roomId, List<String> dates);
 
     @Query(value = "{ 'room_id': ?0, 'status': ?1 }", count = true)
     Integer countByRoomIdAndStatus(ObjectId roomId, String status);
