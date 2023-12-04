@@ -770,6 +770,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         // According to input roomId and gregorian dates find the list of target RoomDateReservationState documents
         List<RoomDateReservationState> roomDateReservationStateList = roomDateReservationStateService.findRoomDateReservationStateForTargetDates(roomId, gregorianDates);
 
+        // Validate fetched RoomDateReservationState docs
+        validateFetchedRoomDateStateDocs(roomId, roomDateReservationStateList, gregorianDates);
+
         // Throw exception if room is not free in target dates
         throwExceptionIfRoomIsNotFreeForAnyTargetDate(roomDateReservationStateList);
 
@@ -778,6 +781,15 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             changeRoomDataStatusesToReserved(roomDateReservationStateList, roomDateSafetyList);
         }
 
+
+    }
+
+    private void validateFetchedRoomDateStateDocs(ObjectId roomId, List<RoomDateReservationState> fetchedDocsList, List<LocalDateTime> gregorianResidenceDates) {
+        /* Number of fetched RoomDateReservationState docs should be the same as the size of list of requested residence dates */
+
+        if (fetchedDocsList.size() != gregorianResidenceDates.size()) {
+            throw new BackendErrorException(String.format("There is not enough RoomDateReservationState for roomId: %s, and target dates: %s. For developers attention",roomId, gregorianResidenceDates));
+        }
 
     }
 
