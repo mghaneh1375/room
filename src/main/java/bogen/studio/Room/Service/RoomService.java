@@ -6,14 +6,12 @@ import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Enums.*;
 import bogen.studio.Room.Exception.*;
-import bogen.studio.Room.Models.PassengersExtractedData;
-import bogen.studio.Room.Models.ReservationRequest;
-import bogen.studio.Room.Models.Room;
-import bogen.studio.Room.Models.ReservationStatusDate;
+import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
 import bogen.studio.Room.Repository.ReservationRequestRepository2;
 import bogen.studio.Room.Repository.RoomRepository;
+import bogen.studio.Room.Repository.RoomRepository2;
 import bogen.studio.Room.Utility.FileUtils;
 import bogen.studio.Room.documents.RoomDateReservationState;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +59,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     private final RoomDateReservationStateService roomDateReservationStateService;
     private final ReservationRequestService reservationRequestService;
     private final ReservationRequestRepository2 reservationRequestRepository2;
+    private final RoomRepository2 roomRepository2;
 
     @Value("${tracking.code.length}")
     private int trackingCodeLength;
@@ -1241,6 +1240,11 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         roomRepository.save(room);
 
         return JSON_OK;
+    }
+
+    public List<RoomStatusDate> getRoomStatusForNext5days(ObjectId roomId) {
+
+        return roomRepository2.getRoomStatusForNext5days(roomId);
     }
 
 }

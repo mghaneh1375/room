@@ -67,13 +67,10 @@ public class RoomDateReservationStateService {
                         log.error("Failed to insert RoomIdLocalDateTime" + e.getMessage());
                     }
                 }
-
-
             }
         }
 
         log.info("Job performed: createRoomDateReservationStateDocuments");
-
     }
 
     public List<RoomStatus> findRoomStatusInTargetDates(ObjectId roomId, List<LocalDateTime> targetDates) {

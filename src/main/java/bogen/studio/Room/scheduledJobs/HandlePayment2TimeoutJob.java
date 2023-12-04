@@ -1,6 +1,5 @@
 package bogen.studio.Room.scheduledJobs;
 
-import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Repository.ReservationRequestRepository;

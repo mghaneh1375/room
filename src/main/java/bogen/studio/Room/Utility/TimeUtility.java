@@ -35,5 +35,22 @@ public class TimeUtility {
         return timeoutThresholdZoned.toInstant();
     }
 
+    public static LocalDateTime getExactStartTimeOfToday() {
+        /* This method returns exact start time of today */
+
+        LocalDateTime now = LocalDateTime.now();
+
+        return LocalDateTime.of(
+                now.getYear(),
+                now.getMonthValue(),
+                now.getDayOfMonth(),
+                0,
+                0,
+                0,
+                0
+        );
+
+    }
+
 
 }

@@ -8,6 +8,7 @@ import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,6 +84,16 @@ public class PublicRoomAPIRoutes {
         }
 
         return roomService.publicList(boomId, dto);
+    }
+
+    @GetMapping("/get-room-status-for-five-days")
+    public ResponseEntity<String> getRoomStatusForNext5days(
+            @RequestParam ObjectId roomId
+    ) {
+        /* This endpoint returns room status for the next five days, starting from today */
+
+        return ResponseEntity.ok(generateSuccessMsg("Data", roomService.getRoomStatusForNext5days(roomId)));
+
     }
 
 }
