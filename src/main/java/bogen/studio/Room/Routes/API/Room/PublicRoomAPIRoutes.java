@@ -7,6 +7,7 @@ import my.common.commonkoochita.Validator.DateValidator;
 import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,9 @@ public class PublicRoomAPIRoutes {
 
     @Autowired
     RoomService roomService;
+
+    @Value("${max.available.days.for.reservation}")
+    private int maxAvailableDaysForReservation;
 
     @PostMapping(value = "reserve/{id}")
     @ResponseBody
@@ -69,7 +73,8 @@ public class PublicRoomAPIRoutes {
             if(!DateValidator.gte(startDate, getToday("/")))
                 return generateErr("تاریخ باید از امروز بزرگ تر باشد");
 
-            String futureLimit = getPast("/", -60);
+            //============================= replace 60
+            String futureLimit = getPast("/", -maxAvailableDaysForReservation);
 
             if(!DateValidator.gte(futureLimit, startDate))
                 return generateErr("امکان رزرو تاریخ مدنظر هنوز باز نشده است");
