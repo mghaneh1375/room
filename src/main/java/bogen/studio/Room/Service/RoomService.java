@@ -708,10 +708,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return generateSuccessMsg("data", jsonObject);
     }
 
-    public String remove(ObjectId id, ObjectId userId) {
+    public String remove(ObjectId roomId, ObjectId userId) {
 
 
-        Room room = findById(id);
+        Room room = findById(roomId);
 
         if (room == null)
             return JSON_NOT_VALID_ID;
@@ -719,7 +719,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         if (!room.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
-        if (reservationRequestRepository.countAllActiveReservationsByRoomId(id) > 0)
+        if (reservationRequestRepository2.countAllActiveReservationsByRoomId(roomId) > 0)
             return generateErr("امکان حذف این اتاق به دلیل وجود اقامت فعال وجود ندارد");
 
         if (room.isMain())

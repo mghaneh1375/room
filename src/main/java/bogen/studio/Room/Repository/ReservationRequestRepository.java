@@ -19,26 +19,26 @@ public interface ReservationRequestRepository extends MongoRepository<Reservatio
     @Query(value = "{ 'room_id': ?0, 'status': ?1 }", count = true)
     Integer countByRoomIdAndStatus(ObjectId roomId, String status);
 
-    @Query(value = "{ 'room_id': ?0,  $or: [ { 'status': 'PENDING' }, { 'status': 'RESERVED' }, { 'status': 'PAID' }, { 'status': 'FINISH' }, { 'status': 'ACCEPT' }, { 'status': 'REFUND' } ] }", count = true)
-    Integer countAllActiveReservationsByRoomId(ObjectId roomId);
+//    @Query(value = "{ 'room_id': ?0,  $or: [ { 'status': 'PENDING' }, { 'status': 'RESERVED' }, { 'status': 'PAID' }, { 'status': 'FINISH' }, { 'status': 'ACCEPT' }, { 'status': 'REFUND' } ] }", count = true)
+//    Integer countAllActiveReservationsByRoomId(ObjectId roomId);
 
-    @Query(value = "{ 'owner_id': ?0, 'status': ?1 }", count = true)
-    Integer countByOwnerIdAndStatus(ObjectId userId, String status);
+//    @Query(value = "{ 'owner_id': ?0, 'status': ?1 }", count = true)
+//    Integer countByOwnerIdAndStatus(ObjectId userId, String status);
 
-    @Query(value = "{ 'reserve_expire_at': { $lt: ?0 }, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'ACCEPT' } ] }")
-    List<ReservationRequest> getExpiredReservations(Long curr);
+//    @Query(value = "{ 'reserve_expire_at': { $lt: ?0 }, $or: [ { 'status': 'RESERVED' }, { 'status': 'PENDING' }, { 'status': 'ACCEPT' } ] }")
+//    List<ReservationRequest> getExpiredReservations(Long curr);
 
-    @Query(value = "{ 'user_id': ?0, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
-            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
-    List<ReservationRequest> getActiveReservationsByUserId(ObjectId userId);
+//    @Query(value = "{ 'user_id': ?0, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+//            fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")
+//    List<ReservationRequest> getActiveReservationsByUserId(ObjectId userId);
 
-    @Query(value = "{ 'room_id': ?0, 'owner_id': ?1, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
-            fields = "{ 'owner_id': 0, 'user_id': 0, 'room_id': 0, 'passengersId': 0  }")
-    List<ReservationRequest> getActiveReservationsByRoomIdAndOwnerId(ObjectId roomId, ObjectId ownerId);
+//    @Query(value = "{ 'room_id': ?0, 'owner_id': ?1, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+//            fields = "{ 'owner_id': 0, 'user_id': 0, 'room_id': 0, 'passengersId': 0  }")
+//    List<ReservationRequest> getActiveReservationsByRoomIdAndOwnerId(ObjectId roomId, ObjectId ownerId);
 
-    @Query(value = "{ 'owner_id': ?0, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
-            fields = "{ 'owner_id': 0, 'user_id': 0, 'passengersId': 0  }")
-    List<ReservationRequest> getActiveReservationsByOwnerId(ObjectId ownerId);
+//    @Query(value = "{ 'owner_id': ?0, $or: [ { 'status': 'PENDING' }, { 'status': 'PAID' }, { 'status': 'ACCEPT' } ] }",
+//            fields = "{ 'owner_id': 0, 'user_id': 0, 'passengersId': 0  }")
+//    List<ReservationRequest> getActiveReservationsByOwnerId(ObjectId ownerId);
 
     @Query(value = "{ 'user_id': ?0, '_id': ?1 }",
             fields = "{ 'passengers_id': 0, 'owner_id': 0, 'user_id': 0  }")

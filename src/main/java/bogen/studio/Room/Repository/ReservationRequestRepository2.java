@@ -120,24 +120,6 @@ public class ReservationRequestRepository2 {
         );
     }
 
-    private Criteria buildActiveReservationCriteria() {
-        /* This method builds a criteria for active reservations  */
-
-        Criteria criteria1 = Criteria.where("status").is(REGISTERED_RESERVE_REQUEST);
-        Criteria criteria2 = Criteria.where("status").is(WAIT_FOR_PAYMENT_1);
-        Criteria criteria3 = Criteria.where("status").is(BOOKED);
-        Criteria criteria4 = Criteria.where("status").is(CANCEL_BY_CUSTOMER);
-        Criteria criteria5 = Criteria.where("status").is(WAIT_FOR_REFUND);
-        Criteria criteria6 = Criteria.where("status").is(CANCEL_BY_OWNER);
-        Criteria criteria7 = Criteria.where("status").is(WAIT_FOR_OWNER_RESPONSE);
-        Criteria criteria8 = Criteria.where("status").is(ACCEPT_BY_OWNER);
-        Criteria criteria9 = Criteria.where("status").is(WAIT_FOR_PAYMENT_2);
-
-        Criteria criteria = new Criteria();
-
-        return criteria.orOperator(criteria1, criteria2, criteria3, criteria4, criteria5, criteria6, criteria7, criteria8, criteria9);
-    }
-
     public long countWithOwnerIdAndStatus(ObjectId ownerId, ReservationStatus status) {
 
         Criteria ownerIdCriteria = Criteria.where("owner_id").is(ownerId);
@@ -165,6 +147,21 @@ public class ReservationRequestRepository2 {
         );
     }
 
+    public long countAllActiveReservationsByRoomId(ObjectId roomID) {
+
+        Criteria activeReservationCriteria = buildActiveReservationCriteria();
+        Criteria roomIdCriteria = Criteria.where("room_id").is(roomID);
+        Criteria searchCriteria = new Criteria().andOperator(activeReservationCriteria, roomIdCriteria);
+
+        Query query = new Query().addCriteria(searchCriteria);
+
+        return mongoTemplate.count(
+                query,
+                ReservationRequest.class,
+                mongoTemplate.getCollectionName(ReservationRequest.class)
+        );
+    }
+
     public long countTrackingCode(String trackingCode) {
 
         Query query = new Query().addCriteria(Criteria.where("tracking_code").is(trackingCode));
@@ -174,6 +171,24 @@ public class ReservationRequestRepository2 {
                 ReservationRequest.class,
                 mongoTemplate.getCollectionName(ReservationRequest.class)
         );
+    }
+
+    private Criteria buildActiveReservationCriteria() {
+        /* This method builds a criteria for active reservations  */
+
+        Criteria criteria1 = Criteria.where("status").is(REGISTERED_RESERVE_REQUEST);
+        Criteria criteria2 = Criteria.where("status").is(WAIT_FOR_PAYMENT_1);
+        Criteria criteria3 = Criteria.where("status").is(BOOKED);
+        Criteria criteria4 = Criteria.where("status").is(CANCEL_BY_CUSTOMER);
+        Criteria criteria5 = Criteria.where("status").is(WAIT_FOR_REFUND);
+        Criteria criteria6 = Criteria.where("status").is(CANCEL_BY_OWNER);
+        Criteria criteria7 = Criteria.where("status").is(WAIT_FOR_OWNER_RESPONSE);
+        Criteria criteria8 = Criteria.where("status").is(ACCEPT_BY_OWNER);
+        Criteria criteria9 = Criteria.where("status").is(WAIT_FOR_PAYMENT_2);
+
+        Criteria criteria = new Criteria();
+
+        return criteria.orOperator(criteria1, criteria2, criteria3, criteria4, criteria5, criteria6, criteria7, criteria8, criteria9);
     }
 
 }
