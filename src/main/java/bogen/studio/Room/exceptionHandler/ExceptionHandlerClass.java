@@ -61,4 +61,12 @@ public class ExceptionHandlerClass {
         return ResponseEntity.ok(generateErr(e.getMessage()));
     }
 
+    @ExceptionHandler(value = PaymentTimeoutException.class)
+    public ResponseEntity<String> paymentTimeoutExceptionHandler(PaymentTimeoutException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+
+
 }
