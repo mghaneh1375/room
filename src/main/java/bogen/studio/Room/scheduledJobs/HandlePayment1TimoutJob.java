@@ -1,5 +1,6 @@
 package bogen.studio.Room.scheduledJobs;
 
+import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Service.ReservationRequestService;
 import bogen.studio.Room.Service.RoomDateReservationStateService;
@@ -46,11 +47,12 @@ public class HandlePayment1TimoutJob {
                     reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), CANCEL_BY_PAYMENT_1_TIMEOUT);
 
                     // Change room status to free
-                    roomDateReservationStateService.setRoomDateStatusesToFree(
+                    roomDateReservationStateService.setRoomDateStatuses(
                             reservationRequest.getRoomId(),
                             reservationRequest.getResidenceStartDate(),
                             reservationRequest.getNumberOfStayingNights(),
-                            CANCEL_BY_PAYMENT_1_TIMEOUT
+                            CANCEL_BY_PAYMENT_1_TIMEOUT,
+                            RoomStatus.FREE
                     );
 
                 } catch (OptimisticLockingFailureException e) { // Handle optimistic lock activation

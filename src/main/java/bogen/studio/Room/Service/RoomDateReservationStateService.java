@@ -114,24 +114,25 @@ public class RoomDateReservationStateService {
         );
 
         if (updateResult.getModifiedCount() > 0) {
-            log.info(String.format("Status of room: %s, in date: %s, changed to: %s", roomObjectId, targetDate, RoomStatus.FREE));
+            log.info(String.format("Status of room: %s, in date: %s, changed to: %s", roomObjectId, targetDate, newStatus));
         }
 
         return updateResult;
 
     }
 
-    public void setRoomDateStatusesToFree(ObjectId roomId, LocalDateTime residenceStartTime, int numberOfStayingNights, ReservationStatus reason) {
+    public void setRoomDateStatuses(ObjectId roomId, LocalDateTime residenceStartTime, int numberOfStayingNights, ReservationStatus reason, RoomStatus newRoomStatus) {
 
         // Build dates of residence
         List<LocalDateTime> residenceDates = buildResidenceDates(residenceStartTime, numberOfStayingNights);
 
         for (LocalDateTime residenceDate : residenceDates) {
 
+
             try {
-                changeRoomStatus(roomId, residenceDate, RoomStatus.FREE);
+                changeRoomStatus(roomId, residenceDate, newRoomStatus);
             } catch (Exception e) {
-                log.error(String.format("Error in setting room status to free because of: %s, (for backup operator attention", reason));
+                log.error(String.format(String.format("Error in setting room status to %s because of: %s, for room: %s (for backup operator attention), in dates: %s", newRoomStatus), reason, roomId, residenceDates));
             }
 
         }

@@ -1,5 +1,6 @@
 package bogen.studio.Room.scheduledJobs;
 
+import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Service.ReservationRequestService;
 import bogen.studio.Room.Service.RoomDateReservationStateService;
@@ -47,11 +48,12 @@ public class HandleOwnerResponseTimeoutJob {
                     reservationRequestService.changeReservationRequestStatus(reservationRequest.get_id(), CANCEL_BY_OWNER_RESPONSE_TIMEOUT);
 
                     // Change room status to free
-                    roomDateReservationStateService.setRoomDateStatusesToFree(
+                    roomDateReservationStateService.setRoomDateStatuses(
                             reservationRequest.getRoomId(),
                             reservationRequest.getResidenceStartDate(),
                             reservationRequest.getNumberOfStayingNights(),
-                            CANCEL_BY_OWNER_RESPONSE_TIMEOUT
+                            CANCEL_BY_OWNER_RESPONSE_TIMEOUT,
+                            RoomStatus.FREE
                     );
 
                     // Todo: Inform the customer: Owner did not respond to your request in the defined timeout. Please choose another room.

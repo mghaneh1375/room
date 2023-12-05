@@ -2,6 +2,7 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.ReservationRequestDTO;
 import bogen.studio.Room.Enums.ReservationStatus;
+import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Exception.DocumentVersionChangedException;
 import bogen.studio.Room.Exception.InvalidIdException;
 import bogen.studio.Room.Exception.InvalidInputException;
@@ -149,11 +150,12 @@ public class ReservationRequestService extends AbstractService<ReservationReques
                 request.setStatus(REJECT_BY_OWNER);
                 reservationRequestRepository.save(request);
                 // Set reserved rooms to free
-                roomDateReservationStateService.setRoomDateStatusesToFree(
+                roomDateReservationStateService.setRoomDateStatuses(
                         request.getRoomId(),
                         request.getResidenceStartDate(),
                         request.getNumberOfStayingNights(),
-                        REJECT_BY_OWNER
+                        REJECT_BY_OWNER,
+                        RoomStatus.FREE
                 );
 
                 // Todo: inform the customer that their response is rejected by boom owner
@@ -209,11 +211,12 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         }
 
         if (isCancelSuccessful){
-            roomDateReservationStateService.setRoomDateStatusesToFree(
+            roomDateReservationStateService.setRoomDateStatuses(
                     reservationRequest.getRoomId(),
                     reservationRequest.getResidenceStartDate(),
                     reservationRequest.getNumberOfStayingNights(),
-                    CANCEL_BY_CUSTOMER
+                    CANCEL_BY_CUSTOMER,
+                    RoomStatus.FREE
             );
         }
 

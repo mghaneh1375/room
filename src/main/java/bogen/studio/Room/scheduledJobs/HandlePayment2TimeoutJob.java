@@ -1,5 +1,6 @@
 package bogen.studio.Room.scheduledJobs;
 
+import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
@@ -53,11 +54,12 @@ public class HandlePayment2TimeoutJob {
                     reservationRequestRepository.save(request);
                     log.info(String.format("Status of reservation request: %s, changed to: %s", request.get_id(), CANCEL_BY_PAYMENT_2_TIMEOUT));
                     // Set reserved rooms free
-                    roomDateReservationStateService.setRoomDateStatusesToFree(
+                    roomDateReservationStateService.setRoomDateStatuses(
                             request.getRoomId(),
                             request.getResidenceStartDate(),
                             request.getNumberOfStayingNights(),
-                            CANCEL_BY_PAYMENT_2_TIMEOUT
+                            CANCEL_BY_PAYMENT_2_TIMEOUT,
+                            RoomStatus.FREE
                     );
                 }
 

@@ -1,6 +1,7 @@
 package bogen.studio.Room.Service;
 
 import bogen.studio.Room.Enums.ReservationStatus;
+import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Exception.InvalidIdException;
 import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Exception.PaymentTimeoutException;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 public class BookingService {
 
     private final ReservationRequestRepository reservationRequestRepository;
+    private final RoomDateReservationStateService roomDateReservationStateService;
 
     public void payRoomFee_underDevelopment(ObjectId reservationRequestId) {
         /* This method will handle payment of room fee */
@@ -43,6 +45,16 @@ public class BookingService {
             request.setStatus(ReservationStatus.BOOKED);
             request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), ReservationStatus.BOOKED));
             reservationRequestRepository.save(request);
+            log.info(String.format("Status for reservation request: %s, changed to: %s", request.get_id(), ReservationStatus.BOOKED));
+
+            // Set room date status to booked
+            roomDateReservationStateService.setRoomDateStatuses(
+                    request.getRoomId(),
+                    request.getResidenceStartDate(),
+                    request.getNumberOfStayingNights(),
+                    ReservationStatus.BOOKED,
+                    RoomStatus.BOOKED
+            );
 
         } catch (OptimisticLockingFailureException e) {
             // We can not rollback since the payment has been done!
