@@ -114,7 +114,7 @@ public class RoomDateReservationStateService {
         );
 
         if (updateResult.getModifiedCount() > 0) {
-            log.info(String.format("Status of room: %s, in date: %s, changed to: %s", roomObjectId, targetDate, newStatus));
+            log.info(String.format("Status of room: %s, in target date: %s, changed to: %s", roomObjectId, targetDate, newStatus));
         }
 
         return updateResult;

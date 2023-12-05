@@ -136,6 +136,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
                 request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), WAIT_FOR_PAYMENT_2));
                 request.setStatus(WAIT_FOR_PAYMENT_2);
                 reservationRequestRepository.save(request);
+                log.info(String.format("Status for reservation request: %s, changed to %s", request.get_id(), WAIT_FOR_PAYMENT_2));
 
             }
             catch (OptimisticLockingFailureException e) {
@@ -149,6 +150,8 @@ public class ReservationRequestService extends AbstractService<ReservationReques
                 request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), REJECT_BY_OWNER));
                 request.setStatus(REJECT_BY_OWNER);
                 reservationRequestRepository.save(request);
+                log.info(String.format("Status for reservation request: %s, changed to %s", request.get_id(), REJECT_BY_OWNER));
+
                 // Set reserved rooms to free
                 roomDateReservationStateService.setRoomDateStatuses(
                         request.getRoomId(),
