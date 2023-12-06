@@ -74,7 +74,6 @@ public class PublicRoomAPIRoutes {
             if(!DateValidator.gte(startDate, getToday("/")))
                 return generateErr("تاریخ باید از امروز بزرگ تر باشد");
 
-            //============================= replace 60
             String futureLimit = getPast("/", -maxAvailableDaysForReservation);
 
             if(!DateValidator.gte(futureLimit, startDate))

@@ -1,9 +1,6 @@
 package bogen.studio.Room.Service;
 
-import bogen.studio.Room.DTO.DatePrice;
-import bogen.studio.Room.DTO.ReservationRequestDTO;
-import bogen.studio.Room.DTO.RoomDTO;
-import bogen.studio.Room.DTO.TripInfo;
+import bogen.studio.Room.DTO.*;
 import bogen.studio.Room.Enums.*;
 import bogen.studio.Room.Exception.*;
 import bogen.studio.Room.Models.*;
@@ -1044,7 +1041,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     room,
                     totalAmount,
                     convertJalaliDatesListToGregorian(List.of(jalaliDates.get(0))).get(0),
-                    tripInfo.getNights());
+                    tripInfo.getNights(),
+                    convertJalaliDatesListToGregorian(jalaliDates));
             reservationRequestRepository.insert(reservationRequest);
 
             // Set initial state of reserve request
@@ -1157,7 +1155,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                                         Room room,
                                                         int totalAmount,
                                                         LocalDateTime residenceStartDate,
-                                                        int numberOfStayingNights) {
+                                                        int numberOfStayingNights,
+                                                        List<LocalDateTime> gregorianResidenceDates) {
 
         ReservationRequest reservationRequest = new ReservationRequest();
 
@@ -1195,6 +1194,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         reservationRequest.setResidenceStartDate(residenceStartDate);
 
         reservationRequest.setNumberOfStayingNights(numberOfStayingNights);
+
+        reservationRequest.setGregorianResidenceDates(gregorianResidenceDates);
 
         return reservationRequest;
 
@@ -1245,6 +1246,11 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     public List<RoomStatusDate> getRoomStatusForNext5days(ObjectId roomId) {
 
         return roomRepository2.getRoomStatusForNext5days(roomId);
+    }
+
+    public GuestCountGetDto getNumberOfGuestsByRoomIdAndDate(ObjectId roomId, LocalDateTime targetDate) {
+
+        return roomRepository2.getNumberOfGuestsByRoomIdAndDate(roomId, targetDate);
     }
 
 }

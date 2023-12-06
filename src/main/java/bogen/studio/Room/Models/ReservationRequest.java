@@ -100,6 +100,7 @@ public class ReservationRequest {
 
     private LocalDateTime residenceStartDate;
     private int numberOfStayingNights;
+    private List<LocalDateTime> gregorianResidenceDates;
 
     @Version
     private long version;

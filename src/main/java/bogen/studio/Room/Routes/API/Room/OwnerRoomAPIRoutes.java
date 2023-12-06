@@ -1,28 +1,34 @@
 package bogen.studio.Room.Routes.API.Room;
 
 import bogen.studio.Room.DTO.DatePrice;
+import bogen.studio.Room.DTO.GuestCountGetDto;
 import bogen.studio.Room.DTO.RoomDTO;
 import bogen.studio.Room.Service.RoomService;
+import bogen.studio.Room.Validator.ValidatedRegularImage;
+import bogen.studio.Room.Validator.bookedDate.ValidBookedDate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import my.common.commonkoochita.Utility.Positive;
 import my.common.commonkoochita.Validator.DateConstraint;
 import my.common.commonkoochita.Validator.ObjectIdConstraint;
 import my.common.commonkoochita.Validator.StrongJSONConstraint;
-import bogen.studio.Room.Validator.ValidatedRegularImage;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import static bogen.studio.Room.Routes.Utility.getUserId;
+import static my.common.commonkoochita.Utility.Utility.generateSuccessMsg;
 
 @RestController
 @RequestMapping(path = "/api/manage/room")
@@ -180,6 +186,28 @@ public class OwnerRoomAPIRoutes {
                          @PathVariable @ObjectIdConstraint ObjectId id
     ) {
         return roomService.remove(id, getUserId(principal));
+    }
+
+    @GetMapping("/get-number-guests")
+    public ResponseEntity<String> getNumberOfGuestsByRoomIdAndDate(
+            @RequestParam ObjectId roomId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @ValidBookedDate LocalDateTime targetDate //2023-12-17T00:00:00.000
+    ) {
+        /* This endpoint returns number of guests in a desired room and date */
+
+        GuestCountGetDto dto = roomService.getNumberOfGuestsByRoomIdAndDate(roomId, targetDate);
+
+        org.json.JSONObject jsonObject = new JSONObject()
+                .put("adultCount", dto.getAdultCount())
+                .put("childrenCount", dto.getChildrenCount())
+                .put("infantCount", dto.getInfantCount());
+
+        return ResponseEntity.ok(
+                generateSuccessMsg(
+                        "Data",
+                        jsonObject
+                )
+        );
     }
 
 
