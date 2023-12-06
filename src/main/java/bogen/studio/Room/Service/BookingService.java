@@ -8,6 +8,7 @@ import bogen.studio.Room.Exception.PaymentTimeoutException;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
+import bogen.studio.Room.documents.FinancialReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -23,6 +24,7 @@ public class BookingService {
 
     private final ReservationRequestRepository reservationRequestRepository;
     private final RoomDateReservationStateService roomDateReservationStateService;
+    private final FinancialReportService financialReportService;
 
     public void payRoomFee_underDevelopment(ObjectId reservationRequestId) {
         /* This method will handle payment of room fee */
@@ -38,10 +40,15 @@ public class BookingService {
         // Handle payment
         // Todo: handle payment
         log.info(String.format("Successful payment for reservation: %s", reservationRequestId));
+
+        // Todo: If payment was not successful, do not proceed the method
+
         // Todo: Save payment info in separate collection
 
         try {
             // Set new status and update status history
+            // Todo: set payment in request (field: paid). The following lines sets a temporary value;
+            request.setPaid(1000); //
             request.setStatus(ReservationStatus.BOOKED);
             request.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), ReservationStatus.BOOKED));
             reservationRequestRepository.save(request);
@@ -63,7 +70,16 @@ public class BookingService {
             // Todo: Insert info in a Separate collection and develop a service for support team to handle the situation.
         }
 
-        // Todo: create financial report
+        // Create financial report
+        buildAndInsertFinancialReport(request);
+    }
+
+    private void buildAndInsertFinancialReport(ReservationRequest request) {
+        /* This method builds a financial report for booked reservation request, then inserts it in to the database */
+
+        FinancialReport financialReport = financialReportService.buildFinancialReport(request);
+        financialReportService.insert(financialReport);
+        log.info(String.format("Financial report inserted for reservation request: %s", request.get_id()));
 
     }
 
@@ -78,5 +94,6 @@ public class BookingService {
             throw new InvalidInputException("شما قادر به پرداخت مبلغ در این مرحله نیستید");
         }
     }
+
 
 }
