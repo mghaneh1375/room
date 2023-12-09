@@ -10,6 +10,7 @@ import bogen.studio.Room.Exception.InvalidRequestByCustomerException;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Models.Room;
+import bogen.studio.Room.Repository.FinancialReportRepository;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
 import bogen.studio.Room.Repository.ReservationRequestRepository2;
 import bogen.studio.Room.Repository.RoomRepository;
@@ -49,6 +50,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     private final RoomRepository roomRepository;
     private final ReservationRequestRepository2 reservationRequestRepository2;
     private final RoomDateReservationStateService roomDateReservationStateService;
+    private final FinancialReportService financialReportService;
 
     @Override
     String list(List<String> filters) {
@@ -183,30 +185,30 @@ public class ReservationRequestService extends AbstractService<ReservationReques
     public String cancelMyReq(ObjectId reqId, ObjectId userId) {
 
         ReservationRequest reservationRequest = findById(reqId);
-        ReservationStatus status = reservationRequest.getStatus();
+        ReservationStatus initialStatus = reservationRequest.getStatus();
 
         if (!reservationRequest.getUserId().equals(userId))
             return JSON_NOT_ACCESS;
 
         // Customer can only cancel requests with state: booked or wait for owner response
-        checkIfRequestStateIsBookedOrWaitForOwnerResponse(status);
+        checkIfRequestStateIsBookedOrWaitForOwnerResponse(initialStatus);
 
         boolean isCancelSuccessful = false;
 
 
         try {
 
-            if (status.equals(BOOKED)) {
+            if (initialStatus.equals(BOOKED)) {
                 reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), CANCEL_BY_CUSTOMER));
                 reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), WAIT_FOR_REFUND));
                 reservationRequest.setStatus(WAIT_FOR_REFUND);
-            } else if (status.equals(WAIT_FOR_OWNER_RESPONSE)) {
+            } else if (initialStatus.equals(WAIT_FOR_OWNER_RESPONSE)) {
                 reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), CANCEL_BY_CUSTOMER));
                 reservationRequest.setStatus(CANCEL_BY_CUSTOMER);
             }
             reservationRequestRepository.save(reservationRequest);
             isCancelSuccessful = true;
-            log.info(String.format("Status for reservation request: %s, changed to: %s", reservationRequest.get_id(), status.equals(BOOKED) ? WAIT_FOR_REFUND : CANCEL_BY_CUSTOMER));
+            log.info(String.format("Status for reservation request: %s, changed to: %s", reservationRequest.get_id(), initialStatus.equals(BOOKED) ? WAIT_FOR_REFUND : CANCEL_BY_CUSTOMER));
 
         } catch (OptimisticLockingFailureException e) {
             log.warn(String.format("Optimistic lock activated for canceling request by customer: %s, requestId: %s", reservationRequest.getUserId(), reservationRequest.get_id()));
@@ -214,6 +216,7 @@ public class ReservationRequestService extends AbstractService<ReservationReques
         }
 
         if (isCancelSuccessful){
+            // Set rooms free
             roomDateReservationStateService.setRoomDateStatuses(
                     reservationRequest.getRoomId(),
                     reservationRequest.getResidenceStartDate(),
@@ -221,6 +224,27 @@ public class ReservationRequestService extends AbstractService<ReservationReques
                     CANCEL_BY_CUSTOMER,
                     RoomStatus.FREE
             );
+
+            // Todo: Calculate refund fee. Temporarily this amount is set equal to payment fee.
+            reservationRequest.setRefundFee(reservationRequest.getPaid());
+
+            // Todo: Do the refund
+            log.info(String.format("Refund performed successfully for reservation request: %s", reservationRequest.get_id()));
+
+
+            // Todo: Set status of the reservation to refunded if refund is successful
+            /* Keep the following line out of try block, since the refund is successful and we need this request status
+             * for financial report */
+            reservationRequest.setStatus(REFUNDED);
+            try {
+                reservationRequest.addToReservationStatusHistory(new ReservationStatusDate(LocalDateTime.now(), REFUNDED));
+                reservationRequestRepository.save(reservationRequest);
+            } catch (Exception e) {
+                log.error(String.format("Error happened while setting reservation request: %s, to Refunded. For support team attention.", reservationRequest.get_id()));
+            }
+            // Todo: create a financial report and insert it to the data base if refund is successful
+            financialReportService.buildAndInsertFinancialReport(reservationRequest);
+
         }
 
         return JSON_OK;

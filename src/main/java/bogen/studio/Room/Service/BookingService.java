@@ -71,16 +71,7 @@ public class BookingService {
         }
 
         // Create financial report
-        buildAndInsertFinancialReport(request);
-    }
-
-    private void buildAndInsertFinancialReport(ReservationRequest request) {
-        /* This method builds a financial report for booked reservation request, then inserts it in to the database */
-
-        FinancialReport financialReport = financialReportService.buildFinancialReport(request);
-        financialReportService.insert(financialReport);
-        log.info(String.format("Financial report inserted for reservation request: %s", request.get_id()));
-
+        financialReportService.buildAndInsertFinancialReport(request);
     }
 
     private void isStatusWaitForPayment(ReservationStatus status) {

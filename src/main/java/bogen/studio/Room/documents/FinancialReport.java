@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.apache.pdfbox.pdmodel.interactive.viewerpreferences.PDViewerPreferences;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.persistence.Id;
@@ -24,6 +25,7 @@ public class FinancialReport {
     @Id
     private String _id;
 
+    private ObjectId reservationId;
     private LocalDateTime purchaseTime;
     private List<LocalDateTime> residenceDates;
     private ReservationCreatorInfo reservationCreatorInfo;
@@ -32,5 +34,6 @@ public class FinancialReport {
     private String description;
     private int numberOfPassengers;
     private int paymentFee;
+    private int refundFee;
 
 }

@@ -33,6 +33,7 @@ public class ReservationRequest {
 
     private ReservationStatus status;
     private Integer paid;
+    private Integer refundFee;
 
     @Field("total_amount")
     private Integer totalAmount;

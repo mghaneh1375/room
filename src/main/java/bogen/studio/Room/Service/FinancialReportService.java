@@ -1,5 +1,6 @@
 package bogen.studio.Room.Service;
 
+import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Models.PassengerInfo;
 import bogen.studio.Room.Models.ReservationCreatorInfo;
 import bogen.studio.Room.Models.ReservationRequest;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static bogen.studio.Room.Enums.ReservationStatus.REFUNDED;
 
 @Service
 @RequiredArgsConstructor
@@ -29,16 +32,26 @@ public class FinancialReportService {
     public FinancialReport buildFinancialReport(ReservationRequest request) {
         /* This method creates financial report for the booked request */
 
-        return new FinancialReport()
+        FinancialReport financialReport = new FinancialReport()
+                .setReservationId(request.get_id())
                 .setPurchaseTime(LocalDateTime.now()) // Todo: replace this with payment timestamp
                 .setResidenceDates(request.getGregorianResidenceDates())
                 .setReservationCreatorInfo(buildCreatorInfo(request))
                 .setPassengersInfo(buildPassengersInfo(request))
                 .setStatus(request.getStatus())
                 .setDescription(request.getDescription())
-                .setNumberOfPassengers(request.getPassengers().size())
-                .setPaymentFee(request.getPaid());
+                .setNumberOfPassengers(request.getPassengers().size());
 
+        if (request.getStatus().equals(ReservationStatus.BOOKED)) {
+            financialReport.setPaymentFee(request.getPaid());
+        } else if (request.getStatus().equals(REFUNDED)) {
+            financialReport.setRefundFee(request.getRefundFee());
+        } else {
+            log.error(String.format("Unexpected reservation request status for reservation: %s. Expected BOOKED or " +
+                    "REFUNDED, got: %s. For developers attention.", request.get_id(), request.getStatus()));
+        }
+
+        return financialReport;
     }
 
     private List<PassengerInfo> buildPassengersInfo(ReservationRequest request) {
@@ -90,6 +103,15 @@ public class FinancialReportService {
                 .setSex(request.getCreator().getString("sex"))
                 .setMail(request.getCreator().getString("mail"))
                 .setPhone(request.getCreator().getString("phone"));
+    }
+
+    public void buildAndInsertFinancialReport(ReservationRequest request) {
+        /* This method builds a financial report for booked reservation request, then inserts it in to the database */
+
+        FinancialReport financialReport = buildFinancialReport(request);
+        insert(financialReport);
+        log.info(String.format("Financial report inserted for reservation request: %s", request.get_id()));
+
     }
 
 }
