@@ -16,6 +16,10 @@ public class BookedDateValidator implements ConstraintValidator<ValidBookedDate,
     @Override
     public boolean isValid(LocalDateTime bookedDate, ConstraintValidatorContext constraintValidatorContext) {
 
+        if (bookedDate == null) {
+            return true;
+        }
+
         boolean hasError = false;
         StringBuffer sb = new StringBuffer();
 
