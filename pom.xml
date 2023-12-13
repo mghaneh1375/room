@@ -15,6 +15,10 @@
     <name>Room</name>
     <description>Boomgardy management</description>
 
+    <properties>
+        <fontDirectory>E:/Reza/company-projects/room/src/main/resources/fonts-extention.jar</fontDirectory>
+    </properties>
+
     <dependencies>
 
         <dependency>
@@ -56,6 +60,39 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.7</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/net.sf.jasperreports/jasperreports -->
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports</artifactId>
+            <version>6.21.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/net.sourceforge.dynamicreports/dynamicreports-core -->
+
+        <!-- https://mvnrepository.com/artifact/net.sf.jasperreports/jasperreports-fonts -->
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports-fonts</artifactId>
+            <version>6.21.0</version>
+        </dependency>
+
+
+        <!--        <dependency>-->
+        <!--            <groupId>local.jasperFontOverrides</groupId>-->
+        <!--            <artifactId>local.jasperFontOverrides</artifactId>-->
+        <!--            <version>1.0</version>-->
+        <!--            <scope>system</scope>-->
+        <!--            <systemPath>E:/Reza/company-projects/room/src/main/resources/fonts-extention.jar</systemPath>-->
+        <!--        </dependency>-->
+
+        <dependency>
+            <groupId>local.jasperFontOverrides</groupId>
+            <artifactId>local.jasperFontOverrides</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${fontDirectory}</systemPath>
         </dependency>
 
     </dependencies>
