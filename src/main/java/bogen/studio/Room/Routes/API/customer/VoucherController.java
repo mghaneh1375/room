@@ -3,6 +3,7 @@ package bogen.studio.Room.Routes.API.customer;
 import bogen.studio.Room.Service.JasperReportService;
 import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.JRException;
+import org.bson.types.ObjectId;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +19,8 @@ public class VoucherController {
     private final JasperReportService jasperReportService;
     @GetMapping("/download")
     public void downloadVoucher(
-            HttpServletResponse httpResponse
+            HttpServletResponse httpResponse,
+            String requestId
     ) throws IOException, JRException {
 
         httpResponse.setContentType("application/pdf");
@@ -27,7 +29,7 @@ public class VoucherController {
         String headerValue = "attachment; filename:voucher.pdf";
         httpResponse.setHeader(headerKey, headerValue);
 
-        jasperReportService.buildAndExportVoucher(httpResponse);
+        jasperReportService.buildAndExportVoucher(httpResponse, new ObjectId(requestId));
 
 
     }

@@ -69,7 +69,7 @@ public class FinancialReportService {
         return financialReport;
     }
 
-    private List<PassengerInfo> buildPassengersInfo(ReservationRequest request) {
+    public List<PassengerInfo> buildPassengersInfo(ReservationRequest request) {
         /* This method returns a list of PassengerInfo, containing data regarding residences of the room */
 
         var passengersData = request.getPassengers();
@@ -100,7 +100,7 @@ public class FinancialReportService {
         return output;
     }
 
-    private ReservationCreatorInfo buildCreatorInfo(ReservationRequest request) {
+    public ReservationCreatorInfo buildCreatorInfo(ReservationRequest request) {
         /* This method creates an instance of ReservationCreatorInfo and populates it with input reservation
          * request */
 
