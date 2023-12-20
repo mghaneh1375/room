@@ -1,14 +1,19 @@
 package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.BoomDTO;
+import bogen.studio.Room.Exception.InvalidIdException;
 import bogen.studio.Room.Models.Boom;
 import bogen.studio.Room.Network.Network;
 import bogen.studio.Room.Repository.BoomRepository;
 import bogen.studio.Room.Repository.RoomRepository;
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -20,13 +25,16 @@ import static my.common.commonkoochita.Utility.Statics.*;
 import static my.common.commonkoochita.Utility.Utility.*;
 
 @Service
+@RequiredArgsConstructor
 public class BoomService extends AbstractService<Boom, BoomDTO> {
 
-    @Autowired
-    private BoomRepository boomRepository;
+    //@Autowired
+    private final BoomRepository boomRepository;
 
-    @Autowired
-    private RoomRepository roomRepository;
+    //@Autowired
+    private final RoomRepository roomRepository;
+
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public String list(List<String> filters) {
@@ -136,6 +144,19 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
 
     @Override
     Boom findById(ObjectId id) {
-        return null;
+
+        Query query = new Query().addCriteria(Criteria.where("_id").is(id));
+
+        Boom boom = mongoTemplate.findOne(
+                query,
+                Boom.class,
+                mongoTemplate.getCollectionName(Boom.class)
+        );
+
+        if (boom == null) {
+            throw new InvalidIdException("چنین بومی وجود ندارد");
+        }
+
+        return boom;
     }
 }

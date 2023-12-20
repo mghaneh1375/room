@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.6.final using JasperReports Library version 6.20.6-5c96b6aa8a39ac1dc6b6bea4b81168e16dd39231  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="test11" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="8a81b1dd-a1bf-4adb-992e-3e1df3d8a74e">
+	<parameter name="creator_first_name" class="java.lang.String"/>
+	<parameter name="creator_last_name" class="java.lang.String"/>
+	<parameter name="creator_phone" class="java.lang.String"/>
+	<parameter name="boomMap" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="index" class="java.lang.Integer"/>
+	<field name="nameFa" class="java.lang.String"/>
+	<field name="lastNameFa" class="java.lang.String"/>
+	<field name="phone" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="440" splitType="Stretch">
+			<staticText>
+				<reportElement x="227" y="0" width="100" height="30" uuid="ec8712c8-aa6c-46e5-8716-1c529055de75"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily" size="12"/>
+				</textElement>
+				<text><![CDATA[ووچر هتل]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="37" width="100" height="30" uuid="2389da28-44fd-4f6b-9639-bb240baf0c2e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[اطلاعات خریدار:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="67" width="100" height="30" uuid="fca38500-cbc6-4d6d-9403-9aa4214ace46"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[نام]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="344" y="67" width="100" height="30" uuid="90ce51cc-7ec7-41c8-8125-d94f8ddb6d68"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[نام خانوادگی]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="244" y="67" width="100" height="30" uuid="206e09cf-2465-4d72-b62f-999e0039a5d3"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[تلفن]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="244" y="97" width="100" height="30" uuid="4f20c72c-5e36-43f3-aff1-ce98b1741313"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{creator_phone}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="97" width="100" height="30" uuid="3e4eeb7b-aea6-4674-9ffc-13bbb5e1cc12"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{creator_last_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="444" y="97" width="100" height="30" uuid="0ee8c7f2-e43a-4d5f-89dd-9a4ee4067114"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{creator_first_name}]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement x="10" y="150" width="200" height="200" uuid="4ff0da4b-8e60-4e6c-a826-af3a23e2b02f">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<imageExpression><![CDATA[$P{boomMap}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="32" splitType="Stretch">
+			<staticText>
+				<reportElement x="449" y="1" width="100" height="30" uuid="1225d28c-2f52-46e0-af33-28729b14e008"/>
+				<textElement textAlignment="Right">
+					<font fontName="vazirFamily" size="12"/>
+				</textElement>
+				<text><![CDATA[اطلاعات مسافرین:]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="31" splitType="Stretch">
+			<staticText>
+				<reportElement x="449" y="0" width="100" height="30" uuid="0f057be3-1202-48f3-bd96-994fb3973656"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[ردیف]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="349" y="0" width="100" height="30" uuid="6eafa695-4339-49a1-9889-591f0134c466"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[نام]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="249" y="0" width="100" height="30" uuid="78ab03e5-2ebb-471f-9c7d-e4e287946c5b"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[نام خانوادگی]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="149" y="0" width="100" height="30" uuid="047d7f64-1526-4b72-8dd1-4c42d8bdb4e9"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[تلفن]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="30" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement x="349" y="0" width="100" height="30" uuid="e12de730-9bba-4571-8790-d4864f105794"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nameFa}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="249" y="0" width="100" height="30" uuid="1dffb728-9b42-4aa7-b40a-951c325ca1dd"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{lastNameFa}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="149" y="0" width="100" height="30" uuid="8c9e0033-0c90-486f-be66-b3631a203d19"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{phone}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="449" y="0" width="100" height="30" uuid="2c1a49c6-f322-4e24-8d8d-86bc694d0c32"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{index}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="67" splitType="Stretch">
+			<staticText>
+				<reportElement x="230" y="14" width="100" height="30" uuid="8ff5ccd7-5a25-4578-b5ab-3a8f4e15cf5d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[بوگن استودیو]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="50" y="24" width="20" height="30" uuid="e7cfa060-968b-4f59-bbcb-a53e27a9dbf6"/>
+				<textElement textAlignment="Left">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="0" y="24" width="30" height="30" uuid="a7505bea-a3a3-41cc-ae26-b0070776acaf"/>
+				<textElement textAlignment="Left">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="30" y="24" width="20" height="30" uuid="211edccc-8f7b-44cd-a618-39dc4d3c025e"/>
+				<textElement textAlignment="Left">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[از]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="70" y="24" width="50" height="30" uuid="8db1e307-62cc-4322-b311-9e2a1e228dbb"/>
+				<textElement textAlignment="Left">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[صفحه]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="49" splitType="Stretch"/>
+	</summary>
+</jasperReport>

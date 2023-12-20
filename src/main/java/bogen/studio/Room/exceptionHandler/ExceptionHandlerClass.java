@@ -68,5 +68,12 @@ public class ExceptionHandlerClass {
     }
 
 
+    @ExceptionHandler(value = ExternalServiceCallException.class)
+    public ResponseEntity<String> externalServiceCallExceptionHandler(ExternalServiceCallException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+
 
 }
