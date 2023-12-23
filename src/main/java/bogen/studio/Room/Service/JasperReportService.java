@@ -39,11 +39,13 @@ public class JasperReportService {
     private final RoomService roomService;
     private final PlaceService placeService;
 
-    public void buildAndExportVoucher(HttpServletResponse httpResponse, ObjectId requestId) throws IOException, JRException {
+    public void buildAndExportVoucher(HttpServletResponse httpResponse, ObjectId reservationRequestId, ObjectId apiCallerId) throws IOException, JRException {
+        /* This method builds and streams voucher through endpoint */
 
         // Fetch reservation request
-        ReservationRequest request = reservationRequestService.findById(requestId);
+        ReservationRequest request = reservationRequestService.findById(reservationRequestId);
         isRequestStatusBooked(request.getStatus());
+        doesRequestBelongToApiCaller(apiCallerId, request.getUserId());
 
         // Read and compile jrxml file
         //JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:Blank_A4.jrxml");
@@ -106,8 +108,6 @@ public class JasperReportService {
         parameterMap.put("number_of_staying_nights", voucherData.getNumberOfStayingNights());
         parameterMap.put("tracking_code", voucherData.getTrackingCode());
 
-        // Todo: define params of voucher data in jasper studio
-
         // 4.
         return parameterMap;
     }
@@ -146,6 +146,15 @@ public class JasperReportService {
 
         if (!status.equals(ReservationStatus.BOOKED)) {
             throw new InvalidRequestByCustomerException("امکان صدور ووچر برای این درخواست رزرو امکان پذیر نیست");
+        }
+
+    }
+
+    private void doesRequestBelongToApiCaller(ObjectId apiCallerId, ObjectId reservationCreatorId) {
+        /* Voucher will be created only if the API caller is the creator of the reservation request */
+
+        if (!reservationCreatorId.equals(apiCallerId)) {
+            throw new InvalidRequestByCustomerException("شما مجاز به دریافت این ووچر نیستید");
         }
 
     }

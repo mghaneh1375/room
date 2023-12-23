@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
+
+import static bogen.studio.Room.Routes.Utility.getUserId;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,7 +23,8 @@ public class VoucherController {
     @GetMapping("/download")
     public void downloadVoucher(
             HttpServletResponse httpResponse,
-            String requestId
+            String reservationRequestId,
+            Principal principal
     ) throws IOException, JRException {
 
         httpResponse.setContentType("application/pdf");
@@ -29,9 +33,11 @@ public class VoucherController {
         String headerValue = "attachment; filename:voucher.pdf";
         httpResponse.setHeader(headerKey, headerValue);
 
-        jasperReportService.buildAndExportVoucher(httpResponse, new ObjectId(requestId));
-
-
+        jasperReportService.buildAndExportVoucher(
+                httpResponse,
+                new ObjectId(reservationRequestId),
+                getUserId(principal)
+        );
     }
 
 }
