@@ -32,4 +32,6 @@ public class BoomMapInfo {
     private Double latitude;
     private Double longitude;
 
+    private String address;
+
 }

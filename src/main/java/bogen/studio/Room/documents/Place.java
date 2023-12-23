@@ -23,5 +23,6 @@ public class Place {
 
     private Double c; // As latitude
     private Double d; // As longitude
+    private String address;
 
 }

@@ -56,7 +56,7 @@ public class NeshanMapService {
             String mapPath = downloadAndSaveMapForBoom(place.getC(), place.getD(), boom.get_id());
 
             // 3.2
-            insertBoomMapInfoToDb(boom.get_id(), mapPath, place.getC(), place.getD());
+            insertBoomMapInfoToDb(boom.get_id(), mapPath, place.getC(), place.getD(), place.getAddress());
 
             // 4
             return mapPath;
@@ -66,14 +66,15 @@ public class NeshanMapService {
         return boomMapInfo.getMapPath();
     }
 
-    private void insertBoomMapInfoToDb(ObjectId boomId, String mapPath, Double latitude, Double longitude) {
+    private void insertBoomMapInfoToDb(ObjectId boomId, String mapPath, Double latitude, Double longitude, String boomAddress) {
         /* Insert boomMapInfo to database */
 
         BoomMapInfo boomMapInfo = new BoomMapInfo()
                 .setBoomId(boomId)
                 .setMapPath(mapPath)
                 .setLatitude(latitude)
-                .setLongitude(longitude);
+                .setLongitude(longitude)
+                .setAddress(boomAddress);
 
         boomMapInfoService.insert(boomMapInfo);
     }

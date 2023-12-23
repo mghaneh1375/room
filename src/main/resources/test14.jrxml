@@ -6,6 +6,11 @@
 	<parameter name="creator_phone" class="java.lang.String"/>
 	<parameter name="boomMap" class="java.lang.String"/>
 	<parameter name="koochitaLogo" class="java.lang.String"/>
+	<parameter name="boom_address" class="java.lang.String"/>
+	<parameter name="room_name" class="java.lang.String"/>
+	<parameter name="tracking_code" class="java.lang.String"/>
+	<parameter name="number_of_staying_nights" class="java.lang.Integer"/>
+	<parameter name="residence_start_date" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -23,7 +28,7 @@
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="vazirFamily" size="12"/>
 				</textElement>
-				<text><![CDATA[ووچر هتل]]></text>
+				<text><![CDATA[ووچر اقامت گاه]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="444" y="37" width="100" height="30" uuid="2389da28-44fd-4f6b-9639-bb240baf0c2e"/>
@@ -111,13 +116,151 @@
 				<textFieldExpression><![CDATA[$P{creator_first_name}]]></textFieldExpression>
 			</textField>
 			<image onErrorType="Blank">
-				<reportElement x="10" y="150" width="200" height="200" uuid="4ff0da4b-8e60-4e6c-a826-af3a23e2b02f">
+				<reportElement x="0" y="204" width="200" height="200" uuid="4ff0da4b-8e60-4e6c-a826-af3a23e2b02f">
 					<property name="com.jaspersoft.studio.unit.x" value="px"/>
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<imageExpression><![CDATA[$P{boomMap}]]></imageExpression>
 			</image>
+			<staticText>
+				<reportElement x="444" y="170" width="100" height="30" uuid="95c2b346-d55b-4b67-91cf-6e6cef3b0319"/>
+				<box rightPadding="5"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[آدرس اقامت گاه:]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="270" y="200" width="274" height="30" uuid="15b54960-b8eb-40c9-a09a-db6fae6fd72f"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{boom_address}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="444" y="250" width="100" height="30" uuid="8e0c11a5-aaf6-45bb-8f24-d8bc03f4eba4"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[نام اتاق]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="280" width="100" height="30" uuid="3718b790-0e6d-4c49-a65a-1daa1344c0fc"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[تاریخ شروع اقامت]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="310" width="100" height="30" uuid="a2a514e5-5ea1-4b1b-bfea-59b06c380bc8"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[تعداد شب های اقامت]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="340" width="100" height="30" uuid="e586ee72-126a-4525-97f2-1a51636346f9"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[کد رهگیری]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="55" y="170" width="100" height="30" forecolor="#ED476B" uuid="48385593-271c-4569-9865-6ff8a2bb06ba"/>
+				<box>
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<text><![CDATA[نقشه اقامت گاه]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="344" y="250" width="100" height="30" uuid="43b6060b-6f55-411e-beff-1708b942a076"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{room_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="280" width="100" height="30" uuid="70bab302-463a-401c-81bc-bd7a255d3ff2"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{residence_start_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="310" width="100" height="30" uuid="2c18bdf0-c4ed-407a-afb7-72311b754cb9"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{number_of_staying_nights}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="340" width="100" height="30" uuid="3ec79cd7-bd76-4cd2-a111-682aa32c04ce"/>
+				<box rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="vazirFamily"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{tracking_code}]]></textFieldExpression>
+			</textField>
 		</band>
 	</title>
 	<pageHeader>

@@ -2,11 +2,11 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Exception.InvalidRequestByCustomerException;
-import bogen.studio.Room.Models.PassengerInfo;
-import bogen.studio.Room.Models.ReservationCreatorInfo;
-import bogen.studio.Room.Models.ReservationRequest;
-import bogen.studio.Room.Models.VoucherPassengerInfo;
+import bogen.studio.Room.Models.*;
+import bogen.studio.Room.documents.Place;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.common.commonkoochita.Utility.JalaliCalendar;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.design.JasperDesign;
@@ -19,20 +19,25 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class JasperReportService {
 
     private final ReservationRequestService reservationRequestService;
     private final FinancialReportService financialReportService;
     private final NeshanMapService neshanMapService;
+    private final BoomService boomService;
+    private final RoomService roomService;
+    private final PlaceService placeService;
 
     public void buildAndExportVoucher(HttpServletResponse httpResponse, ObjectId requestId) throws IOException, JRException {
 
@@ -43,7 +48,9 @@ public class JasperReportService {
         // Read and compile jrxml file
         //JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:Blank_A4.jrxml");
         //JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:test11.jrxml");
-        JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:test13.jrxml");
+        //JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:test13.jrxml");
+        //JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:test14.jrxml");
+        JasperReport jasperReport = loadAndCompileJrxmlFile("classpath:test15.jrxml");
 
         // Create data source ...
         JRBeanCollectionDataSource dataSource = createDataSource(request);
@@ -73,9 +80,13 @@ public class JasperReportService {
          * 3. Define map and put params in it
          * 4. Return map*/
 
+        // 0.
+        VoucherData voucherData = getVoucherData(request);
+
         // 1.
         String mapPath = neshanMapService.fetchBoomMapPath(request.getRoomId());
         File mapFile = new File(mapPath);
+        File koochitaLogoFile = new File("./room/src/main/resources/voucher_images/koochitaLogo.png");
 
         // 2.
         ReservationCreatorInfo creatorInfo = financialReportService.buildCreatorInfo(request);
@@ -88,6 +99,14 @@ public class JasperReportService {
         parameterMap.put("creator_phone", creatorInfo.getPhone());
 
         parameterMap.put("boomMap", mapFile.toString());
+        parameterMap.put("koochitaLogo", koochitaLogoFile.toString());
+        parameterMap.put("boom_address", voucherData.getBoomAddress());
+        parameterMap.put("room_name", voucherData.getRoomName());
+        parameterMap.put("residence_start_date", voucherData.getJalaliResidenceStartDate());
+        parameterMap.put("number_of_staying_nights", voucherData.getNumberOfStayingNights());
+        parameterMap.put("tracking_code", voucherData.getTrackingCode());
+
+        // Todo: define params of voucher data in jasper studio
 
         // 4.
         return parameterMap;
@@ -130,6 +149,46 @@ public class JasperReportService {
         }
 
     }
+
+    private VoucherData getVoucherData(ReservationRequest request) {
+        /* Get data required for generating voucher
+         * 1. Fetch room
+         * 2. Fetch boom
+         * 3. Fetch place
+         * 4. Create and return VoucherData
+         *  */
+
+        // 1.
+        Room room = roomService.findById(request.getRoomId());
+        // 2.
+        Boom boom = boomService.findById(room.getBoomId());
+        // 3.
+        Place place = placeService.fetchById(boom.getPlaceId());
+
+        // 4.
+        return new VoucherData()
+                .setBoomAddress(place.getAddress())
+                .setRoomName(room.getTitle())
+                .setJalaliResidenceStartDate(convertResidenceStartDateToJalali(request.getResidenceStartDate()))
+                .setNumberOfStayingNights(request.getNumberOfStayingNights())
+                .setTrackingCode(request.getTrackingCode());
+
+    }
+
+    private String convertResidenceStartDateToJalali(LocalDateTime residenceStartTime) {
+        /* Convert residence start date from gregorian to jalali */
+
+        return JalaliCalendar
+                .gregorianToJalali(
+                        new JalaliCalendar.YearMonthDate(
+                                residenceStartTime.get(ChronoField.YEAR),
+                                residenceStartTime.get(ChronoField.MONTH_OF_YEAR) - 1,
+                                residenceStartTime.get(ChronoField.DAY_OF_MONTH)
+                        )
+                )
+                .toString();
+    }
+
 
 }
 
