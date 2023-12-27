@@ -38,12 +38,14 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
         boolean discountTypeHasError = validateDiscountType(dto, sb);
         boolean generalDiscountHasError = validateGeneralDiscount(dto, sb);
         boolean lastMinuteDiscountHasError = validateLastMinuteDiscount(dto, sb);
+        boolean codeDiscountHasError = validateCodeDiscount(dto, sb);
 
         if (discountPlaceHasError ||
                 discountPlaceInfoHasError ||
                 discountTypeHasError ||
                 generalDiscountHasError ||
-                lastMinuteDiscountHasError
+                lastMinuteDiscountHasError ||
+                codeDiscountHasError
         ) {
             log.warn("DiscountPostDto validator found an error");
             throw new InvalidInputException(sb.toString());
@@ -51,6 +53,94 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
 
         return true;
 
+    }
+
+    private boolean validateCodeDiscount(DiscountPostDto dto, StringBuffer sb) {
+
+        boolean hasError = false;
+
+        if (dto.getDiscountType().equals(CODE.toString()) &&
+                (dto.getGeneralDiscountPostDto() != null || dto.getLastMinuteDiscountPostDto() != null)
+        ) {
+            sb.append("در حالت کد تخفیف، تخفیف عمومی و لحظه آخری باید تهی باشند");
+            sb.append("\n");
+            hasError = true;
+        } else if (dto.getDiscountType().equals(CODE.toString()) && dto.getCodeDiscountPostDto() == null) {
+            sb.append("کد تخفیف تهی است");
+            sb.append("\n");
+            hasError = true;
+        } else if (dto.getDiscountType().equals(CODE.toString()) && dto.getCodeDiscountPostDto() != null) {
+
+            if (doesDiscountExecutionPercentAndAmountHaveError(
+                    dto.getCodeDiscountPostDto().getDiscountExecution(),
+                    dto.getCodeDiscountPostDto().getAmount(),
+                    dto.getCodeDiscountPostDto().getPercent(),
+                    sb
+            )) {
+                hasError = true;
+            }
+
+            if (doesCodeHasError(dto.getCodeDiscountPostDto().getCode(), sb)) {
+                hasError = true;
+            }
+
+            if (doesDefinedUsageCountHasError(dto.getCodeDiscountPostDto().getDefinedUsageCount(), sb)) {
+                hasError = true;
+            }
+
+            if (doesLifeTimeRangeAndTargetDateRangeHaveError(
+                    dto.getCodeDiscountPostDto().getLifeTimeStart(),
+                    dto.getCodeDiscountPostDto().getLifeTimeEnd(),
+                    dto.getCodeDiscountPostDto().getTargetDateStart(),
+                    dto.getCodeDiscountPostDto().getTargetDateEnd(),
+                    sb
+            )) {
+                hasError = true;
+            }
+
+            if (doesOrderOfDatesForGeneralDiscountHaveError(
+                    dto.getCodeDiscountPostDto().getLifeTimeStart(),
+                    dto.getCodeDiscountPostDto().getLifeTimeEnd(),
+                    dto.getCodeDiscountPostDto().getTargetDateStart(),
+                    dto.getCodeDiscountPostDto().getTargetDateEnd(),
+                    sb
+            )) {
+                hasError = true;
+            }
+        }
+
+        return hasError;
+    }
+
+    private boolean doesDefinedUsageCountHasError(int definedUsageCount, StringBuffer sb) {
+
+        if (definedUsageCount <= 0) {
+            sb.append("تعداد مصرف کد تخفیف باید بزرگتر از صفر باشد");
+            sb.append("\n");
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean doesCodeHasError(String code, StringBuffer sb) {
+
+        boolean haseError = false;
+
+        if (code == null) {
+            sb.append("کد تهی است");
+            sb.append("\n");
+            haseError = true;
+        } else if (code.length() == 0) {
+            sb.append("کد خالی است");
+            sb.append("\n");
+            haseError = true;
+        } else if (!code.matches("^[A-Za-z0-9]+$")) {
+            sb.append("کد فقط میتواند شامل حروف انگلیسی و اعداد باشد");
+            sb.append("\n");
+            haseError = true;
+        }
+        return haseError;
     }
 
     private boolean validateLastMinuteDiscount(DiscountPostDto dto, StringBuffer sb) {
@@ -66,89 +156,20 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
             sb.append("\n");
         } else if (
                 dto.getDiscountType().equals(LAST_MINUTE.toString()) &&
-                        (dto.getGeneralDiscountPostDto() != null || dto.getCodeDiscount() != null)
+                        (dto.getGeneralDiscountPostDto() != null || dto.getCodeDiscountPostDto() != null)
         ) {
             hasError = true;
             sb.append("در حالت تخفیف لحظه آخری، تخفیف های عمومی و کد باید تهی باشند");
             sb.append("\n");
         } else if (dto.getDiscountType().equals(LAST_MINUTE.toString())) {
 
-            String inputDiscountExecution = dto.getLastMinuteDiscountPostDto().getDiscountExecution();
-
-            if (inputDiscountExecution == null) {
+            if (doesDiscountExecutionPercentAndAmountHaveError(
+                    dto.getLastMinuteDiscountPostDto().getDiscountExecution(),
+                    dto.getLastMinuteDiscountPostDto().getAmount(),
+                    dto.getLastMinuteDiscountPostDto().getPercent(),
+                    sb
+            )) {
                 hasError = true;
-                sb.append("نوع اعمال تخفیف وارد نشده است");
-                sb.append("\n");
-            } else if (
-                    !inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                            !inputDiscountExecution.equals(AMOUNT.toString())
-            ) {
-                sb.append("نوع اعمال تخفیف اشتباه وارد شده است");
-                sb.append("\n");
-                hasError = true;
-            } else if (inputDiscountExecution != null) {
-
-                if (
-                        inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                                dto.getLastMinuteDiscountPostDto().getAmount() != null
-                ) {
-                    sb.append("در حالت تخفیف درصدی، مقدار تخفیف باید تهی باشد");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                                dto.getLastMinuteDiscountPostDto().getPercent() == null
-                ) {
-                    sb.append("مقدار درصد تهی است");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                                dto.getLastMinuteDiscountPostDto().getPercent() != null
-                ) {
-                    if (dto.getLastMinuteDiscountPostDto().getPercent() < 0 ||
-                            dto.getLastMinuteDiscountPostDto().getPercent() > 100) {
-
-                        sb.append("مقدار درصد باید بین 0 تا 100 باشد");
-                        sb.append("\n");
-                        hasError = true;
-                    }
-                }
-
-                if (
-                        inputDiscountExecution.equals(AMOUNT.toString()) &&
-                                dto.getLastMinuteDiscountPostDto().getPercent() != null
-                ) {
-                    sb.append("در حالت تخیف مقداری، درصد تخفیف باید تهی باشد");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(AMOUNT.toString()) &&
-                                dto.getLastMinuteDiscountPostDto().getAmount() == null
-                ) {
-                    sb.append("مقدار تخفیف تهی است");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(AMOUNT.toString()) &&
-                                dto.getLastMinuteDiscountPostDto().getAmount() != null
-                ) {
-
-                    if (dto.getLastMinuteDiscountPostDto().getAmount() < 0) {
-                        sb.append("مقدار تخفیف منفی است");
-                        sb.append("\n");
-                        hasError = true;
-                    }
-
-                }
             }
 
             if (doesDateHaveError(
@@ -167,14 +188,90 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
             }
 
             if (doesOrderOfDatesForLastMinuteHaveError(
-                     dto.getLastMinuteDiscountPostDto().getTargetDate(),
-                     dto.getLastMinuteDiscountPostDto().getLifeTimeStart(),
-                     sb)) {
+                    dto.getLastMinuteDiscountPostDto().getTargetDate(),
+                    dto.getLastMinuteDiscountPostDto().getLifeTimeStart(),
+                    sb)) {
                 hasError = true;
             }
 
         }
 
+        return hasError;
+    }
+
+    private boolean doesDiscountExecutionPercentAndAmountHaveError(
+            String inputDiscountExecution,
+            Long amount,
+            Integer percent,
+            StringBuffer sb) {
+
+        boolean hasError = false;
+
+        if (inputDiscountExecution == null) {
+            hasError = true;
+            sb.append("نوع اعمال تخفیف وارد نشده است");
+            sb.append("\n");
+        } else if (
+                !inputDiscountExecution.equals(PERCENTAGE.toString()) &&
+                        !inputDiscountExecution.equals(AMOUNT.toString())
+        ) {
+            sb.append("نوع اعمال تخفیف اشتباه وارد شده است");
+            sb.append("\n");
+            hasError = true;
+        } else if (inputDiscountExecution != null) {
+
+            if (
+                    inputDiscountExecution.equals(PERCENTAGE.toString()) &&
+                            amount != null
+            ) {
+                sb.append("در حالت تخفیف درصدی، مقدار تخفیف باید تهی باشد");
+                sb.append("\n");
+                hasError = true;
+            }
+
+            if (
+                    inputDiscountExecution.equals(PERCENTAGE.toString()) &&
+                            percent == null
+            ) {
+                sb.append("مقدار درصد تهی است");
+                sb.append("\n");
+                hasError = true;
+            }
+
+            if (
+                    inputDiscountExecution.equals(PERCENTAGE.toString()) &&
+                            percent != null
+            ) {
+                if (percent < 0 || percent > 100) {
+
+                    sb.append("مقدار درصد باید بین 0 تا 100 باشد");
+                    sb.append("\n");
+                    hasError = true;
+                }
+            }
+
+            if (inputDiscountExecution.equals(AMOUNT.toString()) && percent != null) {
+                sb.append("در حالت تخیف مقداری، درصد تخفیف باید تهی باشد");
+                sb.append("\n");
+                hasError = true;
+            }
+
+            if (inputDiscountExecution.equals(AMOUNT.toString()) && amount == null) {
+                sb.append("مقدار تخفیف تهی است");
+                sb.append("\n");
+                hasError = true;
+            }
+
+            if (inputDiscountExecution.equals(AMOUNT.toString()) && amount != null) {
+
+                if (amount < 0) {
+                    sb.append("مقدار تخفیف منفی است");
+                    sb.append("\n");
+                    hasError = true;
+                }
+
+            }
+        }
         return hasError;
     }
 
@@ -225,115 +322,29 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
             hasError = true;
         } else if (
                 dto.getDiscountType().equals(GENERAL.toString()) &&
-                        (dto.getLastMinuteDiscountPostDto() != null || dto.getCodeDiscount() != null)
+                        (dto.getLastMinuteDiscountPostDto() != null || dto.getCodeDiscountPostDto() != null)
         ) {
             sb.append("در حالت تخفیف عمومی، تخفیف های لحظه آخری و کد باید تهی باشند");
             sb.append("\n");
             hasError = true;
-        } else if (dto.getDiscountType().equals(GENERAL.toString())) {
+        } else if (dto.getDiscountType().equals(GENERAL.toString()) && dto.getGeneralDiscountPostDto() != null) {
 
-            String inputDiscountExecution = dto.getGeneralDiscountPostDto().getDiscountExecution();
-
-            if (inputDiscountExecution == null) {
-                sb.append("نوع اعمال تخفیف وارده نشده است");
-                sb.append("\n");
+            if (doesDiscountExecutionPercentAndAmountHaveError(
+                    dto.getGeneralDiscountPostDto().getDiscountExecution(),
+                    dto.getGeneralDiscountPostDto().getDiscountAmount(),
+                    dto.getGeneralDiscountPostDto().getDiscountPercent(),
+                    sb
+            )) {
                 hasError = true;
-            } else if (
-                    !inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                            !inputDiscountExecution.equals(AMOUNT.toString())
-            ) {
-                sb.append("نوع اعمال تخفیف اشتباه وارد شده است");
-                sb.append("\n");
-                hasError = true;
-            } else if (inputDiscountExecution != null) {
-                Integer inputPercent = dto.getGeneralDiscountPostDto().getDiscountPercent();
-                Long inputAmount = dto.getGeneralDiscountPostDto().getDiscountAmount();
-
-                if (
-                        inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                                inputAmount != null
-                ) {
-                    sb.append("در حالت تخفبف درصدی مقدار تخفیف باید تهی باشد");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                                inputPercent == null
-                ) {
-                    sb.append("درصد تخفیف وارد نشده است");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(PERCENTAGE.toString()) &&
-                                inputPercent != null
-                ) {
-                    if (inputPercent > 100 || inputPercent < 0) {
-                        sb.append("درصد تخفیف باید بین 0 نا 100 باشد");
-                        sb.append("\n");
-                        hasError = true;
-                    }
-                }
-
-                if (
-                        inputDiscountExecution.equals(AMOUNT.toString()) &&
-                                inputAmount == null
-                ) {
-                    sb.append("مقدار تخفیف وارد نشده است");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(AMOUNT.toString()) &&
-                                inputPercent != null
-                ) {
-                    sb.append("در حالت تخیف مبلغی، درصد تخفیف باید تهی باشد");
-                    sb.append("\n");
-                    hasError = true;
-                }
-
-                if (
-                        inputDiscountExecution.equals(AMOUNT.toString()) &&
-                                inputAmount != null
-                ) {
-                    if (inputAmount < 0) {
-                        sb.append("مقدار تخفیف نمی تواند منفی باشد");
-                        sb.append("\n");
-                        hasError = true;
-                    }
-                }
             }
 
-
-            if (doesDateHaveError(
-                    "شروع زمان فعال بودن",
+            if (doesLifeTimeRangeAndTargetDateRangeHaveError(
                     dto.getGeneralDiscountPostDto().getLifeTimeStart(),
-                    sb)) {
-                hasError = true;
-            }
-
-            if (doesDateHaveError(
-                    "پایان زمان فعال بودن",
                     dto.getGeneralDiscountPostDto().getLifeTimeEnd(),
-                    sb)) {
-                hasError = true;
-            }
-
-            if (doesDateHaveError(
-                    "شروع زمان تاریخ هدف",
                     dto.getGeneralDiscountPostDto().getTargetDateStart(),
-                    sb)) {
-                hasError = true;
-            }
-
-            if (doesDateHaveError(
-                    "پایان زمان تاریخ هدف",
                     dto.getGeneralDiscountPostDto().getTargetDateEnd(),
-                    sb)) {
+                    sb
+            )) {
                 hasError = true;
             }
 
@@ -349,6 +360,48 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
 
         }
         return hasError;
+    }
+
+    private boolean doesLifeTimeRangeAndTargetDateRangeHaveError(
+            String lifeTimeInString,
+            String lifeTimeEndInString,
+            String targtDateStartInString,
+            String targetDateEndInString,
+            StringBuffer sb
+    ) {
+
+        boolean hasError = false;
+
+        if (doesDateHaveError(
+                "شروع زمان فعال بودن",
+                lifeTimeInString,
+                sb)) {
+            hasError = true;
+        }
+
+        if (doesDateHaveError(
+                "پایان زمان فعال بودن",
+                lifeTimeEndInString,
+                sb)) {
+            hasError = true;
+        }
+
+        if (doesDateHaveError(
+                "شروع زمان تاریخ هدف",
+                targtDateStartInString,
+                sb)) {
+            hasError = true;
+        }
+
+        if (doesDateHaveError(
+                "پایان زمان تاریخ هدف",
+                targetDateEndInString,
+                sb)) {
+            hasError = true;
+        }
+
+        return hasError;
+
     }
 
     private boolean doesOrderOfDatesForGeneralDiscountHaveError(

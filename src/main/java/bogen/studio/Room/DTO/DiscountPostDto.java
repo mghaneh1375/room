@@ -21,6 +21,6 @@ public class DiscountPostDto {
 
     private GeneralDiscountPostDto generalDiscountPostDto;
     private LastMinuteDiscountPostDto lastMinuteDiscountPostDto;
-    private CodeDiscount codeDiscount;
+    private CodeDiscountPostDto codeDiscountPostDto;
 
 }

@@ -44,6 +44,6 @@ public class Discount {
     @Field(name = "code_discount")
     private CodeDiscount codeDiscount;
 
-    // Todo: add creator id and createdAt
+    // Todo: add creator id and createdAt, version
 
 }
