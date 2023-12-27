@@ -1,4 +1,4 @@
-package bogen.studio.Room.DTO.Digests;
+package bogen.studio.Room.DTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

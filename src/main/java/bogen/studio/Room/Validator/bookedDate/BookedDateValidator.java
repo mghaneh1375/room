@@ -45,7 +45,7 @@ public class BookedDateValidator implements ConstraintValidator<ValidBookedDate,
 
         if (bookedDate.get(ChronoField.NANO_OF_SECOND) !=0 ) {
             hasError = true;
-            sb.append("میکروٍ ثانیه باید صفر باشد");
+            sb.append("میکرو ثانیه باید صفر باشد");
             sb.append("\n");
         }
 

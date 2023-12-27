@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +29,7 @@ public class TimeUtility {
         return output;
 
     }
+
     public static Instant calculateCreatedAtExpirationTimoutInInstance(int timeoutInMinutes) {
         /* Calculate instance of time out, since created_at filed of reservation request document has a type of Date.
          * Obviously, for avoiding side effects I did not change the type :)  */
@@ -52,6 +55,17 @@ public class TimeUtility {
                 0
         );
 
+    }
+
+    public static LocalDateTime convertStringToLdt(
+            String dateInString,
+            String datePatternInString
+    ) throws DateTimeParseException {
+        /* Convert input string to local_date_time according to input date pattern.
+         * Attention this method throws DateTimeParseException and should be called in try catch block */
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePatternInString);
+        return LocalDateTime.parse(dateInString, formatter);
     }
 
 

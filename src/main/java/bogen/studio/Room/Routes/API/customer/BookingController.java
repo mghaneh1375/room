@@ -1,6 +1,6 @@
 package bogen.studio.Room.Routes.API.customer;
 
-import bogen.studio.Room.DTO.Digests.PaymentInfoPostDto;
+import bogen.studio.Room.DTO.PaymentInfoPostDto;
 import bogen.studio.Room.Service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
