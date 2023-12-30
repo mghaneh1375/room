@@ -119,5 +119,18 @@ public class RoomRepository2 {
                 .setInfantCount(request.getInfants());
     }
 
+    public List<String> fetchDistinctRoomNamesOfBoom(ObjectId boomId) {
+        /* Fetch distinct room names of a boom */
+
+        Query query = new Query().addCriteria(Criteria.where("boom_id").is(boomId));
+
+        return mongoTemplate.findDistinct(
+                query,
+                "title",
+                mongoTemplate.getCollectionName(Room.class),
+                String.class
+        );
+    }
+
 
 }

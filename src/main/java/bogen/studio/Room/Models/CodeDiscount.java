@@ -25,7 +25,6 @@ public class CodeDiscount {
     private Integer percent;
     private Long amount;
 
-    @Indexed(unique = true)
     private String code;
 
     @Field(name = "defined_usage_count")

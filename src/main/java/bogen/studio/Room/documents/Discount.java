@@ -2,14 +2,17 @@ package bogen.studio.Room.documents;
 
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
-import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Models.CodeDiscount;
 import bogen.studio.Room.Models.DiscountPlaceInfo;
+import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Models.LastMinuteDiscount;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -44,6 +47,13 @@ public class Discount {
     @Field(name = "code_discount")
     private CodeDiscount codeDiscount;
 
-    // Todo: add creator id and createdAt, version
+    @Field(name = "created_at")
+    @CreatedDate
+    private LocalDateTime createdAt;
 
+    @Field(name = "created_by")
+    private ObjectId createdBy; // Discount creator userId
+
+    @Version
+    private long version;
 }

@@ -1253,4 +1253,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return roomRepository2.getNumberOfGuestsByRoomIdAndDate(roomId, targetDate);
     }
 
+    public List<String> fetchDistinctRoomNamesOfBoom(ObjectId boomId) {
+
+        return roomRepository2.fetchDistinctRoomNamesOfBoom(boomId);
+    }
+
 }

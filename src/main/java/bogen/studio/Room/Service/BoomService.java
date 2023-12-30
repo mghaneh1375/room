@@ -159,4 +159,16 @@ public class BoomService extends AbstractService<Boom, BoomDTO> {
 
         return boom;
     }
+
+    public boolean doesBoomIdExist(ObjectId boomId) {
+
+        Query query = new Query().addCriteria(Criteria.where("_id").is(boomId));
+        long boomCount = mongoTemplate.count(
+                query,
+                Boom.class,
+                mongoTemplate.getCollectionName(Boom.class)
+        );
+
+        return boomCount != 0;
+    }
 }
