@@ -1,6 +1,6 @@
 package bogen.studio.Room.Exception;
 
-public class NotAccessException extends Exception {
+public class NotAccessException extends RuntimeException {
 
     private static final long serialVersionUID = 58L;
 

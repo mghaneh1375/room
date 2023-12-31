@@ -11,10 +11,13 @@ public class MyRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        DiscountPlace discountPlace = DiscountPlace.BOOM_DISCOUNT;
+        int a = 10;
 
-        System.out.println("** Hello");
-        System.out.println("**: " + discountPlace.gtPersianValue());
+        if (a > 0) {
+            System.out.println("a > 0");
+        } else if (a > 5) {
+            System.out.println("a > 5");
+        }
 
     }
 }

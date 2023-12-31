@@ -9,6 +9,7 @@ import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Exception.BackendErrorException;
 import bogen.studio.Room.Exception.InvalidInputException;
+import bogen.studio.Room.Exception.NotAccessException;
 import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.DiscountRepository;
 import bogen.studio.Room.documents.Discount;
@@ -18,8 +19,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
@@ -29,6 +28,7 @@ import java.util.List;
 
 import static bogen.studio.Room.Routes.Utility.getUserId;
 import static bogen.studio.Room.Utility.TimeUtility.convertStringToLdt;
+import static bogen.studio.Room.Utility.UserUtility.getUserAuthorities;
 
 @Service
 @RequiredArgsConstructor
@@ -54,8 +54,10 @@ public class DiscountService {
         // Check the integrity of boomId roomName, and discount code uniqueness;
         checkBoomIdExistence(boomId);
         checkRoomExistence(discountPlace, boomId, discountPlaceInfo.getRoomName());
-        checkCodeUniqueness(discountType,boomId, dto);
-        // Todo: check the createdBy to be the owner of the boom or the admin
+        checkCodeUniqueness(discountType, boomId, dto);
+
+        // Check the user to be the owner of the boom or the system admin
+        isUserAllowedToCreateDiscount(boomId, principal);
 
         // Instantiate discount
         Discount discount = new Discount()
@@ -71,18 +73,23 @@ public class DiscountService {
         return discountRepository.insert(discount);
     }
 
-//    private void isUserAllowedToCreateDiscount(ObjectId boomId, Principal principal) {
-//        /* Two types of users can create discount:
-//         * 1. Boom owner can create discount for only his/her boom.
-//         * 2. System admin can create discount for any boom/room. */
-//
-//        Boom boom = boomService.findById(boomId);
-//        User user = ((bogen.studio.Room.Models.User) ((UsernamePasswordAuthenticationToken) principal).getPrincipal());
-//        List<GrantedAuthority> dd = (List<GrantedAuthority>) user.getAuthorities();
-//
-//
-//
-//    }
+    private void isUserAllowedToCreateDiscount(ObjectId boomId, Principal principal) {
+        /* Two types of users can create discount:
+         * 1. Boom owner can create discount for only his/her boom.
+         * 2. System admin can create discount for any boom/room. */
+
+        Boom boom = boomService.findById(boomId);
+
+        List<String> userAuthorities = getUserAuthorities(principal);
+
+        // Todo: allow if the user is admin
+        // Todo: allow if the use is the owner of the boom
+        if (!userAuthorities.contains("ADMIN")) {
+            if (!boom.getUserId().equals(getUserId(principal))) {
+                throw new NotAccessException("شما مجاز به ایجاد تخفیف برای این بوم نیستید");
+            }
+        }
+    }
 
     private void setGeneralOrLastMinuteOrCodeDiscount(DiscountType discountType, Discount discount, DiscountPostDto dto) {
         /* According to input discountType set general or lastMinute or code discount */
@@ -105,7 +112,7 @@ public class DiscountService {
 
     }
 
-    private void checkCodeUniqueness(DiscountType discountType,ObjectId boomId, DiscountPostDto dto) {
+    private void checkCodeUniqueness(DiscountType discountType, ObjectId boomId, DiscountPostDto dto) {
         /* Check uniqueness of the input discount code */
 
         if (discountType.equals(DiscountType.CODE)) {
@@ -162,6 +169,7 @@ public class DiscountService {
         }
 
     }
+
     private void checkBoomIdExistence(ObjectId boomId) {
         /* Throw exception if boomId does not exist */
 
@@ -170,6 +178,7 @@ public class DiscountService {
         }
 
     }
+
     private CodeDiscount createCodeDiscount(CodeDiscountPostDto dto) {
         /* Create CodeDiscount */
 

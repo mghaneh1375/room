@@ -74,6 +74,12 @@ public class ExceptionHandlerClass {
         return ResponseEntity.ok(generateErr(e.getMessage()));
     }
 
+    @ExceptionHandler(value = NotAccessException.class)
+    public ResponseEntity<String> notAccessExceptionHandler(NotAccessException e) {
+
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
 
 
 }
