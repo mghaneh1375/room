@@ -47,7 +47,8 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
                 lastMinuteDiscountHasError ||
                 codeDiscountHasError
         ) {
-            log.warn("DiscountPostDto validator found an error");
+            String errorMsgForLog = sb.toString().replace("\n", "--");
+            log.warn("DiscountPostDto validator found an error: " + errorMsgForLog);
             throw new InvalidInputException(sb.toString());
         }
 
@@ -546,6 +547,11 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
         ) {
             hasError = true;
             sb.append("آیدی بوم یا نام اتاق وارد نشده است");
+            sb.append("\n");
+        } else if (dto.getDiscountPlace().equals(BOOM_DISCOUNT.toString()) &&
+                dto.getDiscountPlaceInfoPostDto().getRoomName() != null) {
+            hasError = true;
+            sb.append("درحالت تخفیف بوم، نام اتاق باید تهی باشد");
             sb.append("\n");
         } else if (
                 dto.getDiscountPlace().equals(BOOM_DISCOUNT.toString()) &&
