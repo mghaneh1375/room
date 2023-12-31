@@ -223,7 +223,26 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             jsonArray.put(jsonObject);
         });
 
-        return generateSuccessMsg("data", jsonArray);
+        JSONArray modifiedSearchResult = removeRoomsWithNoFreeIds(jsonArray);
+        return generateSuccessMsg("data", modifiedSearchResult);
+        //return generateSuccessMsg("data", jsonArray);
+
+    }
+
+    private JSONArray removeRoomsWithNoFreeIds(JSONArray searchResult) {
+        /* Remove rooms, which do not have freeIds */
+
+        JSONArray modifiedSearchResult = new JSONArray();
+
+        for (int i = 0; i < searchResult.length(); i++) {
+
+            var roomSearchObject = searchResult.getJSONObject(i);
+            if (roomSearchObject.getInt("totalPrice") != -1) {
+                modifiedSearchResult.put(roomSearchObject);
+            }
+        }
+
+        return modifiedSearchResult;
 
     }
 
