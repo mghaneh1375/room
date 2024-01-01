@@ -184,7 +184,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
                             if (tmp.getInt("totalPrice") == -1) {
                                 tmp.put("totalPrice",
-                                        (int) calcPrice(x, dates, dto.getAdults(), dto.getChildren()).getKey()
+                                        (int) calcPrice(x, dates, dto.getAdults(), dto.getChildren()).getTotalPrice()
                                 );
                             }
                         } catch (Exception ignore) {
@@ -211,7 +211,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                 JSONArray freeRoomIds = new JSONArray();
 
                 try {
-                    jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getAdults(), dto.getChildren()).getKey());
+                    jsonObject.put("totalPrice", calcPrice(x, canReserve(x, dto), dto.getAdults(), dto.getChildren()).getTotalPrice());
                     freeRoomIds.put(x.get_id().toString());
                 } catch (Exception ex) {
                     jsonObject.put("totalPrice", -1);
@@ -911,18 +911,18 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
 
-            PairValue p = calcPrice(room, dates, dto.getAdults(), dto.getChildren());
+            CalculatePriceResult calculatePriceResult = calcPrice(room, dates, dto.getAdults(), dto.getChildren());
 
             JSONArray jsonArray = new JSONArray();
 
-            ((List<DatePrice>) p.getValue()).forEach(x -> jsonArray.put(new JSONObject()
+            ((List<DatePrice>) calculatePriceResult.getDatePriceList()).forEach(x -> jsonArray.put(new JSONObject()
                     .put("additionalCapPrice", x.getCapPrice())
                     .put("price", x.getPrice())
                     .put("date", x.getDate())
             ));
 
             return generateSuccessMsg("data", new JSONObject()
-                    .put("total", p.getKey())
+                    .put("total", calculatePriceResult.getTotalPrice())
                     .put("prices", jsonArray)
             );
         } catch (Exception x) {
@@ -930,7 +930,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         }
     }
 
-    public PairValue calcPrice(Room room, List<String> dates, int adults, int children) {
+    public CalculatePriceResult calcPrice(Room room, List<String> dates, int adults, int children) {
 
         // todo: consider children independent
         adults += children;
@@ -1015,7 +1015,22 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         }
 
-        return new PairValue(totalPrice, pricesDetail);
+        //return new PairValue(totalPrice, pricesDetail);
+        return new CalculatePriceResult()
+                .setTotalPrice(totalPrice)
+                .setDatePriceList(pricesDetail);
+    }
+
+    private void calculateDiscount(Room room, List<String> jalaliDates) {
+        /*  */
+
+        List<LocalDateTime> targetDates =  convertJalaliDatesListToGregorian(jalaliDates);
+        ObjectId boomId = room.getBoomId();
+
+        // find boom related discounts
+
+
+
     }
 
     @Transactional // This annotation needs replica set to work
@@ -1047,8 +1062,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             Room room = (Room) canReservePairValue.getKey();
             List<String> jalaliDates = (List<String>) canReservePairValue.getValue();
 
-            PairValue pricePairValue = calcPrice(room, jalaliDates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
-            int totalAmount = (int) pricePairValue.getKey();
+            CalculatePriceResult calculatePriceResult = calcPrice(room, jalaliDates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
+            int totalAmount = (int) calculatePriceResult.getTotalPrice();
 
             ReservationRequest reservationRequest = createReservationRequest(
                     passengerServiceResponse,
@@ -1056,7 +1071,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     reservationRequestDTO,
                     tripId,
                     userId,
-                    pricePairValue,
+                    calculatePriceResult,
                     room,
                     totalAmount,
                     convertJalaliDatesListToGregorian(List.of(jalaliDates.get(0))).get(0),
@@ -1170,7 +1185,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                                         ReservationRequestDTO reservationRequestDTO,
                                                         ObjectId tripId,
                                                         ObjectId userId,
-                                                        PairValue p,
+                                                        CalculatePriceResult calculatePriceResult,
                                                         Room room,
                                                         int totalAmount,
                                                         LocalDateTime residenceStartDate,
@@ -1190,7 +1205,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             reservationRequest.setDescription(reservationRequestDTO.getDescription());
 
         reservationRequest.setPassengersId(tripId);
-        reservationRequest.setPrices((List<DatePrice>) p.getValue());
+        reservationRequest.setPrices((List<DatePrice>) calculatePriceResult.getDatePriceList());
         reservationRequest.setTotalAmount(totalAmount);
         reservationRequest.setOwnerId(room.getUserId());
 

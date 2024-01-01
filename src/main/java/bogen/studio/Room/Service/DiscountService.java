@@ -1,21 +1,18 @@
 package bogen.studio.Room.Service;
 
-import bogen.studio.Room.DTO.CodeDiscountPostDto;
 import bogen.studio.Room.DTO.DiscountPostDto;
-import bogen.studio.Room.DTO.GeneralDiscountPostDto;
-import bogen.studio.Room.DTO.LastMinuteDiscountPostDto;
 import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
-import bogen.studio.Room.Exception.BackendErrorException;
-import bogen.studio.Room.Exception.InvalidInputException;
-import bogen.studio.Room.Exception.NotAccessException;
-import bogen.studio.Room.Models.*;
+import bogen.studio.Room.Models.CalculatedDiscountInfo;
+import bogen.studio.Room.Models.DiscountPlaceInfo;
+import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Repository.DiscountRepository;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.data.geo.Circle;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -23,12 +20,14 @@ import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
+import static bogen.studio.Room.Enums.DiscountExecution.AMOUNT;
+import static bogen.studio.Room.Enums.DiscountPlace.BOOM_DISCOUNT;
+import static bogen.studio.Room.Enums.DiscountPlace.ROOM_DISCOUNT;
+import static bogen.studio.Room.Enums.DiscountType.*;
 import static bogen.studio.Room.Routes.Utility.getUserId;
-import static bogen.studio.Room.Utility.TimeUtility.convertStringToLdt;
-import static bogen.studio.Room.Utility.UserUtility.getUserAuthorities;
 
 @Service
 @RequiredArgsConstructor
@@ -36,9 +35,8 @@ import static bogen.studio.Room.Utility.UserUtility.getUserAuthorities;
 public class DiscountService {
 
     private final DiscountRepository discountRepository;
-    private final BoomService boomService;
-    private final RoomService roomService;
-    private final MongoTemplate mongoTemplate;
+    private final InsertDiscountService insertDiscountService;
+    private final CalculateDiscountService calculateDiscountService;
 
     public Discount insert(DiscountPostDto dto, Principal principal) {
         /* Create Discount doc and insert it into DB */
@@ -52,12 +50,12 @@ public class DiscountService {
         DiscountType discountType = DiscountType.valueOf(dto.getDiscountType());
 
         // Check the integrity of boomId roomName, and discount code uniqueness;
-        checkBoomIdExistence(boomId);
-        checkRoomExistence(discountPlace, boomId, discountPlaceInfo.getRoomName());
-        checkCodeUniqueness(discountType, boomId, dto);
+        insertDiscountService.checkBoomIdExistence(boomId);
+        insertDiscountService.checkRoomExistence(discountPlace, boomId, discountPlaceInfo.getRoomName());
+        insertDiscountService.checkCodeUniqueness(discountType, boomId, dto);
 
         // Check the user to be the owner of the boom or the system admin
-        isUserAllowedToCreateDiscount(boomId, principal);
+        insertDiscountService.isUserAllowedToCreateDiscount(boomId, principal);
 
         // Instantiate discount
         Discount discount = new Discount()
@@ -67,177 +65,118 @@ public class DiscountService {
                 .setCreatedBy(getUserId(principal));
 
         // According to input discountType set general or lastMinute or code discount
-        setGeneralOrLastMinuteOrCodeDiscount(discountType, discount, dto);
+        insertDiscountService.setGeneralOrLastMinuteOrCodeDiscount(discountType, discount, dto);
 
         // Insert to DB
         return discountRepository.insert(discount);
     }
 
-    private void isUserAllowedToCreateDiscount(ObjectId boomId, Principal principal) {
-        /* Two types of users can create discount:
-         * 1. Boom owner can create discount for only his/her boom.
-         * 2. System admin can create discount for any boom/room. */
+    public void calculateDiscountForTargetDate(ObjectId boomId, String roomName, LocalDateTime targetDate, Long totalAmount) {
+        /**/
 
-        Boom boom = boomService.findById(boomId);
+        // Fetch discounts from db
+        List<Discount> discounts = calculateDiscountService
+                .fetchDefinedDiscountsForTargetDate(boomId, roomName, targetDate);
 
-        List<String> userAuthorities = getUserAuthorities(principal);
+        // Calculate discount-amount for fetched discounts
+        List<CalculatedDiscountInfo> calculatedDiscountInfoList = new ArrayList<>();
 
-        // Todo: allow if the user is admin
-        // Todo: allow if the use is the owner of the boom
-        if (!userAuthorities.contains("ADMIN")) {
-            if (!boom.getUserId().equals(getUserId(principal))) {
-                throw new NotAccessException("شما مجاز به ایجاد تخفیف برای این بوم نیستید");
+        // Todo: delete this section
+        System.out.println("Discounts:\n");
+        for (Discount discount : discounts) {
+
+            CalculatedDiscountInfo  calculatedDiscountInfo = renameMe(discount, totalAmount);
+
+            System.out.println(discount);
+            System.out.println("\n");
+            System.out.println("discount: ");
+            System.out.println(calculatedDiscountInfo);
+            System.out.println("---------------------------");
+        }
+
+
+    }
+
+    private CalculatedDiscountInfo renameMe(Discount discount, Long totalAmount) {
+
+        if (discount.getDiscountType().equals(GENERAL)) {
+
+            return calculateGeneralDiscount(discount, totalAmount);
+
+        }
+
+        return null;
+    }
+
+    private CalculatedDiscountInfo calculateGeneralDiscount(Discount discount, Long totalAmount) {
+        /* Calculate discount if it is a GENERAL one */
+
+        GeneralDiscount generalDiscount = discount.getGeneralDiscount();
+        DiscountExecution discountExecution = generalDiscount.getDiscountExecution();
+
+        if (discountExecution.equals(AMOUNT)) {
+
+            return calculateGeneralAmountWiseDiscount(generalDiscount, discount.get_id(), totalAmount);
+
+        } else if (discountExecution.equals(DiscountExecution.PERCENTAGE)) {
+
+            return calculateGeneralPercentWiseDiscount(generalDiscount, discount.get_id(), totalAmount);
+
+        } else {
+            return null;
+        }
+    }
+
+    private CalculatedDiscountInfo calculateGeneralPercentWiseDiscount(GeneralDiscount generalDiscount, String discountId, Long totalAmount) {
+        /* Calculate general discount if execution type is PERCENTAGE */
+
+        Long discountThreshold = generalDiscount.getDiscountThreshold();
+        Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
+
+        if (minimumRequiredPurchase != null) {
+            if (totalAmount < minimumRequiredPurchase) {
+                return null;
             }
         }
-    }
 
-    private void setGeneralOrLastMinuteOrCodeDiscount(DiscountType discountType, Discount discount, DiscountPostDto dto) {
-        /* According to input discountType set general or lastMinute or code discount */
-
-        switch (discountType) {
-
-            case GENERAL:
-                discount.setGeneralDiscount(createGeneralDiscount(dto.getGeneralDiscountPostDto()));
-                break;
-            case LAST_MINUTE:
-                discount.setLastMinuteDiscount(createLastMinuteDiscount(dto.getLastMinuteDiscountPostDto()));
-                break;
-            case CODE:
-                discount.setCodeDiscount(createCodeDiscount(dto.getCodeDiscountPostDto()));
-                break;
-            default:
-                log.error("Unexpected case in DiscountType: " + discountType);
-                throw new BackendErrorException("خطای سرور. لطفا با پشتیبانی تماس بگیرید");
-        }
-
-    }
-
-    private void checkCodeUniqueness(DiscountType discountType, ObjectId boomId, DiscountPostDto dto) {
-        /* Check uniqueness of the input discount code */
-
-        if (discountType.equals(DiscountType.CODE)) {
-
-            String discountCode = getDiscountCode(discountType, dto);
-
-            Criteria boomIdCriteria = Criteria.where("discount_place_info.boomId").is(boomId);
-            Criteria discountTypeCriteria = Criteria.where("discount_type").is(discountType);
-            Criteria discountCodeCriteria = Criteria.where("code_discount.code").is(discountCode);
-            Criteria searchCriteria = new Criteria().andOperator(boomIdCriteria, discountTypeCriteria, discountCodeCriteria);
-
-            Query query = new Query().addCriteria(searchCriteria);
-
-            long discountCodeCount = mongoTemplate.count(
-                    query,
-                    Discount.class,
-                    mongoTemplate.getCollectionName(Discount.class)
-            );
-
-            if (discountCodeCount > 0) {
-                throw new InvalidInputException("کد تخفیف برای این بوم تکراری است");
+        long calculatedDiscount = totalAmount * generalDiscount.getPercent() / 100;
+        if (discountThreshold != null) {
+            if (calculatedDiscount > discountThreshold) {
+                calculatedDiscount = discountThreshold;
             }
         }
+
+        return new CalculatedDiscountInfo()
+                .setDiscountId(discountId)
+                .setCalculatedDiscount(calculatedDiscount);
+
     }
 
-    private String getDiscountCode(DiscountType discountType, DiscountPostDto dto) {
-        /* Get discount code from DiscountPostDto */
+    private CalculatedDiscountInfo calculateGeneralAmountWiseDiscount(GeneralDiscount generalDiscount, String discountId, Long totalAmount) {
+        /* Calculate discount if the discount is general, and amount-wise */
 
-        if (discountType.equals(DiscountType.CODE)) {
+        Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
 
-            CodeDiscountPostDto codeDiscountPostDto = dto.getCodeDiscountPostDto();
-            if (codeDiscountPostDto != null) {
-                return dto.getCodeDiscountPostDto().getCode();
+        if (minimumRequiredPurchase != null) {
+            // If minimumRequiredPurchase is defined in the discount doc.
 
+            if (totalAmount > minimumRequiredPurchase) {
+                return new CalculatedDiscountInfo()
+                        .setDiscountId(discountId)
+                        .setCalculatedDiscount(generalDiscount.getAmount());
             } else {
-                log.error("Expected to get codeDiscountPostDto but it was null");
-                throw new BackendErrorException("خطای سرور. با پشتیبانی تماس بگیرید");
+                return null;
             }
 
         } else {
-            log.error(String.format("Expected to get DiscountType: CODE but got: %s", discountType));
-            throw new BackendErrorException("خطای سرور. با پشتیبانی تماس بگیرید");
-        }
-    }
+            // If minimumRequiredPurchase is NOT defined in the discount doc.
 
-    private void checkRoomExistence(DiscountPlace discountPlace, ObjectId boomId, String roomName) {
-        /* Check room existence according to input discountPlace, boomId, and roomName */
-
-        if (discountPlace.equals(DiscountPlace.ROOM_DISCOUNT)) {
-            List<String> roomNamesInBoom = roomService.fetchDistinctRoomNamesOfBoom(boomId);
-            if (!roomNamesInBoom.contains(roomName)) {
-                throw new InvalidInputException("اتاقی با این نام در بوم وجود ندارد");
-            }
+            return new CalculatedDiscountInfo()
+                    .setDiscountId(discountId)
+                    .setCalculatedDiscount(generalDiscount.getAmount());
         }
 
     }
 
-    private void checkBoomIdExistence(ObjectId boomId) {
-        /* Throw exception if boomId does not exist */
-
-        if (!boomService.doesBoomIdExist(boomId)) {
-            throw new InvalidInputException("بوم در سیستم ثبت نشده است");
-        }
-
-    }
-
-    private CodeDiscount createCodeDiscount(CodeDiscountPostDto dto) {
-        /* Create CodeDiscount */
-
-        DiscountExecution discountExecution = DiscountExecution.valueOf(dto.getDiscountExecution());
-
-        return new CodeDiscount()
-                .setDiscountExecution(discountExecution)
-                .setPercent(dto.getPercent())
-                .setAmount(dto.getAmount())
-                .setCode(dto.getCode())
-                .setDefinedUsageCount(dto.getDefinedUsageCount())
-                .setCurrentUsageCount(0)
-                .setLifeTimeStart(createLdt(dto.getLifeTimeStart()))
-                .setLifeTimeEnd(createLdt(dto.getLifeTimeEnd()))
-                .setTargetDateStart(createLdt(dto.getTargetDateStart()))
-                .setTargetDateEnd(createLdt(dto.getTargetDateEnd()));
-    }
-
-    private LastMinuteDiscount createLastMinuteDiscount(LastMinuteDiscountPostDto dto) {
-        /* Create LastMinuteDiscount */
-
-        DiscountExecution discountExecution = DiscountExecution.valueOf(dto.getDiscountExecution());
-
-        return new LastMinuteDiscount()
-                .setDiscountExecution(discountExecution)
-                .setPercent(dto.getPercent())
-                .setAmount(dto.getAmount())
-                .setTargetDate(createLdt(dto.getTargetDate()))
-                .setLifeTimeStart(createLdt(dto.getLifeTimeStart()));
-    }
-
-    private GeneralDiscount createGeneralDiscount(GeneralDiscountPostDto dto) {
-        /* Create GeneralDiscount */
-
-        DiscountExecution discountExecution = DiscountExecution.valueOf(dto.getDiscountExecution());
-
-        return new GeneralDiscount()
-                .setDiscountExecution(discountExecution)
-                .setPercent(dto.getDiscountPercent())
-                .setAmount(dto.getDiscountAmount())
-                .setMinimumRequiredPurchase(dto.getMinimumRequiredPurchase())
-                .setDiscountThreshold(dto.getDiscountThreshold())
-                .setLifeTimeStart(createLdt(dto.getLifeTimeStart()))
-                .setLifeTimeEnd(createLdt(dto.getLifeTimeEnd()))
-                .setTargetDateStart(createLdt(dto.getTargetDateStart()))
-                .setTargetDateEnd(createLdt(dto.getTargetDateEnd()));
-    }
-
-    private LocalDateTime createLdt(String dateInString) {
-        /* Create LDT from input string according to defined date pattern */
-
-        String datePattern = "yyyy-MM-dd'T'HH:mm:ss";
-
-        try {
-            return convertStringToLdt(dateInString, datePattern);
-        } catch (DateTimeParseException e) {
-            log.error("Error in parsing: " + dateInString);
-            throw new BackendErrorException("خطایی در سرور رخ داده است. لطفا با پشتیبانی تماس بگیرید");
-        }
-    }
 
 }

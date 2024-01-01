@@ -76,6 +76,7 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
                     dto.getCodeDiscountPostDto().getDiscountExecution(),
                     dto.getCodeDiscountPostDto().getAmount(),
                     dto.getCodeDiscountPostDto().getPercent(),
+                    null,
                     sb
             )) {
                 hasError = true;
@@ -168,6 +169,7 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
                     dto.getLastMinuteDiscountPostDto().getDiscountExecution(),
                     dto.getLastMinuteDiscountPostDto().getAmount(),
                     dto.getLastMinuteDiscountPostDto().getPercent(),
+                    null,
                     sb
             )) {
                 hasError = true;
@@ -204,6 +206,7 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
             String inputDiscountExecution,
             Long amount,
             Integer percent,
+            Long discountThreshold,
             StringBuffer sb) {
 
         boolean hasError = false;
@@ -272,6 +275,12 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
                 }
 
             }
+
+            if (inputDiscountExecution.equals(AMOUNT.toString()) && discountThreshold != null) {
+                sb.append("در حالت تخفیف مقداری، آستانه تخفیف باید تهی باشد");
+                sb.append("\n");
+                hasError = true;
+            }
         }
         return hasError;
     }
@@ -334,6 +343,7 @@ public class DiscountValidator implements ConstraintValidator<ValidDiscount, Dis
                     dto.getGeneralDiscountPostDto().getDiscountExecution(),
                     dto.getGeneralDiscountPostDto().getDiscountAmount(),
                     dto.getGeneralDiscountPostDto().getDiscountPercent(),
+                    dto.getGeneralDiscountPostDto().getDiscountThreshold(),
                     sb
             )) {
                 hasError = true;

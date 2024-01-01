@@ -4,7 +4,7 @@ public enum DiscountType {
 
     GENERAL,
     LAST_MINUTE,
-    CODE
+    PERCENTAGE, CODE
 
 
 }

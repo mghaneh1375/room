@@ -28,8 +28,8 @@ public class DiscountController {
             Principal principal
             ) {
 
-        discountService.insert(dto, principal);
-        return ResponseEntity.ok("Successfully inserted Discount to DB");
+        var dd = discountService.insert(dto, principal);
+        return ResponseEntity.ok("Successfully inserted Discount to DB: " + dd);
     }
 
 }
