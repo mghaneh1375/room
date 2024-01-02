@@ -1,32 +1,21 @@
 package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.DiscountPostDto;
-import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Models.CalculatedDiscountInfo;
 import bogen.studio.Room.Models.DiscountPlaceInfo;
-import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Repository.DiscountRepository;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.springframework.data.geo.Circle;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-import static bogen.studio.Room.Enums.DiscountExecution.AMOUNT;
-import static bogen.studio.Room.Enums.DiscountPlace.BOOM_DISCOUNT;
-import static bogen.studio.Room.Enums.DiscountPlace.ROOM_DISCOUNT;
-import static bogen.studio.Room.Enums.DiscountType.*;
 import static bogen.studio.Room.Routes.Utility.getUserId;
 
 @Service
@@ -71,111 +60,29 @@ public class DiscountService {
         return discountRepository.insert(discount);
     }
 
-    public void calculateDiscountForTargetDate(ObjectId boomId, String roomName, LocalDateTime targetDate, Long totalAmount) {
-        /**/
+    public CalculatedDiscountInfo getMaximumDiscountForTargetDate(
+            ObjectId boomId,
+            String roomName,
+            LocalDateTime targetDate,
+            int nightOrdinalNumber,
+            Long totalAmount) {
+        /* Find related discounts, then return the one with maximum discount amount */
 
-        // Fetch discounts from db
+        // Fetch related discounts from db
         List<Discount> discounts = calculateDiscountService
                 .fetchDefinedDiscountsForTargetDate(boomId, roomName, targetDate);
 
         // Calculate discount-amount for fetched discounts
-        List<CalculatedDiscountInfo> calculatedDiscountInfoList = new ArrayList<>();
+        List<CalculatedDiscountInfo> calculatedDiscountInfoList =
+                calculateDiscountService.
+                        calculateDiscountAmountForFetchedDiscounts(
+                                discounts,
+                                nightOrdinalNumber,
+                                totalAmount);
 
-        // Todo: delete this section
-        System.out.println("Discounts:\n");
-        for (Discount discount : discounts) {
-
-            CalculatedDiscountInfo  calculatedDiscountInfo = renameMe(discount, totalAmount);
-
-            System.out.println(discount);
-            System.out.println("\n");
-            System.out.println("discount: ");
-            System.out.println(calculatedDiscountInfo);
-            System.out.println("---------------------------");
-        }
-
-
-    }
-
-    private CalculatedDiscountInfo renameMe(Discount discount, Long totalAmount) {
-
-        if (discount.getDiscountType().equals(GENERAL)) {
-
-            return calculateGeneralDiscount(discount, totalAmount);
-
-        }
-
-        return null;
-    }
-
-    private CalculatedDiscountInfo calculateGeneralDiscount(Discount discount, Long totalAmount) {
-        /* Calculate discount if it is a GENERAL one */
-
-        GeneralDiscount generalDiscount = discount.getGeneralDiscount();
-        DiscountExecution discountExecution = generalDiscount.getDiscountExecution();
-
-        if (discountExecution.equals(AMOUNT)) {
-
-            return calculateGeneralAmountWiseDiscount(generalDiscount, discount.get_id(), totalAmount);
-
-        } else if (discountExecution.equals(DiscountExecution.PERCENTAGE)) {
-
-            return calculateGeneralPercentWiseDiscount(generalDiscount, discount.get_id(), totalAmount);
-
-        } else {
-            return null;
-        }
-    }
-
-    private CalculatedDiscountInfo calculateGeneralPercentWiseDiscount(GeneralDiscount generalDiscount, String discountId, Long totalAmount) {
-        /* Calculate general discount if execution type is PERCENTAGE */
-
-        Long discountThreshold = generalDiscount.getDiscountThreshold();
-        Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
-
-        if (minimumRequiredPurchase != null) {
-            if (totalAmount < minimumRequiredPurchase) {
-                return null;
-            }
-        }
-
-        long calculatedDiscount = totalAmount * generalDiscount.getPercent() / 100;
-        if (discountThreshold != null) {
-            if (calculatedDiscount > discountThreshold) {
-                calculatedDiscount = discountThreshold;
-            }
-        }
-
-        return new CalculatedDiscountInfo()
-                .setDiscountId(discountId)
-                .setCalculatedDiscount(calculatedDiscount);
-
-    }
-
-    private CalculatedDiscountInfo calculateGeneralAmountWiseDiscount(GeneralDiscount generalDiscount, String discountId, Long totalAmount) {
-        /* Calculate discount if the discount is general, and amount-wise */
-
-        Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
-
-        if (minimumRequiredPurchase != null) {
-            // If minimumRequiredPurchase is defined in the discount doc.
-
-            if (totalAmount > minimumRequiredPurchase) {
-                return new CalculatedDiscountInfo()
-                        .setDiscountId(discountId)
-                        .setCalculatedDiscount(generalDiscount.getAmount());
-            } else {
-                return null;
-            }
-
-        } else {
-            // If minimumRequiredPurchase is NOT defined in the discount doc.
-
-            return new CalculatedDiscountInfo()
-                    .setDiscountId(discountId)
-                    .setCalculatedDiscount(generalDiscount.getAmount());
-        }
-
+        // Find maximum discount amount
+        return calculateDiscountService
+                .findMaximumDiscountAmount(calculatedDiscountInfoList);
     }
 
 

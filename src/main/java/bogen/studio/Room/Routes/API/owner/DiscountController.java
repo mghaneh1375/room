@@ -2,7 +2,6 @@ package bogen.studio.Room.Routes.API.owner;
 
 import bogen.studio.Room.DTO.DiscountPostDto;
 import bogen.studio.Room.Service.DiscountService;
-import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,8 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.security.Principal;
-
-import static bogen.studio.Room.Routes.Utility.getUserId;
 
 @RestController
 @RequiredArgsConstructor

@@ -1,5 +1,10 @@
 package bogen.studio.Room.Service;
 
+import bogen.studio.Room.Enums.DiscountExecution;
+import bogen.studio.Room.Enums.DiscountType;
+import bogen.studio.Room.Models.CalculatedDiscountInfo;
+import bogen.studio.Room.Models.GeneralDiscount;
+import bogen.studio.Room.Models.LastMinuteDiscount;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,12 +15,16 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+import static bogen.studio.Room.Enums.DiscountExecution.AMOUNT;
+import static bogen.studio.Room.Enums.DiscountExecution.PERCENTAGE;
 import static bogen.studio.Room.Enums.DiscountPlace.BOOM_DISCOUNT;
 import static bogen.studio.Room.Enums.DiscountPlace.ROOM_DISCOUNT;
-import static bogen.studio.Room.Enums.DiscountType.*;
-import static bogen.studio.Room.Enums.DiscountType.CODE;
+import static bogen.studio.Room.Enums.DiscountType.GENERAL;
+import static bogen.studio.Room.Enums.DiscountType.LAST_MINUTE;
 
 @Service
 @RequiredArgsConstructor
@@ -107,4 +116,154 @@ public class CalculateDiscountService {
         return new Criteria().orOperator(generalTargetDate, lastMinuteTargetDate);
     }
 
+    public CalculatedDiscountInfo findMaximumDiscountAmount(List<CalculatedDiscountInfo> calculatedDiscountInfoList) {
+
+        if (calculatedDiscountInfoList.size() == 0) {
+            return new CalculatedDiscountInfo()
+                    .setDiscountId(null)
+                    .setCalculatedDiscount(null);
+        }
+
+        // Sort calculated discount list in descending order
+        calculatedDiscountInfoList.sort(
+                Comparator
+                        .comparing(CalculatedDiscountInfo::getCalculatedDiscount)
+                        .reversed());
+
+        return new CalculatedDiscountInfo()
+                .setDiscountId(calculatedDiscountInfoList.get(0).getDiscountId())
+                .setCalculatedDiscount(calculatedDiscountInfoList.get(0).getCalculatedDiscount());
+
+    }
+
+    public List<CalculatedDiscountInfo> calculateDiscountAmountForFetchedDiscounts(
+            List<Discount> discounts,
+            int nightOrdinalNumber,
+            Long totalAmount) {
+        /* Calculate discount-amount for fetched discounts*/
+
+        List<CalculatedDiscountInfo> calculatedDiscountInfoList = new ArrayList<>();
+
+        for (Discount discount : discounts) {
+
+            CalculatedDiscountInfo calculatedDiscountInfo = calculateDiscount(discount, nightOrdinalNumber, totalAmount);
+
+            if (calculatedDiscountInfo != null) {
+                calculatedDiscountInfoList.add(calculatedDiscountInfo);
+            }
+        }
+
+        return calculatedDiscountInfoList;
+    }
+
+    private CalculatedDiscountInfo calculateDiscount(Discount discount, int nightOrdinalNumber, Long totalAmount) {
+
+        DiscountType discountType = discount.getDiscountType();
+
+        if (discountType.equals(GENERAL)) {
+
+            return calculateGeneralDiscount(discount, totalAmount);
+
+        } else if (discountType.equals(LAST_MINUTE) && nightOrdinalNumber == 1) {
+
+            return calculateLastMinuteDiscount(discount, totalAmount);
+        }
+
+        return null;
+    }
+
+    private CalculatedDiscountInfo calculateLastMinuteDiscount(Discount discount, Long totalAmount) {
+        /* Calculate discount for Last-minute discounts */
+
+        LastMinuteDiscount lastMinuteDiscount = discount.getLastMinuteDiscount();
+        DiscountExecution discountExecution = discount.getLastMinuteDiscount().getDiscountExecution();
+
+        if (discountExecution.equals(PERCENTAGE)) {
+
+            Long calculatedDiscount = totalAmount * lastMinuteDiscount.getPercent() / 100;
+
+            return new CalculatedDiscountInfo()
+                    .setDiscountId(discount.get_id())
+                    .setCalculatedDiscount(calculatedDiscount);
+
+        } else if (discountExecution.equals(AMOUNT)) {
+
+            return new CalculatedDiscountInfo()
+                    .setDiscountId(discount.get_id())
+                    .setCalculatedDiscount(lastMinuteDiscount.getAmount());
+
+        }
+
+        return null;
+    }
+
+    private CalculatedDiscountInfo calculateGeneralDiscount(Discount discount, Long totalAmount) {
+        /* Calculate discount if it is a GENERAL one */
+
+        GeneralDiscount generalDiscount = discount.getGeneralDiscount();
+        DiscountExecution discountExecution = generalDiscount.getDiscountExecution();
+
+        if (discountExecution.equals(AMOUNT)) {
+
+            return calculateGeneralAmountWiseDiscount(generalDiscount, discount.get_id(), totalAmount);
+
+        } else if (discountExecution.equals(PERCENTAGE)) {
+
+            return calculateGeneralPercentWiseDiscount(generalDiscount, discount.get_id(), totalAmount);
+
+        } else {
+            return null;
+        }
+    }
+
+    private CalculatedDiscountInfo calculateGeneralPercentWiseDiscount(GeneralDiscount generalDiscount, String discountId, Long totalAmount) {
+        /* Calculate general discount if execution type is PERCENTAGE */
+
+        Long discountThreshold = generalDiscount.getDiscountThreshold();
+        Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
+
+        if (minimumRequiredPurchase != null) {
+            if (totalAmount < minimumRequiredPurchase) {
+                return null;
+            }
+        }
+
+        long calculatedDiscount = totalAmount * generalDiscount.getPercent() / 100;
+        if (discountThreshold != null) {
+            if (calculatedDiscount > discountThreshold) {
+                calculatedDiscount = discountThreshold;
+            }
+        }
+
+        return new CalculatedDiscountInfo()
+                .setDiscountId(discountId)
+                .setCalculatedDiscount(calculatedDiscount);
+
+    }
+
+    private CalculatedDiscountInfo calculateGeneralAmountWiseDiscount(GeneralDiscount generalDiscount, String discountId, Long totalAmount) {
+        /* Calculate discount if the discount is general, and amount-wise */
+
+        Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
+
+        if (minimumRequiredPurchase != null) {
+            // If minimumRequiredPurchase is defined in the discount doc.
+
+            if (totalAmount > minimumRequiredPurchase) {
+                return new CalculatedDiscountInfo()
+                        .setDiscountId(discountId)
+                        .setCalculatedDiscount(generalDiscount.getAmount());
+            } else {
+                return null;
+            }
+
+        } else {
+            // If minimumRequiredPurchase is NOT defined in the discount doc.
+
+            return new CalculatedDiscountInfo()
+                    .setDiscountId(discountId)
+                    .setCalculatedDiscount(generalDiscount.getAmount());
+        }
+
+    }
 }
