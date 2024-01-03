@@ -1,7 +1,9 @@
 package bogen.studio.Room;
 
+import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Models.CalculatedDiscountInfo;
 import bogen.studio.Room.Service.DiscountService;
+import bogen.studio.Room.Service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.boot.CommandLineRunner;
@@ -14,6 +16,8 @@ import java.time.LocalDateTime;
 public class MyRunner implements CommandLineRunner {
 
     private final DiscountService discountService;
+    private final RoomService roomService;
+
     @Override
     public void run(String... args) throws Exception {
 
@@ -23,5 +27,9 @@ public class MyRunner implements CommandLineRunner {
         //discountService.fetchRelatedDiscounts(new ObjectId("64df8ced6b21b94de607c441"),"اتاق رویال", targetDate);
         System.out.println("**Finally: ");
         System.out.println(maxDis);
+
+
+
+
     }
 }

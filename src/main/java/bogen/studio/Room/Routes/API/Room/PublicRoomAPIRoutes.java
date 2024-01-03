@@ -92,7 +92,6 @@ public class PublicRoomAPIRoutes {
         /* This endpoint returns room status for the next five days, starting from today */
 
         return ResponseEntity.ok(generateSuccessMsg("Data", roomService.getRoomStatusForNext5days(roomId)));
-
     }
 
 }

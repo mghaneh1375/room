@@ -14,6 +14,7 @@ import bogen.studio.Room.Models.Boom;
 import bogen.studio.Room.Models.CodeDiscount;
 import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Models.LastMinuteDiscount;
+import bogen.studio.Room.Repository.RoomRepository2;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,7 @@ import static bogen.studio.Room.Utility.UserUtility.getUserAuthorities;
 public class InsertDiscountService {
 
     private final BoomService boomService;
-    private final RoomService roomService;
+    private final RoomRepository2 roomRepository2;
     private final MongoTemplate mongoTemplate;
 
     public void isUserAllowedToCreateDiscount(ObjectId boomId, Principal principal) {
@@ -51,8 +52,6 @@ public class InsertDiscountService {
 
         List<String> userAuthorities = getUserAuthorities(principal);
 
-        // Todo: allow if the user is admin
-        // Todo: allow if the use is the owner of the boom
         if (!userAuthorities.contains("ADMIN")) {
             if (!boom.getUserId().equals(getUserId(principal))) {
                 throw new NotAccessException("شما مجاز به ایجاد تخفیف برای این بوم نیستید");
@@ -131,7 +130,7 @@ public class InsertDiscountService {
         /* Check room existence according to input discountPlace, boomId, and roomName */
 
         if (discountPlace.equals(ROOM_DISCOUNT)) {
-            List<String> roomNamesInBoom = roomService.fetchDistinctRoomNamesOfBoom(boomId);
+            List<String> roomNamesInBoom = roomRepository2.fetchDistinctRoomNamesOfBoom(boomId);
             if (!roomNamesInBoom.contains(roomName)) {
                 throw new InvalidInputException("اتاقی با این نام در بوم وجود ندارد");
             }

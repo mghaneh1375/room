@@ -1,6 +1,8 @@
 package bogen.studio.Room.Utility;
 
 
+import my.common.commonkoochita.Utility.JalaliCalendar;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -66,6 +68,25 @@ public class TimeUtility {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePatternInString);
         return LocalDateTime.parse(dateInString, formatter);
+    }
+
+    public static List<LocalDateTime> convertJalaliDatesListToGregorian(List<String> jalaliDates) {
+        /* Input dates format: 1402/09/21 */
+
+        List<LocalDateTime> output = new ArrayList<>();
+
+        for (String date : jalaliDates) {
+
+            String[] jalaliDateValues = date.split("/");
+            JalaliCalendar.YearMonthDate gregorianDate = JalaliCalendar.jalaliToGregorian(new JalaliCalendar.YearMonthDate(jalaliDateValues[0], jalaliDateValues[1], jalaliDateValues[2]));
+            int year = gregorianDate.getYear();
+            int month = gregorianDate.getMonth() + 1;
+            int day = gregorianDate.getDate();
+            output.add(LocalDateTime.of(year, month, day, 0, 0, 0, 0));
+        }
+
+        return output;
+
     }
 
 

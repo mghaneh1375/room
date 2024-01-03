@@ -10,6 +10,7 @@ import bogen.studio.Room.Repository.ReservationRequestRepository2;
 import bogen.studio.Room.Repository.RoomRepository;
 import bogen.studio.Room.Repository.RoomRepository2;
 import bogen.studio.Room.Utility.FileUtils;
+import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.RoomDateReservationState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     private final ReservationRequestService reservationRequestService;
     private final ReservationRequestRepository2 reservationRequestRepository2;
     private final RoomRepository2 roomRepository2;
+    private final DiscountService discountService;
 
     @Value("${tracking.code.length}")
     private int trackingCodeLength;
@@ -223,9 +225,13 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             jsonArray.put(jsonObject);
         });
 
+        // Remove Rooms with no FreeIds
         JSONArray modifiedSearchResult = removeRoomsWithNoFreeIds(jsonArray);
+
+        // Add Discount info
+        discountService.addDiscountInfoToRoomSearchResult(modifiedSearchResult, boomId, dto);
+
         return generateSuccessMsg("data", modifiedSearchResult);
-        //return generateSuccessMsg("data", jsonArray);
 
     }
 
@@ -237,9 +243,17 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         for (int i = 0; i < searchResult.length(); i++) {
 
             var roomSearchObject = searchResult.getJSONObject(i);
-            if (roomSearchObject.getInt("totalPrice") != -1) {
+
+            if (roomSearchObject.has("totalPrice")) {
+
+                if (roomSearchObject.getInt("totalPrice") != -1) {
+                    modifiedSearchResult.put(roomSearchObject);
+                }
+            } else {
                 modifiedSearchResult.put(roomSearchObject);
             }
+
+
         }
 
         return modifiedSearchResult;
@@ -784,7 +798,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
          * RESERVED */
 
         // Convert input jalali dates to gregorian dates
-        List<LocalDateTime> gregorianDates = convertJalaliDatesListToGregorian(jalaliDates);
+        List<LocalDateTime> gregorianDates = TimeUtility.convertJalaliDatesListToGregorian(jalaliDates);
 
         // According to input roomId and gregorian dates find the list of target RoomDateReservationState documents
         List<RoomDateReservationState> roomDateReservationStateList = roomDateReservationStateService.findRoomDateReservationStateForTargetDates(roomId, gregorianDates);
@@ -861,24 +875,6 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         }
     }
 
-    private List<LocalDateTime> convertJalaliDatesListToGregorian(List<String> jalaliDates) {
-        /* Input dates format: 1402/09/21 */
-
-        List<LocalDateTime> output = new ArrayList<>();
-
-        for (String date : jalaliDates) {
-
-            String[] jalaliDateValues = date.split("/");
-            JalaliCalendar.YearMonthDate gregorianDate = JalaliCalendar.jalaliToGregorian(new JalaliCalendar.YearMonthDate(jalaliDateValues[0], jalaliDateValues[1], jalaliDateValues[2]));
-            int year = gregorianDate.getYear();
-            int month = gregorianDate.getMonth() + 1;
-            int day = gregorianDate.getDate();
-            output.add(LocalDateTime.of(year, month, day, 0, 0, 0, 0));
-        }
-
-        return output;
-
-    }
 
     private List<String> canReserve(Room room, TripInfo tripInfo) throws InvalidFieldsException {
 
@@ -1021,18 +1017,6 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                 .setDatePriceList(pricesDetail);
     }
 
-    private void calculateDiscount(Room room, List<String> jalaliDates) {
-        /*  */
-
-        List<LocalDateTime> targetDates =  convertJalaliDatesListToGregorian(jalaliDates);
-        ObjectId boomId = room.getBoomId();
-
-        // find boom related discounts
-
-
-
-    }
-
     @Transactional // This annotation needs replica set to work
     public String reserve(ObjectId roomId, ReservationRequestDTO reservationRequestDTO, ObjectId userId) {
 
@@ -1074,9 +1058,9 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     calculatePriceResult,
                     room,
                     totalAmount,
-                    convertJalaliDatesListToGregorian(List.of(jalaliDates.get(0))).get(0),
+                    TimeUtility.convertJalaliDatesListToGregorian(List.of(jalaliDates.get(0))).get(0),
                     tripInfo.getNights(),
-                    convertJalaliDatesListToGregorian(jalaliDates));
+                    TimeUtility.convertJalaliDatesListToGregorian(jalaliDates));
             reservationRequestRepository.insert(reservationRequest);
 
             // Set initial state of reserve request

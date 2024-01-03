@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,5 +15,6 @@ public class CalculatedDiscountInfo {
 
     private String discountId;
     private Long calculatedDiscount;
+    private LocalDateTime targetDate;
 
 }
