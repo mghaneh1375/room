@@ -902,25 +902,36 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
         try {
 
+            JSONObject output = new JSONObject();
+
             PairValue pairValue = canReserve(id, dto, true, null);
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
 
+            // Get total price and put it in output Json
             CalculatePriceResult calculatePriceResult = calcPrice(room, dates, dto.getAdults(), dto.getChildren());
+            output.put("total", calculatePriceResult.getTotalPrice());
 
+            // Get details of prices and put it in the output json
             JSONArray jsonArray = new JSONArray();
-
             ((List<DatePrice>) calculatePriceResult.getDatePriceList()).forEach(x -> jsonArray.put(new JSONObject()
                     .put("additionalCapPrice", x.getCapPrice())
                     .put("price", x.getPrice())
-                    .put("date", x.getDate())
+                    .put("date", TimeUtility.convertJalaliDatesListToGregorian(List.of(x.getDate())).get(0))
             ));
+            output.put("prices", jsonArray);
 
-            return generateSuccessMsg("data", new JSONObject()
-                    .put("total", calculatePriceResult.getTotalPrice())
-                    .put("prices", jsonArray)
+            // Add Discount info
+            JSONArray discountInfo = discountService.buildRoomDiscountInfoJsonArray(
+                    room.getTitle(),
+                    Long.valueOf(String.valueOf(calculatePriceResult.getTotalPrice())), // kesafat kari
+                    room.getBoomId(),
+                    TimeUtility.convertJalaliDatesListToGregorian(dates)
             );
+            output.put("discountInfo", discountInfo);
+
+            return generateSuccessMsg("data", output);
         } catch (Exception x) {
             return generateErr(x.getMessage());
         }

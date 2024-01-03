@@ -109,15 +109,20 @@ public class DiscountService {
             JSONObject roomData = modifiedSearchResult.getJSONObject(i);
 
             // Build JSONObject, including discount info for each staying date
-            JSONArray roomDiscountInfo = buildRoomDiscountInfoJsonArray(roomData, boomId, stayingDatesInGregorian);
+            JSONArray roomDiscountInfo = buildRoomDiscountInfoJsonArray(
+                    roomData.getString("title"),
+                    roomData.getLong("totalPrice"),
+                    boomId,
+                    stayingDatesInGregorian);
 
             // Add roomDiscountInfo to roomData
             roomData.put("roomDiscountInfo", roomDiscountInfo);
         }
     }
 
-    private JSONArray buildRoomDiscountInfoJsonArray(
-            JSONObject roomData,
+    public JSONArray buildRoomDiscountInfoJsonArray(
+            String roomName,
+            Long totalPrice, // totalAmount
             ObjectId boomId,
             List<LocalDateTime> stayingDatesInGregorian
     ) {
@@ -137,10 +142,10 @@ public class DiscountService {
             // Get maximum discount for target date
             CalculatedDiscountInfo calculatedDiscountInfo = getMaximumDiscountForTargetDate(
                     boomId,
-                    roomData.getString("title"),
+                    roomName,
                     stayingDatesInGregorian.get(j),
                     nightOrdinalNumber,
-                    roomData.getLong("totalPrice"));
+                    totalPrice);
 
             if (calculatedDiscountInfo.getCalculatedDiscount() != null) {
                 totalDiscount += calculatedDiscountInfo.getCalculatedDiscount();
