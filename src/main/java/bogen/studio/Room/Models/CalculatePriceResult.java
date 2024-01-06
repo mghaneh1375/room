@@ -14,7 +14,7 @@ import java.util.List;
 @Accessors(chain = true)
 public class CalculatePriceResult {
 
-    private int totalPrice;
+    private Long totalPrice;
     private List<DatePrice> datePriceList;
 
 }

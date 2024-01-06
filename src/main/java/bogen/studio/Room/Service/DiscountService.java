@@ -72,6 +72,7 @@ public class DiscountService {
             String roomName,
             LocalDateTime targetDate,
             int nightOrdinalNumber,
+            Long nightPrice,
             Long totalAmount) {
         /* Find related discounts, then return the one with maximum discount amount */
 
@@ -85,6 +86,7 @@ public class DiscountService {
                         calculateDiscountAmountForFetchedDiscounts(
                                 discounts,
                                 nightOrdinalNumber,
+                                nightPrice,
                                 totalAmount,
                                 targetDate);
 
@@ -112,6 +114,7 @@ public class DiscountService {
             // Build JSONObject, including discount info for each staying date
             JSONArray roomDiscountInfo = buildRoomDiscountInfoJsonArray(
                     roomData.getString("title"),
+                    roomData.getLong("price"),
                     roomData.getLong("totalPrice"),
                     boomId,
                     stayingDatesInGregorian);
@@ -123,6 +126,7 @@ public class DiscountService {
 
     public JSONArray buildRoomDiscountInfoJsonArray(
             String roomName,
+            Long nightPrice,
             Long totalPrice, // totalAmount
             ObjectId boomId,
             List<LocalDateTime> stayingDatesInGregorian
@@ -146,6 +150,7 @@ public class DiscountService {
                     roomName,
                     stayingDatesInGregorian.get(j),
                     nightOrdinalNumber,
+                    nightPrice,
                     totalPrice);
 
             if (targetDateDiscountDetail.getCalculatedDiscount() != null) {
@@ -192,6 +197,7 @@ public class DiscountService {
 
     public DiscountInfo buildDiscountInfo(
             String roomName,
+            Long nightPrice,
             Long totalPrice,
             ObjectId boomId,
             List<LocalDateTime> stayingDatesInGregorian
@@ -215,6 +221,7 @@ public class DiscountService {
                     roomName,
                     stayingDatesInGregorian.get(j),
                     nightOrdinalNumber,
+                    nightPrice,
                     totalPrice);
 
             if (targetDateDiscountDetail.getCalculatedDiscount() != null) {

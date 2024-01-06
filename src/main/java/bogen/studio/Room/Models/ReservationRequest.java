@@ -36,7 +36,7 @@ public class ReservationRequest {
     private Integer refundFee;
 
     @Field("total_amount")
-    private Integer totalAmount;
+    private Long totalAmount;
 
     @Field("passengers_id")
     private ObjectId passengersId;

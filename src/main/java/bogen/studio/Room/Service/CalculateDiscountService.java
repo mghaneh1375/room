@@ -144,6 +144,7 @@ public class CalculateDiscountService {
     public List<TargetDateDiscountDetail> calculateDiscountAmountForFetchedDiscounts(
             List<Discount> discounts,
             int nightOrdinalNumber,
+            Long nightPrice,
             Long totalAmount,
             LocalDateTime targetDate) {
         /* Calculate discount-amount for fetched discounts*/
@@ -152,7 +153,7 @@ public class CalculateDiscountService {
 
         for (Discount discount : discounts) {
 
-            TargetDateDiscountDetail targetDateDiscountDetail = calculateDiscount(discount, nightOrdinalNumber, totalAmount, targetDate);
+            TargetDateDiscountDetail targetDateDiscountDetail = calculateDiscount(discount, nightOrdinalNumber,nightPrice, totalAmount, targetDate);
 
             if (targetDateDiscountDetail != null) {
                 targetDateDiscountDetailList.add(targetDateDiscountDetail);
@@ -165,6 +166,7 @@ public class CalculateDiscountService {
     private TargetDateDiscountDetail calculateDiscount(
             Discount discount,
             int nightOrdinalNumber,
+            Long nightPrice,
             Long totalAmount,
             LocalDateTime targetDate) {
 
@@ -176,7 +178,7 @@ public class CalculateDiscountService {
 
         } else if (discountType.equals(LAST_MINUTE) && nightOrdinalNumber == 1) {
 
-            return calculateLastMinuteDiscount(discount, totalAmount, targetDate);
+            return calculateLastMinuteDiscount(discount, nightPrice, targetDate);
         }
 
         return null;
@@ -184,7 +186,7 @@ public class CalculateDiscountService {
 
     private TargetDateDiscountDetail calculateLastMinuteDiscount(
             Discount discount,
-            Long totalAmount,
+            Long nightPrice,
             LocalDateTime targetDate
     ) {
         /* Calculate discount for Last-minute discounts */
@@ -194,7 +196,7 @@ public class CalculateDiscountService {
 
         if (discountExecution.equals(PERCENTAGE)) {
 
-            Long calculatedDiscount = totalAmount * lastMinuteDiscount.getPercent() / 100;
+            Long calculatedDiscount = nightPrice * lastMinuteDiscount.getPercent() / 100;
 
             return new TargetDateDiscountDetail()
                     .setDiscountId(discount.get_id())

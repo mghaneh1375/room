@@ -186,7 +186,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
 
                             if (tmp.getInt("totalPrice") == -1) {
                                 tmp.put("totalPrice",
-                                        (int) calcPrice(x, dates, dto.getAdults(), dto.getChildren()).getTotalPrice()
+                                        (long) calcPrice(x, dates, dto.getAdults(), dto.getChildren()).getTotalPrice()
                                 );
                             }
                         } catch (Exception ignore) {
@@ -925,7 +925,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             // Add Discount info
             JSONArray discountInfo = discountService.buildRoomDiscountInfoJsonArray(
                     room.getTitle(),
-                    Long.valueOf(String.valueOf(calculatePriceResult.getTotalPrice())), // kesafat kari
+                    room.getPrice().longValue(),
+                    calculatePriceResult.getTotalPrice(),
                     room.getBoomId(),
                     TimeUtility.convertJalaliDatesListToGregorian(dates)
             );
@@ -942,7 +943,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         // todo: consider children independent
         adults += children;
 
-        int totalPrice = 0;
+        long totalPrice = 0;
 
         List<DatePrice> datePrices = room.getDatePrices();
         List<DatePrice> pricesDetail = new ArrayList<>();
@@ -1058,7 +1059,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             List<String> jalaliDates = (List<String>) canReservePairValue.getValue();
 
             CalculatePriceResult calculatePriceResult = calcPrice(room, jalaliDates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
-            int totalAmount = (int) calculatePriceResult.getTotalPrice();
+            Long totalAmount =  calculatePriceResult.getTotalPrice();
 
             List<LocalDateTime> residenceDatesInGregorian = TimeUtility.convertJalaliDatesListToGregorian(jalaliDates);
 
@@ -1074,7 +1075,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     residenceDatesInGregorian.get(0),
                     tripInfo.getNights(),
                     residenceDatesInGregorian,
-                    discountService.buildDiscountInfo(room.getTitle(), Long.valueOf(String.valueOf(totalAmount)), room.getBoomId(), residenceDatesInGregorian));
+                    discountService.buildDiscountInfo(room.getTitle(), room.getPrice().longValue(), totalAmount, room.getBoomId(), residenceDatesInGregorian));
             reservationRequestRepository.insert(reservationRequest);
 
             // Set initial state of reserve request
@@ -1187,7 +1188,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                                         ObjectId userId,
                                                         CalculatePriceResult calculatePriceResult,
                                                         Room room,
-                                                        int totalAmount,
+                                                        Long totalAmount,
                                                         LocalDateTime residenceStartDate,
                                                         int numberOfStayingNights,
                                                         List<LocalDateTime> gregorianResidenceDates,
