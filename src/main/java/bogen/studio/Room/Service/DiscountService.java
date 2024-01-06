@@ -131,40 +131,29 @@ public class DiscountService {
             ObjectId boomId,
             List<LocalDateTime> stayingDatesInGregorian
     ) {
-
-        Long totalDiscount = 0L;
+        // Calculate discount for each target date
+        DiscountInfo discountInfo =  buildDiscountInfo(
+                roomName,
+                nightPrice,
+                totalPrice,
+                boomId,
+                stayingDatesInGregorian
+        );
 
         // Instantiate JSON Object that will be added to Room data
         JSONArray targetDateDiscountDetails = new JSONArray();
 
-        // Loop over staying nights
-        //for (LocalDateTime date : stayingDatesInGregorian) {
-        for (int j = 0; j < stayingDatesInGregorian.size(); j++) {
-
-            // define ordinal number of target date in Staying nights list
-            int nightOrdinalNumber = j + 1;
-
-            // Get maximum discount for target date
-            TargetDateDiscountDetail targetDateDiscountDetail = getMaximumDiscountForTargetDate(
-                    boomId,
-                    roomName,
-                    stayingDatesInGregorian.get(j),
-                    nightOrdinalNumber,
-                    nightPrice,
-                    totalPrice);
-
-            if (targetDateDiscountDetail.getCalculatedDiscount() != null) {
-                totalDiscount += targetDateDiscountDetail.getCalculatedDiscount();
-            }
+        // Build JSON Object for discount-info-detail of each target date
+        for (TargetDateDiscountDetail info : discountInfo.getTargetDateDiscountDetails()) {
 
             // Build target-date-discount-info
-            JSONObject targetDateDiscountInfo = createTargetDateDiscountInfoJSONObject(targetDateDiscountDetail);
+            JSONObject targetDateDiscountInfo = createTargetDateDiscountInfoJSONObject(info);
             // Add target-date-discount-info to targetDateDiscountDetails array
             targetDateDiscountDetails.put(targetDateDiscountInfo);
         }
 
         // Build json objects for total-discount-amount and discount-info-details
-        JSONObject totalDiscountObject = new JSONObject().put("totalDiscount", totalDiscount);
+        JSONObject totalDiscountObject = new JSONObject().put("totalDiscount", discountInfo.getTotalDiscount());
         JSONObject DiscountInfoDetails = new JSONObject().put("targetDateDiscountDetails", targetDateDiscountDetails);
 
         return new JSONArray()
