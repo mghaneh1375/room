@@ -1060,6 +1060,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             CalculatePriceResult calculatePriceResult = calcPrice(room, jalaliDates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
             int totalAmount = (int) calculatePriceResult.getTotalPrice();
 
+            List<LocalDateTime> residenceDatesInGregorian = TimeUtility.convertJalaliDatesListToGregorian(jalaliDates);
+
             ReservationRequest reservationRequest = createReservationRequest(
                     passengerServiceResponse,
                     passengersExtractedData,
@@ -1069,9 +1071,10 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     calculatePriceResult,
                     room,
                     totalAmount,
-                    TimeUtility.convertJalaliDatesListToGregorian(List.of(jalaliDates.get(0))).get(0),
+                    residenceDatesInGregorian.get(0),
                     tripInfo.getNights(),
-                    TimeUtility.convertJalaliDatesListToGregorian(jalaliDates));
+                    residenceDatesInGregorian,
+                    discountService.buildDiscountInfo(room.getTitle(), Long.valueOf(String.valueOf(totalAmount)), room.getBoomId(), residenceDatesInGregorian));
             reservationRequestRepository.insert(reservationRequest);
 
             // Set initial state of reserve request
@@ -1085,6 +1088,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             return generateSuccessMsg("data", new JSONObject()
                     .put("trackingCode", reservationRequest.getTrackingCode())
                     .put("reservationId", reservationRequest.get_id())
+                    .put("TotalAmount", reservationRequest.getTotalAmount())
+                    .put("TotalDiscount", reservationRequest.getDiscountInfo().getTotalDiscount())
             );
 
         } catch (RoomNotFreeException | RoomExceedCapacityException | RoomUnavailableByOwnerException |
@@ -1185,7 +1190,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                                                         int totalAmount,
                                                         LocalDateTime residenceStartDate,
                                                         int numberOfStayingNights,
-                                                        List<LocalDateTime> gregorianResidenceDates) {
+                                                        List<LocalDateTime> gregorianResidenceDates,
+                                                        DiscountInfo discountInfo) {
 
         ReservationRequest reservationRequest = new ReservationRequest();
 
@@ -1225,6 +1231,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         reservationRequest.setNumberOfStayingNights(numberOfStayingNights);
 
         reservationRequest.setGregorianResidenceDates(gregorianResidenceDates);
+
+        reservationRequest.setDiscountInfo(discountInfo);
 
         return reservationRequest;
 

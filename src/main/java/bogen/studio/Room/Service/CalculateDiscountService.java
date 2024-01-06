@@ -2,7 +2,7 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountType;
-import bogen.studio.Room.Models.CalculatedDiscountInfo;
+import bogen.studio.Room.Models.TargetDateDiscountDetail;
 import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Models.LastMinuteDiscount;
 import bogen.studio.Room.documents.Discount;
@@ -116,53 +116,53 @@ public class CalculateDiscountService {
         return new Criteria().orOperator(generalTargetDate, lastMinuteTargetDate);
     }
 
-    public CalculatedDiscountInfo findMaximumDiscountAmount(
-            List<CalculatedDiscountInfo> calculatedDiscountInfoList,
+    public TargetDateDiscountDetail findMaximumDiscountAmount(
+            List<TargetDateDiscountDetail> targetDateDiscountDetailList,
             LocalDateTime targetDate
             ) {
 
-        if (calculatedDiscountInfoList.size() == 0) {
-            return new CalculatedDiscountInfo()
+        if (targetDateDiscountDetailList.size() == 0) {
+            return new TargetDateDiscountDetail()
                     .setDiscountId(null)
                     .setCalculatedDiscount(null)
                     .setTargetDate(targetDate);
         }
 
         // Sort calculated discount list in descending order
-        calculatedDiscountInfoList.sort(
+        targetDateDiscountDetailList.sort(
                 Comparator
-                        .comparing(CalculatedDiscountInfo::getCalculatedDiscount)
+                        .comparing(TargetDateDiscountDetail::getCalculatedDiscount)
                         .reversed());
 
-        return new CalculatedDiscountInfo()
-                .setDiscountId(calculatedDiscountInfoList.get(0).getDiscountId())
-                .setCalculatedDiscount(calculatedDiscountInfoList.get(0).getCalculatedDiscount())
-                .setTargetDate(calculatedDiscountInfoList.get(0).getTargetDate());
+        return new TargetDateDiscountDetail()
+                .setDiscountId(targetDateDiscountDetailList.get(0).getDiscountId())
+                .setCalculatedDiscount(targetDateDiscountDetailList.get(0).getCalculatedDiscount())
+                .setTargetDate(targetDateDiscountDetailList.get(0).getTargetDate());
 
     }
 
-    public List<CalculatedDiscountInfo> calculateDiscountAmountForFetchedDiscounts(
+    public List<TargetDateDiscountDetail> calculateDiscountAmountForFetchedDiscounts(
             List<Discount> discounts,
             int nightOrdinalNumber,
             Long totalAmount,
             LocalDateTime targetDate) {
         /* Calculate discount-amount for fetched discounts*/
 
-        List<CalculatedDiscountInfo> calculatedDiscountInfoList = new ArrayList<>();
+        List<TargetDateDiscountDetail> targetDateDiscountDetailList = new ArrayList<>();
 
         for (Discount discount : discounts) {
 
-            CalculatedDiscountInfo calculatedDiscountInfo = calculateDiscount(discount, nightOrdinalNumber, totalAmount, targetDate);
+            TargetDateDiscountDetail targetDateDiscountDetail = calculateDiscount(discount, nightOrdinalNumber, totalAmount, targetDate);
 
-            if (calculatedDiscountInfo != null) {
-                calculatedDiscountInfoList.add(calculatedDiscountInfo);
+            if (targetDateDiscountDetail != null) {
+                targetDateDiscountDetailList.add(targetDateDiscountDetail);
             }
         }
 
-        return calculatedDiscountInfoList;
+        return targetDateDiscountDetailList;
     }
 
-    private CalculatedDiscountInfo calculateDiscount(
+    private TargetDateDiscountDetail calculateDiscount(
             Discount discount,
             int nightOrdinalNumber,
             Long totalAmount,
@@ -182,7 +182,7 @@ public class CalculateDiscountService {
         return null;
     }
 
-    private CalculatedDiscountInfo calculateLastMinuteDiscount(
+    private TargetDateDiscountDetail calculateLastMinuteDiscount(
             Discount discount,
             Long totalAmount,
             LocalDateTime targetDate
@@ -196,14 +196,14 @@ public class CalculateDiscountService {
 
             Long calculatedDiscount = totalAmount * lastMinuteDiscount.getPercent() / 100;
 
-            return new CalculatedDiscountInfo()
+            return new TargetDateDiscountDetail()
                     .setDiscountId(discount.get_id())
                     .setCalculatedDiscount(calculatedDiscount)
                     .setTargetDate(targetDate);
 
         } else if (discountExecution.equals(AMOUNT)) {
 
-            return new CalculatedDiscountInfo()
+            return new TargetDateDiscountDetail()
                     .setDiscountId(discount.get_id())
                     .setCalculatedDiscount(lastMinuteDiscount.getAmount())
                     .setTargetDate(targetDate);
@@ -213,7 +213,7 @@ public class CalculateDiscountService {
         return null;
     }
 
-    private CalculatedDiscountInfo calculateGeneralDiscount(Discount discount, Long totalAmount, LocalDateTime targetDate) {
+    private TargetDateDiscountDetail calculateGeneralDiscount(Discount discount, Long totalAmount, LocalDateTime targetDate) {
         /* Calculate discount if it is a GENERAL one */
 
         GeneralDiscount generalDiscount = discount.getGeneralDiscount();
@@ -232,7 +232,7 @@ public class CalculateDiscountService {
         }
     }
 
-    private CalculatedDiscountInfo calculateGeneralPercentWiseDiscount(
+    private TargetDateDiscountDetail calculateGeneralPercentWiseDiscount(
             GeneralDiscount generalDiscount,
             String discountId,
             Long totalAmount,
@@ -255,14 +255,14 @@ public class CalculateDiscountService {
             }
         }
 
-        return new CalculatedDiscountInfo()
+        return new TargetDateDiscountDetail()
                 .setDiscountId(discountId)
                 .setCalculatedDiscount(calculatedDiscount)
                 .setTargetDate(targetDate);
 
     }
 
-    private CalculatedDiscountInfo calculateGeneralAmountWiseDiscount(
+    private TargetDateDiscountDetail calculateGeneralAmountWiseDiscount(
             GeneralDiscount generalDiscount,
             String discountId,
             Long totalAmount,
@@ -275,7 +275,7 @@ public class CalculateDiscountService {
             // If minimumRequiredPurchase is defined in the discount doc.
 
             if (totalAmount > minimumRequiredPurchase) {
-                return new CalculatedDiscountInfo()
+                return new TargetDateDiscountDetail()
                         .setDiscountId(discountId)
                         .setCalculatedDiscount(generalDiscount.getAmount())
                         .setTargetDate(targetDate);
@@ -286,7 +286,7 @@ public class CalculateDiscountService {
         } else {
             // If minimumRequiredPurchase is NOT defined in the discount doc.
 
-            return new CalculatedDiscountInfo()
+            return new TargetDateDiscountDetail()
                     .setDiscountId(discountId)
                     .setCalculatedDiscount(generalDiscount.getAmount())
                     .setTargetDate(targetDate);

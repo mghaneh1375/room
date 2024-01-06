@@ -1,7 +1,6 @@
 package bogen.studio.Room;
 
-import bogen.studio.Room.DTO.TripInfo;
-import bogen.studio.Room.Models.CalculatedDiscountInfo;
+import bogen.studio.Room.Models.TargetDateDiscountDetail;
 import bogen.studio.Room.Service.DiscountService;
 import bogen.studio.Room.Service.RoomService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ public class MyRunner implements CommandLineRunner {
 
 
         LocalDateTime targetDate = LocalDateTime.of(2024, 1, 3, 0, 0, 0, 0);
-        CalculatedDiscountInfo maxDis = discountService.getMaximumDiscountForTargetDate(new ObjectId("64df8ced6b21b94de607c441"), "اتاق رویال", targetDate, 1, 1000L);
+        TargetDateDiscountDetail maxDis = discountService.getMaximumDiscountForTargetDate(new ObjectId("64df8ced6b21b94de607c441"), "اتاق رویال", targetDate, 1, 1000L);
         //discountService.fetchRelatedDiscounts(new ObjectId("64df8ced6b21b94de607c441"),"اتاق رویال", targetDate);
         System.out.println("**Finally: ");
         System.out.println(maxDis);

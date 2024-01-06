@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class CalculatedDiscountInfo {
+public class TargetDateDiscountDetail {
 
     private String discountId;
     private Long calculatedDiscount;
