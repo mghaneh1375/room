@@ -183,7 +183,7 @@ public class CalculateDiscountService {
 
         if (discountType.equals(GENERAL)) {
 
-            return calculateGeneralDiscount(discount, totalAmount, targetDate);
+            return calculateGeneralDiscount(discount, nightPrice, totalAmount, targetDate);
 
         } else if (discountType.equals(LAST_MINUTE) && nightOrdinalNumber == 1) {
 
@@ -214,9 +214,17 @@ public class CalculateDiscountService {
 
         } else if (discountExecution.equals(AMOUNT)) {
 
+            long calculatedDiscount = 0L;
+            long discountAmount = lastMinuteDiscount.getAmount();
+            if (discountAmount > nightPrice) {
+                calculatedDiscount = nightPrice;
+            } else {
+                calculatedDiscount = discountAmount;
+            }
+
             return new TargetDateDiscountDetail()
                     .setDiscountId(discount.get_id())
-                    .setCalculatedDiscount(lastMinuteDiscount.getAmount())
+                    .setCalculatedDiscount(calculatedDiscount)
                     .setTargetDate(targetDate);
 
         }
@@ -224,7 +232,7 @@ public class CalculateDiscountService {
         return null;
     }
 
-    private TargetDateDiscountDetail calculateGeneralDiscount(Discount discount, Long totalAmount, LocalDateTime targetDate) {
+    private TargetDateDiscountDetail calculateGeneralDiscount(Discount discount,long nightPrice, Long totalAmount, LocalDateTime targetDate) {
         /* Calculate discount if it is a GENERAL one */
 
         GeneralDiscount generalDiscount = discount.getGeneralDiscount();
@@ -232,7 +240,7 @@ public class CalculateDiscountService {
 
         if (discountExecution.equals(AMOUNT)) {
 
-            return calculateGeneralAmountWiseDiscount(generalDiscount, discount.get_id(), totalAmount, targetDate);
+            return calculateGeneralAmountWiseDiscount(generalDiscount, discount.get_id(), nightPrice, totalAmount, targetDate);
 
         } else if (discountExecution.equals(PERCENTAGE)) {
 
@@ -276,19 +284,29 @@ public class CalculateDiscountService {
     private TargetDateDiscountDetail calculateGeneralAmountWiseDiscount(
             GeneralDiscount generalDiscount,
             String discountId,
-            Long totalAmount,
+            long nightPrice,
+            long totalAmount,
             LocalDateTime targetDate) {
         /* Calculate discount if the discount is general, and amount-wise */
 
         Long minimumRequiredPurchase = generalDiscount.getMinimumRequiredPurchase();
 
+        long discountAmount = generalDiscount.getAmount();
+        long calculatedDiscount = 0L;
+        if (discountAmount > nightPrice) {
+            calculatedDiscount = nightPrice;
+        } else {
+            calculatedDiscount = discountAmount;
+        }
+
         if (minimumRequiredPurchase != null) {
             // If minimumRequiredPurchase is defined in the discount doc.
 
             if (totalAmount > minimumRequiredPurchase) {
+
                 return new TargetDateDiscountDetail()
                         .setDiscountId(discountId)
-                        .setCalculatedDiscount(generalDiscount.getAmount())
+                        .setCalculatedDiscount(calculatedDiscount)
                         .setTargetDate(targetDate);
             } else {
                 return null;
@@ -299,7 +317,7 @@ public class CalculateDiscountService {
 
             return new TargetDateDiscountDetail()
                     .setDiscountId(discountId)
-                    .setCalculatedDiscount(generalDiscount.getAmount())
+                    .setCalculatedDiscount(calculatedDiscount)
                     .setTargetDate(targetDate);
         }
 

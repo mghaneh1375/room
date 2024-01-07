@@ -65,7 +65,11 @@ public class DiscountService {
     }
 
 
-    public void addDiscountInfoToRoomSearchResult(JSONArray modifiedSearchResult, ObjectId boomId, TripInfo tripInfo, String discountCode) {
+    public void addDiscountInfoToRoomSearchResult(
+            JSONArray modifiedSearchResult,
+            ObjectId boomId,
+            TripInfo tripInfo,
+            String discountCode) {
         /* Add discount info to rooms data */
 
         if (tripInfo == null) {
