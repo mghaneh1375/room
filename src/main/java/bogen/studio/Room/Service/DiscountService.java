@@ -82,7 +82,7 @@ public class DiscountService {
             JSONObject roomData = modifiedSearchResult.getJSONObject(i);
 
             // Build JSONObject, including discount info for each staying date
-            JSONArray roomDiscountInfo = buildRoomDiscountInfoJsonArray(
+            JSONObject roomDiscountInfo = buildRoomDiscountInfoJsonObject(
                     roomData.getString("title"),
                     roomData.getLong("price"),
                     roomData.getLong("totalPrice"),
@@ -95,7 +95,7 @@ public class DiscountService {
         }
     }
 
-    public JSONArray buildRoomDiscountInfoJsonArray(
+    public JSONObject buildRoomDiscountInfoJsonObject(
             String roomName,
             Long nightPrice,
             Long totalPrice, // totalAmount
@@ -125,15 +125,10 @@ public class DiscountService {
             targetDateDiscountDetails.put(targetDateDiscountInfo);
         }
 
-        // Build json objects for total-discount-amount and discount-info-details
-        JSONObject totalDiscountObject = new JSONObject().put("totalDiscount", discountInfo.getTotalDiscount());
-        JSONObject DiscountInfoDetails = new JSONObject().put("targetDateDiscountDetails", targetDateDiscountDetails);
-        JSONObject discountCodeApplication = new JSONObject().put("isDiscountCodeApplied", discountInfo.isDiscountCodeApplied());
-
-        return new JSONArray()
-                .put(totalDiscountObject)
-                .put(DiscountInfoDetails)
-                .put(discountCodeApplication);
+        return new JSONObject()
+                .put("totalDiscount", discountInfo.getTotalDiscount())
+                .put("targetDateDiscountDetails", targetDateDiscountDetails)
+                .put("isDiscountCodeApplied", discountInfo.isDiscountCodeApplied());
     }
 
     public DiscountInfo buildDiscountInfo(

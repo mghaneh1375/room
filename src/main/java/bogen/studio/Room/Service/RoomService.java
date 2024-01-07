@@ -926,7 +926,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             output.put("prices", jsonArray);
 
             // Add Discount info
-            JSONArray discountInfo = discountService.buildRoomDiscountInfoJsonArray(
+            JSONObject discountInfo = discountService.buildRoomDiscountInfoJsonObject(
                     room.getTitle(),
                     room.getPrice().longValue(),
                     calculatePriceResult.getTotalPrice(),
