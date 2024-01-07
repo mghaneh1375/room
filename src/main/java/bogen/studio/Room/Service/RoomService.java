@@ -1033,7 +1033,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                 .setDatePriceList(pricesDetail);
     }
 
-    @Transactional // This annotation needs replica set to work
+    @Transactional //Todo: This annotation needs replica set to work
     public String reserve(ObjectId roomId, ReservationRequestDTO reservationRequestDTO, ObjectId userId, String discountCode) {
 
         List<RoomDateReservationState> roomDateSafetyList = new ArrayList<>();
@@ -1063,9 +1063,11 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             List<String> jalaliDates = (List<String>) canReservePairValue.getValue();
 
             CalculatePriceResult calculatePriceResult = calcPrice(room, jalaliDates, passengersExtractedData.getAdults(), passengersExtractedData.getChildren());
-            Long totalAmount =  calculatePriceResult.getTotalPrice();
+            Long totalAmount = calculatePriceResult.getTotalPrice();
 
             List<LocalDateTime> residenceDatesInGregorian = TimeUtility.convertJalaliDatesListToGregorian(jalaliDates);
+
+            DiscountInfo discountInfo = getDiscountInfoAndHandleRollBack(room, totalAmount, roomDateSafetyList, residenceDatesInGregorian, discountCode);
 
             ReservationRequest reservationRequest = createReservationRequest(
                     passengerServiceResponse,
@@ -1079,7 +1081,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     residenceDatesInGregorian.get(0),
                     tripInfo.getNights(),
                     residenceDatesInGregorian,
-                    discountService.buildDiscountInfo(room.getTitle(), room.getPrice().longValue(), totalAmount, room.getBoomId(), residenceDatesInGregorian, discountCode));
+                    discountInfo);
             reservationRequestRepository.insert(reservationRequest);
 
             // Set initial state of reserve request
@@ -1098,13 +1100,49 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
             );
 
         } catch (RoomNotFreeException | RoomExceedCapacityException | RoomUnavailableByOwnerException |
-                 InvalidIdException | BackendErrorException e) {
+                 InvalidIdException | BackendErrorException | InvalidInputException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error: " + e.getMessage());
             throw new RuntimeException("Unexpected error while reservation process");
         }
 
+    }
+
+    private DiscountInfo getDiscountInfoAndHandleRollBack(
+            Room room,
+            long totalAmount,
+            List<RoomDateReservationState> roomDateSafetyList,
+            List<LocalDateTime> residenceDatesInGregorian,
+            String discountCode
+    ) {
+
+        try {
+            return discountService.buildDiscountInfo(
+                    room.getTitle(),
+                    room.getPrice().longValue(),
+                    totalAmount, room.getBoomId(),
+                    residenceDatesInGregorian,
+                    discountCode);
+        } catch (Exception e) {
+
+            String exceptionClassName = e.getClass().getSimpleName();
+            String invalidInputExceptionClassName = InvalidInputException.class.getSimpleName();
+            if (exceptionClassName.equals(invalidInputExceptionClassName)) {
+
+                for (RoomDateReservationState roomDateReservationState : roomDateSafetyList) {
+                    roomDateReservationState.setRoomStatus(FREE);
+                    roomDateReservationStateService.save(roomDateReservationState);
+
+                    log.info(String.format("Status of room: %s, in date: %s, changed to: %s",
+                            roomDateReservationState.getRoomObjectId(),
+                            roomDateReservationState.getTargetDate(),
+                            FREE));
+                }
+                throw e;
+            }
+        }
+        return null;
     }
 
     private void setInitialReserveRequestState(List<RoomDateReservationState> roomDateSafetyList, boolean isRoomDirectReservable, ReservationRequest reservationRequest) {
