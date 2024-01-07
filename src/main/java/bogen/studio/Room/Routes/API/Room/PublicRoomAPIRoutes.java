@@ -37,15 +37,18 @@ public class PublicRoomAPIRoutes {
     @ResponseBody
     public String reserve(Principal principal,
                           @PathVariable @ObjectIdConstraint ObjectId id,
-                          @RequestBody @Valid ReservationRequestDTO dto) {
-        return roomService.reserve(id, dto, getUserId(principal));
+                          @RequestBody @Valid ReservationRequestDTO dto,
+                          @RequestParam(required = false) String discountCode) {
+        return roomService.reserve(id, dto, getUserId(principal), discountCode);
     }
 
     @PostMapping(value = "calcPrice/{id}")
     @ResponseBody
     public String calcPrice(@PathVariable @ObjectIdConstraint ObjectId id,
-                            @RequestBody @Valid TripInfo dto) {
-        return roomService.calcPrice(id, dto);
+                            @RequestBody @Valid TripInfo tripInfo,
+                            @RequestParam(required = false) String discountCode
+    ) {
+        return roomService.calcPrice(id, tripInfo, discountCode);
     }
 
     @GetMapping(value = "list/{boomId}")

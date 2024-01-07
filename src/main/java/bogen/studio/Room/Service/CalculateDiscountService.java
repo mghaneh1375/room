@@ -1,20 +1,27 @@
 package bogen.studio.Room.Service;
 
+import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountType;
+import bogen.studio.Room.Exception.InvalidInputException;
+import bogen.studio.Room.Models.DiscountInfo;
 import bogen.studio.Room.Models.TargetDateDiscountDetail;
 import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Models.LastMinuteDiscount;
+import bogen.studio.Room.Repository.DiscountRepository;
+import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.json.JSONObject;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +32,7 @@ import static bogen.studio.Room.Enums.DiscountPlace.BOOM_DISCOUNT;
 import static bogen.studio.Room.Enums.DiscountPlace.ROOM_DISCOUNT;
 import static bogen.studio.Room.Enums.DiscountType.GENERAL;
 import static bogen.studio.Room.Enums.DiscountType.LAST_MINUTE;
+import static my.common.commonkoochita.Utility.Utility.getPast;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +40,7 @@ import static bogen.studio.Room.Enums.DiscountType.LAST_MINUTE;
 public class CalculateDiscountService {
 
     private final MongoTemplate mongoTemplate;
+    private final DiscountRepository discountRepository;
 
     public List<Discount> fetchDefinedDiscountsForTargetDate(ObjectId boomId, String roomName, LocalDateTime targetDate) {
         /* Find defined discounts for input target date */
@@ -295,4 +304,222 @@ public class CalculateDiscountService {
         }
 
     }
+
+    private void checkCodeDiscountLifeTime(Discount codeDiscount) {
+        /* Check is the discount code whether is in its lifetime */
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(codeDiscount.getCodeDiscount().getLifeTimeStart())) {
+            throw new InvalidInputException("زمان استفاده از کد تخفیف هنوز فرا نرسیده است");
+        }
+        if (now.isAfter(codeDiscount.getCodeDiscount().getLifeTimeEnd())) {
+            throw new InvalidInputException("کد تخفیف منقضی شده است");
+        }
+    }
+
+    private void checkCodeDiscountTargetDates(Discount codeDiscount, List<LocalDateTime> stayingDatesInGregorian) {
+
+        for (LocalDateTime night : stayingDatesInGregorian) {
+
+            long stayingNightEpoch = night.toEpochSecond(ZoneOffset.UTC);
+            long targetDateEndEpoch = codeDiscount.getCodeDiscount().getTargetDateEnd().toEpochSecond(ZoneOffset.UTC);
+            long targetDateStart = codeDiscount.getCodeDiscount().getTargetDateStart().toEpochSecond(ZoneOffset.UTC);
+
+            if ((stayingNightEpoch > targetDateEndEpoch) || (stayingNightEpoch < targetDateStart)) {
+                throw new InvalidInputException("تاریخ اقامت با تاریخ در نظر گرفته شده برای کد تخفیف همخوانی ندارد");
+            }
+        }
+    }
+
+    private void checkRoomNameIfCodeDiscountIsForRoom(Discount codeDiscount, String roomName) {
+        /* If discount code is defined for the room then room name should match the defined name in the Discount */
+
+        if (codeDiscount.getDiscountPlace().equals(ROOM_DISCOUNT)) {
+
+            if (!codeDiscount.getDiscountPlaceInfo().getRoomName().equals(roomName)) {
+                throw new InvalidInputException("کد تخفیف تعریف شده با این اتاق تطابق ندارد");
+            }
+        }
+    }
+
+    private void checkCurrentUsageCount(Discount codeDiscount) {
+        /* Check whether current-usage-count is less than defined-usage-count */
+
+        int currentUsageCount = codeDiscount.getCodeDiscount().getCurrentUsageCount();
+        int definedUsageCount = codeDiscount.getCodeDiscount().getDefinedUsageCount();
+
+        if (currentUsageCount >= definedUsageCount) {
+            throw new InvalidInputException("تعداد استفاده از کد تخفیف به حداکثر میزان تعریف شده رسیده است");
+        }
+
+    }
+
+    private long calculateDiscountAmountForCodeDiscount(Discount codeDiscount, long nightPrice) {
+        /* Calculate discount amount for Code discount */
+
+        long calculatedDiscount = 0;
+        DiscountExecution discountExecution = codeDiscount.getCodeDiscount().getDiscountExecution();
+
+        if (discountExecution.equals(PERCENTAGE)) {
+
+            calculatedDiscount = nightPrice * codeDiscount.getCodeDiscount().getPercent() / 100;
+
+        } else if (discountExecution.equals(AMOUNT)) {
+
+            long discountAmount = codeDiscount.getCodeDiscount().getAmount();
+
+            calculatedDiscount = Math.min(discountAmount, nightPrice);
+        }
+
+        return calculatedDiscount;
+    }
+
+    private List<TargetDateDiscountDetail> buildTargetDateDiscountDetails(String discountId, long calculatedDiscount, List<LocalDateTime> stayingDatesInGregorian) {
+        /* Build a list containing TargetDateDiscountDetail regarding each staying night */
+
+        List<TargetDateDiscountDetail> targetDateDiscountDetails = new ArrayList<>();
+
+        for (LocalDateTime stayingNight : stayingDatesInGregorian) {
+
+            TargetDateDiscountDetail targetDateDiscountDetail = new TargetDateDiscountDetail()
+                    .setDiscountId(discountId)
+                    .setCalculatedDiscount(calculatedDiscount)
+                    .setTargetDate(stayingNight);
+
+            targetDateDiscountDetails.add(targetDateDiscountDetail);
+        }
+
+        return targetDateDiscountDetails;
+    }
+
+    public DiscountInfo buildDiscountInfoForCodeDiscount(
+            ObjectId boomId,
+            String discountCode,
+            List<LocalDateTime> stayingDatesInGregorian,
+            String roomName,
+            long nightPrice
+    ) {
+        /* Build DiscountInfo for Code discount */
+
+        Discount codeDiscount = fetchByBoomIdAndDiscountCode(boomId, discountCode);
+
+        // Check lifetime and targetDates, room name, and current-usage-count
+        checkCodeDiscountLifeTime(codeDiscount);
+        checkCodeDiscountTargetDates(codeDiscount, stayingDatesInGregorian);
+        checkRoomNameIfCodeDiscountIsForRoom(codeDiscount, roomName);
+        checkCurrentUsageCount(codeDiscount);
+
+        // Calculate discount for each staying night
+        long calculatedDiscount = calculateDiscountAmountForCodeDiscount(codeDiscount, nightPrice);
+
+        // Calculate total discount
+        long totalDiscount = calculatedDiscount * stayingDatesInGregorian.size();
+
+        // Build list of targetDateDiscountDetail
+        List<TargetDateDiscountDetail> targetDateDiscountDetails =
+                buildTargetDateDiscountDetails(codeDiscount.get_id(), calculatedDiscount, stayingDatesInGregorian);
+
+        return new DiscountInfo()
+                .setTotalDiscount(totalDiscount)
+                .setTargetDateDiscountDetails(targetDateDiscountDetails)
+                .setDiscountCodeApplied(true);
+
+    }
+    public Discount fetchByBoomIdAndDiscountCode(ObjectId boomId, String code) {
+
+        return discountRepository.fetchByBoomIdAndDiscountCode(boomId, code);
+    }
+
+    public DiscountInfo buildDiscountInfoForGeneralAndLastMinuteDiscount(
+            List<LocalDateTime> stayingDatesInGregorian,
+            ObjectId boomId,
+            String roomName,
+            long nightPrice,
+            long totalPrice
+    ) {
+        /* Build DiscountInfo for General and LastMinute discount */
+
+        long totalDiscount = 0L;
+
+        // Crate a list of TargetDateDiscountDetail
+        List<TargetDateDiscountDetail> targetDateDiscountDetails = new ArrayList<>();
+
+        // Loop over staying nights
+        for (int j = 0; j < stayingDatesInGregorian.size(); j++) {
+
+            // define ordinal number of target date in Staying nights list
+            int nightOrdinalNumber = j + 1;
+
+            // Get maximum discount for target date
+            TargetDateDiscountDetail targetDateDiscountDetail = getMaximumDiscountForTargetDate(
+                    boomId,
+                    roomName,
+                    stayingDatesInGregorian.get(j),
+                    nightOrdinalNumber,
+                    nightPrice,
+                    totalPrice);
+
+            if (targetDateDiscountDetail.getCalculatedDiscount() != null) {
+                totalDiscount += targetDateDiscountDetail.getCalculatedDiscount();
+            }
+
+            targetDateDiscountDetails.add(targetDateDiscountDetail);
+        }
+
+        return new DiscountInfo()
+                .setTotalDiscount(totalDiscount)
+                .setTargetDateDiscountDetails(targetDateDiscountDetails)
+                .setDiscountCodeApplied(false);
+    }
+
+    private TargetDateDiscountDetail getMaximumDiscountForTargetDate(
+            ObjectId boomId,
+            String roomName,
+            LocalDateTime targetDate,
+            int nightOrdinalNumber,
+            Long nightPrice,
+            Long totalAmount) {
+        /* Find related discounts, then return the one with maximum discount amount */
+
+        // Fetch related discounts from db
+        List<Discount> discounts = fetchDefinedDiscountsForTargetDate(boomId, roomName, targetDate);
+
+        // Calculate discount-amount for fetched discounts
+        List<TargetDateDiscountDetail> targetDateDiscountDetailList =
+                        calculateDiscountAmountForFetchedDiscounts(
+                                discounts,
+                                nightOrdinalNumber,
+                                nightPrice,
+                                totalAmount,
+                                targetDate);
+
+        // Find maximum discount amount
+        return findMaximumDiscountAmount(targetDateDiscountDetailList, targetDate);
+    }
+
+    public JSONObject createTargetDateDiscountInfoJSONObject(TargetDateDiscountDetail targetDateDiscountDetail) {
+        /* Build JSON object according to target date discount info */
+
+        JSONObject targetDateDiscountInfo = new JSONObject();
+        targetDateDiscountInfo.put("targetDate", targetDateDiscountDetail.getTargetDate());
+        targetDateDiscountInfo.put("calculatedDiscount", targetDateDiscountDetail.getCalculatedDiscount());
+        targetDateDiscountInfo.put("DiscountId", targetDateDiscountDetail.getDiscountId());
+
+        return targetDateDiscountInfo;
+    }
+
+    public List<LocalDateTime> buildGregorianStayingDates(TripInfo tripInfo) {
+        /* Build list of staying dates in gregorian */
+
+        List<String> jalaliDates = new ArrayList<>();
+        jalaliDates.add(tripInfo.getStartDate());
+
+        for (int i = 1; i < tripInfo.getNights(); i++)
+            jalaliDates.add(getPast("/", tripInfo.getStartDate(), -1 * i));
+
+        return TimeUtility.convertJalaliDatesListToGregorian(jalaliDates);
+    }
+
+
 }

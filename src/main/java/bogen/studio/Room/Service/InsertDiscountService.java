@@ -87,7 +87,7 @@ public class InsertDiscountService {
 
             String discountCode = getDiscountCode(discountType, dto);
 
-            Criteria boomIdCriteria = Criteria.where("discount_place_info.boomId").is(boomId);
+            Criteria boomIdCriteria = Criteria.where("discount_place_info.boom_id").is(boomId);
             Criteria discountTypeCriteria = Criteria.where("discount_type").is(discountType);
             Criteria discountCodeCriteria = Criteria.where("code_discount.code").is(discountCode);
             Criteria searchCriteria = new Criteria().andOperator(boomIdCriteria, discountTypeCriteria, discountCodeCriteria);

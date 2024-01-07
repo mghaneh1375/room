@@ -12,14 +12,14 @@ import bogen.studio.Room.Repository.RoomRepository2;
 import bogen.studio.Room.Utility.FileUtils;
 import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.RoomDateReservationState;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import my.common.commonkoochita.Utility.JalaliCalendar;
-import my.common.commonkoochita.Utility.PairValue;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import my.common.commonkoochita.Utility.JalaliCalendar;
+import my.common.commonkoochita.Utility.PairValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
@@ -31,7 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static bogen.studio.Room.Enums.ReservationStatus.*;
@@ -229,7 +232,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         JSONArray modifiedSearchResult = removeRoomsWithNoFreeIds(jsonArray);
 
         // Add Discount info
-        discountService.addDiscountInfoToRoomSearchResult(modifiedSearchResult, boomId, dto);
+        discountService.addDiscountInfoToRoomSearchResult(modifiedSearchResult, boomId, dto, null);
 
         return generateSuccessMsg("data", modifiedSearchResult);
 
@@ -898,13 +901,13 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
         return dates;
     }
 
-    public String calcPrice(ObjectId id, TripInfo dto) {
+    public String calcPrice(ObjectId roomId, TripInfo dto, String discountCode) {
 
         try {
 
             JSONObject output = new JSONObject();
 
-            PairValue pairValue = canReserve(id, dto, true, null);
+            PairValue pairValue = canReserve(roomId, dto, true, null);
 
             Room room = (Room) pairValue.getKey();
             List<String> dates = (List<String>) pairValue.getValue();
@@ -928,7 +931,8 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     room.getPrice().longValue(),
                     calculatePriceResult.getTotalPrice(),
                     room.getBoomId(),
-                    TimeUtility.convertJalaliDatesListToGregorian(dates)
+                    TimeUtility.convertJalaliDatesListToGregorian(dates),
+                    discountCode
             );
             output.put("discountInfo", discountInfo);
 
@@ -1030,7 +1034,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
     }
 
     @Transactional // This annotation needs replica set to work
-    public String reserve(ObjectId roomId, ReservationRequestDTO reservationRequestDTO, ObjectId userId) {
+    public String reserve(ObjectId roomId, ReservationRequestDTO reservationRequestDTO, ObjectId userId, String discountCode) {
 
         List<RoomDateReservationState> roomDateSafetyList = new ArrayList<>();
 
@@ -1075,7 +1079,7 @@ public class RoomService extends AbstractService<Room, RoomDTO> {
                     residenceDatesInGregorian.get(0),
                     tripInfo.getNights(),
                     residenceDatesInGregorian,
-                    discountService.buildDiscountInfo(room.getTitle(), room.getPrice().longValue(), totalAmount, room.getBoomId(), residenceDatesInGregorian));
+                    discountService.buildDiscountInfo(room.getTitle(), room.getPrice().longValue(), totalAmount, room.getBoomId(), residenceDatesInGregorian, discountCode));
             reservationRequestRepository.insert(reservationRequest);
 
             // Set initial state of reserve request

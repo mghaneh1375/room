@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.bson.types.ObjectId;
 
 import java.util.List;
 
@@ -19,6 +18,5 @@ public class DiscountInfo {
     private Long totalDiscount;
     private List<TargetDateDiscountDetail> targetDateDiscountDetails;
     private boolean isDiscountCodeApplied;
-    private ObjectId CodeDiscountId;
 
 }

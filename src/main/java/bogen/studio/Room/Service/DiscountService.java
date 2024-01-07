@@ -5,10 +5,9 @@ import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Models.DiscountInfo;
-import bogen.studio.Room.Models.TargetDateDiscountDetail;
 import bogen.studio.Room.Models.DiscountPlaceInfo;
+import bogen.studio.Room.Models.TargetDateDiscountDetail;
 import bogen.studio.Room.Repository.DiscountRepository;
-import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import static bogen.studio.Room.Routes.Utility.getUserId;
-import static my.common.commonkoochita.Utility.Utility.getPast;
 
 @Service
 @RequiredArgsConstructor
@@ -67,35 +64,8 @@ public class DiscountService {
         return discountRepository.insert(discount);
     }
 
-    public TargetDateDiscountDetail getMaximumDiscountForTargetDate(
-            ObjectId boomId,
-            String roomName,
-            LocalDateTime targetDate,
-            int nightOrdinalNumber,
-            Long nightPrice,
-            Long totalAmount) {
-        /* Find related discounts, then return the one with maximum discount amount */
 
-        // Fetch related discounts from db
-        List<Discount> discounts = calculateDiscountService
-                .fetchDefinedDiscountsForTargetDate(boomId, roomName, targetDate);
-
-        // Calculate discount-amount for fetched discounts
-        List<TargetDateDiscountDetail> targetDateDiscountDetailList =
-                calculateDiscountService.
-                        calculateDiscountAmountForFetchedDiscounts(
-                                discounts,
-                                nightOrdinalNumber,
-                                nightPrice,
-                                totalAmount,
-                                targetDate);
-
-        // Find maximum discount amount
-        return calculateDiscountService
-                .findMaximumDiscountAmount(targetDateDiscountDetailList, targetDate);
-    }
-
-    public void addDiscountInfoToRoomSearchResult(JSONArray modifiedSearchResult, ObjectId boomId, TripInfo tripInfo) {
+    public void addDiscountInfoToRoomSearchResult(JSONArray modifiedSearchResult, ObjectId boomId, TripInfo tripInfo, String discountCode) {
         /* Add discount info to rooms data */
 
         if (tripInfo == null) {
@@ -103,7 +73,7 @@ public class DiscountService {
         }
 
         // Build list of Gregorian dates based on tripInfo
-        List<LocalDateTime> stayingDatesInGregorian = buildGregorianStayingDates(tripInfo);
+        List<LocalDateTime> stayingDatesInGregorian = calculateDiscountService.buildGregorianStayingDates(tripInfo);
 
         // Loop over rooms
         for (int i = 0; i < modifiedSearchResult.length(); i++) {
@@ -117,7 +87,8 @@ public class DiscountService {
                     roomData.getLong("price"),
                     roomData.getLong("totalPrice"),
                     boomId,
-                    stayingDatesInGregorian);
+                    stayingDatesInGregorian,
+                    discountCode);
 
             // Add roomDiscountInfo to roomData
             roomData.put("roomDiscountInfo", roomDiscountInfo);
@@ -129,15 +100,17 @@ public class DiscountService {
             Long nightPrice,
             Long totalPrice, // totalAmount
             ObjectId boomId,
-            List<LocalDateTime> stayingDatesInGregorian
+            List<LocalDateTime> stayingDatesInGregorian,
+            String discountCode
     ) {
         // Calculate discount for each target date
-        DiscountInfo discountInfo =  buildDiscountInfo(
+        DiscountInfo discountInfo = buildDiscountInfo(
                 roomName,
                 nightPrice,
                 totalPrice,
                 boomId,
-                stayingDatesInGregorian
+                stayingDatesInGregorian,
+                discountCode
         );
 
         // Instantiate JSON Object that will be added to Room data
@@ -147,7 +120,7 @@ public class DiscountService {
         for (TargetDateDiscountDetail info : discountInfo.getTargetDateDiscountDetails()) {
 
             // Build target-date-discount-info
-            JSONObject targetDateDiscountInfo = createTargetDateDiscountInfoJSONObject(info);
+            JSONObject targetDateDiscountInfo = calculateDiscountService.createTargetDateDiscountInfoJSONObject(info);
             // Add target-date-discount-info to targetDateDiscountDetails array
             targetDateDiscountDetails.put(targetDateDiscountInfo);
         }
@@ -155,33 +128,12 @@ public class DiscountService {
         // Build json objects for total-discount-amount and discount-info-details
         JSONObject totalDiscountObject = new JSONObject().put("totalDiscount", discountInfo.getTotalDiscount());
         JSONObject DiscountInfoDetails = new JSONObject().put("targetDateDiscountDetails", targetDateDiscountDetails);
+        JSONObject discountCodeApplication = new JSONObject().put("isDiscountCodeApplied", discountInfo.isDiscountCodeApplied());
 
         return new JSONArray()
                 .put(totalDiscountObject)
-                .put(DiscountInfoDetails);
-    }
-
-    private JSONObject createTargetDateDiscountInfoJSONObject(TargetDateDiscountDetail targetDateDiscountDetail) {
-        /* Build JSON object according to target date discount info */
-
-        JSONObject targetDateDiscountInfo = new JSONObject();
-        targetDateDiscountInfo.put("targetDate", targetDateDiscountDetail.getTargetDate());
-        targetDateDiscountInfo.put("calculatedDiscount", targetDateDiscountDetail.getCalculatedDiscount());
-        targetDateDiscountInfo.put("DiscountId", targetDateDiscountDetail.getDiscountId());
-
-        return targetDateDiscountInfo;
-    }
-
-    private List<LocalDateTime> buildGregorianStayingDates(TripInfo tripInfo) {
-        /* Build list of staying dates in gregorian */
-
-        List<String> jalaliDates = new ArrayList<>();
-        jalaliDates.add(tripInfo.getStartDate());
-
-        for (int i = 1; i < tripInfo.getNights(); i++)
-            jalaliDates.add(getPast("/", tripInfo.getStartDate(), -1 * i));
-
-        return TimeUtility.convertJalaliDatesListToGregorian(jalaliDates);
+                .put(DiscountInfoDetails)
+                .put(discountCodeApplication);
     }
 
     public DiscountInfo buildDiscountInfo(
@@ -189,41 +141,30 @@ public class DiscountService {
             Long nightPrice,
             Long totalPrice,
             ObjectId boomId,
-            List<LocalDateTime> stayingDatesInGregorian
+            List<LocalDateTime> stayingDatesInGregorian,
+            String discountCode
     ) {
         /* Build discountInfo for ReservationRequest Doc. */
 
-        Long totalDiscount = 0L;
+        // If there is a discount code
+        if (discountCode != null) {
 
-        // Crate a list of TargetDateDiscountDetail
-        List<TargetDateDiscountDetail> targetDateDiscountDetails = new ArrayList<>();
-
-        // Loop over staying nights
-        for (int j = 0; j < stayingDatesInGregorian.size(); j++) {
-
-            // define ordinal number of target date in Staying nights list
-            int nightOrdinalNumber = j + 1;
-
-            // Get maximum discount for target date
-            TargetDateDiscountDetail targetDateDiscountDetail = getMaximumDiscountForTargetDate(
+            return calculateDiscountService.buildDiscountInfoForCodeDiscount(
                     boomId,
+                    discountCode,
+                    stayingDatesInGregorian,
                     roomName,
-                    stayingDatesInGregorian.get(j),
-                    nightOrdinalNumber,
-                    nightPrice,
-                    totalPrice);
-
-            if (targetDateDiscountDetail.getCalculatedDiscount() != null) {
-                totalDiscount += targetDateDiscountDetail.getCalculatedDiscount();
-            }
-
-            targetDateDiscountDetails.add(targetDateDiscountDetail);
+                    nightPrice
+            );
         }
 
-        return new DiscountInfo()
-                .setTotalDiscount(totalDiscount)
-                .setTargetDateDiscountDetails(targetDateDiscountDetails);
-
+        return calculateDiscountService.buildDiscountInfoForGeneralAndLastMinuteDiscount(
+                stayingDatesInGregorian,
+                boomId,
+                roomName,
+                nightPrice,
+                totalPrice
+        );
     }
 
 }
