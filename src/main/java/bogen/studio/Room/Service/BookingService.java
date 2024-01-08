@@ -4,6 +4,7 @@ import bogen.studio.Room.Enums.ReservationStatus;
 import bogen.studio.Room.Enums.RoomStatus;
 import bogen.studio.Room.Exception.InvalidIdException;
 import bogen.studio.Room.Exception.InvalidInputException;
+import bogen.studio.Room.Exception.PaymentException;
 import bogen.studio.Room.Exception.PaymentTimeoutException;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
@@ -25,8 +26,9 @@ public class BookingService {
     private final ReservationRequestRepository reservationRequestRepository;
     private final RoomDateReservationStateService roomDateReservationStateService;
     private final FinancialReportService financialReportService;
+    private final DiscountService discountService;
 
-    public void payRoomFee_underDevelopment(ObjectId reservationRequestId) {
+    public void payRoomFee_underDevelopment(ObjectId reservationRequestId, String paymentCode) {
         /* This method will handle payment of room fee */
 
         // Fetch reservation
@@ -36,6 +38,9 @@ public class BookingService {
 
         // Verify reservation status
         isStatusWaitForPayment(request.getStatus());
+
+        // Check if payment is accurate.
+        isPaymentAmountAccurate_underDevelopment(paymentCode);
 
         // Handle payment
         // Todo: handle payment
@@ -72,6 +77,12 @@ public class BookingService {
 
         // Create financial report
         financialReportService.buildAndInsertFinancialReport(request);
+
+        // If discount is code type then increment the current-usage-count
+        discountService.incrementCurrentUsageCountForCodeDiscount(request);
+
+        // Todo: Discount Report!
+
     }
 
     private void isStatusWaitForPayment(ReservationStatus status) {
@@ -85,6 +96,21 @@ public class BookingService {
             throw new InvalidInputException("شما قادر به پرداخت مبلغ در این مرحله نیستید");
         }
     }
+
+    private void isPaymentAmountAccurate_underDevelopment(String paymentCode) {
+        /* Check if payment is accurate or not */
+
+        // Todo: Check if payment Code matches with the reservation
+        // ...
+
+        // Under development...
+        boolean isPaymentSuccessful = true;
+        if (!isPaymentSuccessful) {
+            throw new PaymentException("کد پرداخت معتبر نیست");
+        }
+
+    }
+
 
 
 }

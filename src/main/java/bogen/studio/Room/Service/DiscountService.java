@@ -6,6 +6,7 @@ import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Models.DiscountInfo;
 import bogen.studio.Room.Models.DiscountPlaceInfo;
+import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.TargetDateDiscountDetail;
 import bogen.studio.Room.Repository.DiscountRepository;
 import bogen.studio.Room.documents.Discount;
@@ -14,12 +15,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static bogen.studio.Room.Enums.DiscountType.CODE;
 import static bogen.studio.Room.Routes.Utility.getUserId;
 
 @Service
@@ -30,6 +36,7 @@ public class DiscountService {
     private final DiscountRepository discountRepository;
     private final InsertDiscountService insertDiscountService;
     private final CalculateDiscountService calculateDiscountService;
+    private final MongoTemplate mongoTemplate;
 
     public Discount insert(DiscountPostDto dto, Principal principal) {
         /* Create Discount doc and insert it into DB */
@@ -164,6 +171,31 @@ public class DiscountService {
                 nightPrice,
                 totalPrice
         );
+    }
+
+    public void incrementCurrentUsageCountForCodeDiscount(ReservationRequest request) {
+
+        if (request.getDiscountInfo().isDiscountCodeApplied()) {
+
+            String discountId = request.getDiscountInfo().getTargetDateDiscountDetails().get(0).getDiscountId();
+
+            Criteria typeCriteria = Criteria.where("discount_type").is(CODE);
+            Criteria idCriteria = Criteria.where("_id").is(discountId);
+            Criteria searchCriteria = new Criteria().andOperator(typeCriteria, idCriteria);
+
+            Query query = new Query().addCriteria(searchCriteria);
+
+            Update update = new Update().inc("code_discount.current_usage_count", 1);
+
+            mongoTemplate.findAndModify(
+                    query,
+                    update,
+                    Discount.class,
+                    mongoTemplate.getCollectionName(Discount.class)
+            );
+        }
+
+
     }
 
 }

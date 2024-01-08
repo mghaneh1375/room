@@ -26,7 +26,10 @@ public class BookingController {
         /* This endpoint is for paying fee of the room. */
 
 
-        bookingService.payRoomFee_underDevelopment(paymentInfo.getReservationRequestId());
+        bookingService.payRoomFee_underDevelopment(
+                paymentInfo.getReservationRequestId(),
+                paymentInfo.getPaymentCode()
+        );
 
         return ResponseEntity.ok("Payment SuccessFull. \n Attention: Payment service is under development");
 

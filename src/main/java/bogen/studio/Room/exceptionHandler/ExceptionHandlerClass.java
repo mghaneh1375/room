@@ -80,6 +80,10 @@ public class ExceptionHandlerClass {
         return ResponseEntity.ok(generateErr(e.getMessage()));
     }
 
+    @ExceptionHandler(value = PaymentException.class)
+    public ResponseEntity<String> paymentExceptionHandler(PaymentException e) {
 
+        return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
 
 }
