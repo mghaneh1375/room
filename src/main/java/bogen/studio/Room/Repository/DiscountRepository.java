@@ -1,5 +1,6 @@
 package bogen.studio.Room.Repository;
 
+import bogen.studio.Room.Exception.InvalidIdException;
 import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
@@ -49,4 +50,20 @@ public class DiscountRepository {
         return codeDiscount;
     }
 
+    public Discount fetchDiscountById(String discountId) {
+
+        Query query = new Query().addCriteria(Criteria.where("_id").is(discountId));
+
+        Discount fetchedDiscount = mongoTemplate.findOne(
+                query,
+                Discount.class,
+                mongoTemplate.getCollectionName(Discount.class)
+        );
+
+        if (fetchedDiscount == null) {
+            throw new InvalidIdException("آیدی تخفیف نامعتبر است");
+        }
+
+        return fetchedDiscount;
+    }
 }

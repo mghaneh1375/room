@@ -21,11 +21,6 @@ public class MyRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
 
-//        LocalDateTime targetDate = LocalDateTime.of(2024, 1, 3, 0, 0, 0, 0);
-//        TargetDateDiscountDetail maxDis = discountService.getMaximumDiscountForTargetDate(new ObjectId("64df8ced6b21b94de607c441"), "اتاق رویال", targetDate, 1, 1000L);
-//        //discountService.fetchRelatedDiscounts(new ObjectId("64df8ced6b21b94de607c441"),"اتاق رویال", targetDate);
-//        System.out.println("**Finally: ");
-//        System.out.println(maxDis);
 
 
 

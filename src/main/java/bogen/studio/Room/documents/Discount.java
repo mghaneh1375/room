@@ -39,7 +39,7 @@ public class Discount {
     private DiscountType discountType;
 
     @Field(name = "general_discount")
-        private GeneralDiscount generalDiscount;
+    private GeneralDiscount generalDiscount;
 
     @Field(name = "last_minute_discount")
     private LastMinuteDiscount lastMinuteDiscount;

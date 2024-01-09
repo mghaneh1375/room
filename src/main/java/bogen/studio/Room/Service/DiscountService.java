@@ -194,8 +194,10 @@ public class DiscountService {
                     mongoTemplate.getCollectionName(Discount.class)
             );
         }
-
-
     }
 
+    public Discount fetchDiscountById(String discountId) {
+
+        return discountRepository.fetchDiscountById(discountId);
+    }
 }

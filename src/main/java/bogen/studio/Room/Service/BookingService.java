@@ -9,7 +9,6 @@ import bogen.studio.Room.Exception.PaymentTimeoutException;
 import bogen.studio.Room.Models.ReservationRequest;
 import bogen.studio.Room.Models.ReservationStatusDate;
 import bogen.studio.Room.Repository.ReservationRequestRepository;
-import bogen.studio.Room.documents.FinancialReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -27,6 +26,7 @@ public class BookingService {
     private final RoomDateReservationStateService roomDateReservationStateService;
     private final FinancialReportService financialReportService;
     private final DiscountService discountService;
+    private final DiscountReportService discountReportService;
 
     public void payRoomFee_underDevelopment(ObjectId reservationRequestId, String paymentCode) {
         /* This method will handle payment of room fee */
@@ -50,6 +50,21 @@ public class BookingService {
 
         // Todo: Save payment info in separate collection
 
+        // Set new status for reservation request and new status for room
+        setNewStatusForReservationRequestAndRoom(request);
+
+        // Create financial report
+        financialReportService.buildAndInsertFinancialReport(request);
+
+        // If discount is code type then increment the current-usage-count
+        discountService.incrementCurrentUsageCountForCodeDiscount(request);
+
+        // Build and insert discountReport
+        discountReportService.buildAndInsertDiscountReportsOfReservationRequest(request);
+
+    }
+
+    private void setNewStatusForReservationRequestAndRoom(ReservationRequest request) {
         try {
             // Set new status and update status history
             // Todo: set payment in request (field: paid). The following lines sets a temporary value;
@@ -59,6 +74,16 @@ public class BookingService {
             reservationRequestRepository.save(request);
             log.info(String.format("Status for reservation request: %s, changed to: %s", request.get_id(), ReservationStatus.BOOKED));
 
+        } catch (Exception e) {
+            /* ATTENTION: We can not rollback since the payment has been done! */
+            if (e instanceof OptimisticLockingFailureException) {
+                log.warn(String.format("Optimistic lock activated while changing request: %s, to %s", request.get_id(), ReservationStatus.BOOKED));
+            }
+            log.error(String.format("For support team attention. Payment is done for request: %s, but there was a problem while updating reservation status to Booked.", request.get_id()));
+            // Todo: Insert info in a Separate collection and develop a service for support team to handle the situation.
+        }
+
+        try {
             // Set room date status to booked
             roomDateReservationStateService.setRoomDateStatuses(
                     request.getRoomId(),
@@ -67,22 +92,16 @@ public class BookingService {
                     ReservationStatus.BOOKED,
                     RoomStatus.BOOKED
             );
+        } catch (Exception e) {
 
-        } catch (OptimisticLockingFailureException e) {
-            // We can not rollback since the payment has been done!
-            log.warn(String.format("Optimistic lock activated while changing request: %s, to %s", reservationRequestId, ReservationStatus.BOOKED));
-            log.error(String.format("For support team attention. Payment is done for request: %s, but there was a problem while updating reservation status to Booked.", reservationRequestId));
-            // Todo: Insert info in a Separate collection and develop a service for support team to handle the situation.
+            if (e instanceof OptimisticLockingFailureException) {
+                log.warn(String.format("Optimistic lock activated while changing room: %s, for target dates: %s to BOOKED",
+                        request.getRoomId(), request.getGregorianResidenceDates()));
+            }
+
+            log.error(String.format("For support team attention. Room status for room: %s should be set to BOOKED. Due to successful payment of reservation request: %s", request.getRoomId(), request.get_id()));
+
         }
-
-        // Create financial report
-        financialReportService.buildAndInsertFinancialReport(request);
-
-        // If discount is code type then increment the current-usage-count
-        discountService.incrementCurrentUsageCountForCodeDiscount(request);
-
-        // Todo: Discount Report!
-
     }
 
     private void isStatusWaitForPayment(ReservationStatus status) {
@@ -110,7 +129,6 @@ public class BookingService {
         }
 
     }
-
 
 
 }

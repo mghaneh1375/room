@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import javax.persistence.Id;
 
@@ -24,5 +25,8 @@ public class Place {
     private Double c; // As latitude
     private Double d; // As longitude
     private String address;
+    private String name;
 
+    @Field(name = "city_id")
+    private String cityId;
 }
