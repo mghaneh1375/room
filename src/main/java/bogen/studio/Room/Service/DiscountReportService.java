@@ -2,6 +2,7 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.PaginationResult;
 import bogen.studio.Room.Enums.DiscountExecution;
+import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.CityRepository;
@@ -72,14 +73,14 @@ public class DiscountReportService {
                     Discount fetchedDiscount = discountService.fetchDiscountById(targetDateDiscountDetail.getDiscountId());
 
                     DiscountReport discountReport = new DiscountReport()
-                            .setUserId(request.getUserId())
+                            .setUserId(request.getUserId().toString())
                             .setCreatedAt(LocalDateTime.now())
                             .setTargetDate(targetDateDiscountDetail.getTargetDate())
-                            .setRoomId(request.getRoomId())
+                            .setRoomId(request.getRoomId().toString())
                             .setRoomName(room.getTitle())
-                            .setBoomId(room.getBoomId())
+                            .setBoomId(room.getBoomId().toString())
                             .setBoomName(place.getName())
-                            .setOwnerId(request.getOwnerId())
+                            .setBoomOwnerId(request.getOwnerId().toString())
                             .setCity(city.getName())
                             .setProvince(city.getState())
                             .setDiscountId(targetDateDiscountDetail.getDiscountId())
@@ -174,6 +175,7 @@ public class DiscountReportService {
             Optional<String> provinceNameOptional,
             Optional<LocalDateTime> createdDateOptional,
             Optional<LocalDateTime> targetDateOptional,
+            Optional<DiscountType> discountTypeOptional,
             Optional<DiscountExecution> discountExecutionOptional,
             Optional<Integer> discountAmountMinOptional,
             Optional<Integer> discountAmountMaxOptional,
@@ -193,6 +195,7 @@ public class DiscountReportService {
                 provinceNameOptional,
                 createdDateOptional,
                 targetDateOptional,
+                discountTypeOptional,
                 discountExecutionOptional,
                 discountAmountMinOptional,
                 discountAmountMaxOptional,
@@ -227,6 +230,7 @@ public class DiscountReportService {
             Optional<String> provinceNameOptional,
             Optional<LocalDateTime> createdDateOptional,
             Optional<LocalDateTime> targetDateOptional,
+            Optional<DiscountType> discountTypeOptional,
             Optional<DiscountExecution> discountExecutionOptional,
             Optional<Integer> discountAmountMinOptional,
             Optional<Integer> discountAmountMaxOptional,
@@ -251,6 +255,7 @@ public class DiscountReportService {
                 )
         );
         targetDateOptional.ifPresent(targetDate -> criteriaList.add(Criteria.where("target_date").is(targetDate)));
+        discountTypeOptional.ifPresent(discountType -> criteriaList.add(Criteria.where("discount_type").is(discountType)));
         discountExecutionOptional.ifPresent(discountExecution -> criteriaList.add(Criteria.where("discount_execution").is(discountExecution)));
         discountAmountMinOptional.ifPresent(amountMin ->
                 discountAmountMaxOptional.ifPresent(amountMax ->
@@ -276,7 +281,7 @@ public class DiscountReportService {
         List<String> authorities = getUserAuthorities(principal);
         if (!authorities.contains("ADMIN")) {
             /* If Api caller is not an admin, then the callerId should be same as the ownerId in the discount-report */
-            criteriaList.add(Criteria.where("owner_id").is(getUserId(principal)));
+            criteriaList.add(Criteria.where("boom_owner_id").is(getUserId(principal)));
         }
 
         // Create search criteria

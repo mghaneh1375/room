@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -24,7 +23,7 @@ public class DiscountReport {
     private String _id;
 
     @Field(name = "user_id")
-    private ObjectId userId; // Person who has used this discount
+    private String userId; // Person who has used this discount
 
     @Field(name = "created_at")
     private LocalDateTime createdAt;
@@ -33,19 +32,19 @@ public class DiscountReport {
     private LocalDateTime targetDate;
 
     @Field(name = "room_id")
-    private ObjectId roomId;
+    private String roomId;
 
     @Field(name = "room_name")
     private String roomName;
 
     @Field(name = "boom_id")
-    private ObjectId boomId;
+    private String boomId;
 
     @Field(name = "boom_name")
     private String boomName;
 
-    @Field(name = "owner_id")
-    private ObjectId ownerId;
+    @Field(name = "boom_owner_id")
+    private String BoomOwnerId;
 
     private String city;
     private String province;

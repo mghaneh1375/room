@@ -2,6 +2,7 @@ package bogen.studio.Room.Routes.owner_admin;
 
 import bogen.studio.Room.DTO.PaginationResult;
 import bogen.studio.Room.Enums.DiscountExecution;
+import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Service.DiscountReportService;
 import bogen.studio.Room.documents.DiscountReport;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class DiscountReportController {
             @RequestParam(required = false) String provinceName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime targetDate,
+            @RequestParam(required = false) DiscountType discountType,
             @RequestParam(required = false) DiscountExecution discountExecution,
             @RequestParam(required = false) Integer discountAmountMin,
             @RequestParam(required = false) Integer discountAmountMax,
@@ -64,6 +66,7 @@ public class DiscountReportController {
                 Optional.ofNullable(provinceName),
                 Optional.ofNullable(createdDate),
                 Optional.ofNullable(targetDate),
+                Optional.ofNullable(discountType),
                 Optional.ofNullable(discountExecution),
                 Optional.ofNullable(discountAmountMin),
                 Optional.ofNullable(discountAmountMax),
