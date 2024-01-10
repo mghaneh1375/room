@@ -1,5 +1,6 @@
 package bogen.studio.Room.Service;
 
+import bogen.studio.Room.DTO.PaginationResult;
 import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Models.*;
@@ -11,13 +12,24 @@ import bogen.studio.Room.documents.DiscountReport;
 import bogen.studio.Room.documents.Place;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-import static bogen.studio.Room.Enums.DiscountExecution.AMOUNT;
-import static bogen.studio.Room.Enums.DiscountExecution.PERCENTAGE;
+import static bogen.studio.Room.Routes.Utility.getUserId;
+import static bogen.studio.Room.Utility.TimeUtility.getExactEndTimeOfInputDate;
+import static bogen.studio.Room.Utility.TimeUtility.getExactStartTimeOfInputDate;
+import static bogen.studio.Room.Utility.UserUtility.getUserAuthorities;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +42,9 @@ public class DiscountReportService {
     private final PlaceService placeService;
     private final CityRepository cityRepository;
     private final DiscountService discountService;
+    private final DiscountReportValidatorService validatorService;
+    private final PaginationService paginationService;
+    private final MongoTemplate mongoTemplate;
 
     public DiscountReport insert(DiscountReport discountReport) {
 
@@ -116,7 +131,7 @@ public class DiscountReportService {
             Optional<String> roomNameOptional,
             Optional<String> cityNameOptional,
             Optional<String> provinceNameOptional,
-            Optional<LocalDateTime> issueDateOptional,
+            Optional<LocalDateTime> createdDateOptional,
             Optional<LocalDateTime> targetDateOptional,
             Optional<DiscountExecution> discountExecutionOptional,
             Optional<Integer> discountAmountMinOptional,
@@ -127,19 +142,19 @@ public class DiscountReportService {
 
         StringBuffer sb = new StringBuffer();
 
-        boolean hasIssueDateAnyError = hasDateAnyError(issueDateOptional, sb, "تاریخ صدور");
-        boolean hasTargetDateAnyError = hasDateAnyError(targetDateOptional, sb, "تاریخ اقامت");
-        boolean hasDiscountExecutionAmountPercentAnyError = hasDiscountExecutionAmountPercentAnyError(
+        boolean hasIssueDateAnyError = validatorService.hasDateAnyError(createdDateOptional, sb, "تاریخ صدور");
+        boolean hasTargetDateAnyError = validatorService.hasDateAnyError(targetDateOptional, sb, "تاریخ اقامت");
+        boolean hasDiscountExecutionAmountPercentAnyError = validatorService.hasDiscountExecutionAmountPercentAnyError(
                 discountExecutionOptional,
                 discountAmountMinOptional,
                 discountAmountMaxOptional,
                 discountPercentMinOptional,
                 discountPercentMaxOptional,
                 sb);
-        boolean hasBoomNameAnyError = hasPlaceNameAnyError(boomNameOptional, sb, "نام اقامت گاه");
-        boolean hasRoomNameAnyError = hasPlaceNameAnyError(roomNameOptional, sb, "نام اتاق");
-        boolean hasCityNameAnyError = hasPlaceNameAnyError(cityNameOptional, sb, "نام شهر");
-        boolean hasProvinceNameAnyError = hasPlaceNameAnyError(provinceNameOptional, sb, "نام استان");
+        boolean hasBoomNameAnyError = validatorService.hasPlaceNameAnyError(boomNameOptional, sb, "نام اقامت گاه");
+        boolean hasRoomNameAnyError = validatorService.hasPlaceNameAnyError(roomNameOptional, sb, "نام اتاق");
+        boolean hasCityNameAnyError = validatorService.hasPlaceNameAnyError(cityNameOptional, sb, "نام شهر");
+        boolean hasProvinceNameAnyError = validatorService.hasPlaceNameAnyError(provinceNameOptional, sb, "نام استان");
 
         if (
                 hasIssueDateAnyError || hasTargetDateAnyError || hasDiscountExecutionAmountPercentAnyError ||
@@ -151,98 +166,123 @@ public class DiscountReportService {
         }
     }
 
-    private boolean hasDateAnyError(Optional<LocalDateTime> dateOptional, StringBuffer sb, String dateName) {
 
-        return dateOptional
-                .map(
-                        (date) -> {
-
-                            boolean output = false;
-
-                            if (date.getHour() != 0) {
-                                sb.append(dateName + ":" + "ساعت باید 0 باشد").append("\n");
-                                output = true;
-                            }
-
-                            if (date.getMinute() != 0) {
-                                sb.append(dateName + ":" + "دقیقه باید 0 باشد").append("\n");
-                                output = true;
-                            }
-
-                            if (date.getSecond() != 0) {
-                                sb.append(dateName + ":" + "ثانیه باید 0 باشد").append("\n");
-                                output = true;
-                            }
-
-                            if (date.getNano() != 0) {
-                                sb.append(dateName + ":" + "نانو ثانیه باید 0 باشد").append("\n");
-                                output = true;
-                            }
-
-
-                            return output;
-                        }
-                )
-                .orElse(false);
-
-
-    }
-
-    private boolean hasDiscountExecutionAmountPercentAnyError(
+    public PaginationResult<DiscountReport> paginatedSearch(
+            Optional<String> boomNameOptional,
+            Optional<String> roomNameOptional,
+            Optional<String> cityNameOptional,
+            Optional<String> provinceNameOptional,
+            Optional<LocalDateTime> createdDateOptional,
+            Optional<LocalDateTime> targetDateOptional,
             Optional<DiscountExecution> discountExecutionOptional,
             Optional<Integer> discountAmountMinOptional,
             Optional<Integer> discountAmountMaxOptional,
             Optional<Integer> discountPercentMinOptional,
             Optional<Integer> discountPercentMaxOptional,
-            StringBuffer sb
+            Principal principal,
+            int page,
+            int size
     ) {
+        /* Paginated search of discount-report */
 
-        boolean hasError = false;
+        // Build paginated query
+        Query query = buildQueryForDiscountReportSearch(
+                boomNameOptional,
+                roomNameOptional,
+                cityNameOptional,
+                provinceNameOptional,
+                createdDateOptional,
+                targetDateOptional,
+                discountExecutionOptional,
+                discountAmountMinOptional,
+                discountAmountMaxOptional,
+                discountPercentMinOptional,
+                discountPercentMaxOptional,
+                principal
+        );
+        Pageable pageable = paginationService.buildPageable(page, size, "created_at", "ASCENDING");
+        Query paginatedQuery = query.with(pageable);
 
-        if (discountExecutionOptional.isEmpty()) {
-            if (
-                    discountAmountMinOptional.isPresent() ||
-                            discountAmountMaxOptional.isPresent() ||
-                            discountPercentMinOptional.isPresent() ||
-                            discountPercentMaxOptional.isPresent()
-            ) {
-                hasError = true;
-                sb.append("در حالتی که نوع تخفیف مشخص نشده است، بازه مبلغ و درصد باید تهی باشند");
-                sb.append("\n");
-            }
-        } else {
-            if (
-                    discountExecutionOptional.get().equals(AMOUNT) &&
-                            (discountPercentMinOptional.isPresent() || discountPercentMaxOptional.isPresent())
-            ) {
-                hasError = true;
-                sb.append("در حالت تخفیف مقداری، بازه درصد باید تهی باشند");
-                sb.append("\n");
-            }
+        // Perform search
+        List<DiscountReport> discountReports = mongoTemplate.find(
+                paginatedQuery,
+                DiscountReport.class,
+                mongoTemplate.getCollectionName(DiscountReport.class)
+        );
 
-            if (
-                    discountExecutionOptional.get().equals(PERCENTAGE) &&
-                            (discountAmountMinOptional.isPresent() || discountAmountMaxOptional.isPresent())
-            ) {
-                hasError = true;
-                sb.append("در حالت تخفیف درصدی، بازه مبلغ باید تهی باشند");
-                sb.append("\n");
-            }
-        }
+        //
+        Page<DiscountReport> reportsInPage = PageableExecutionUtils.getPage(
+                discountReports,
+                pageable,
+                () -> mongoTemplate.count(Query.of(paginatedQuery).limit(-1).skip(-1), DiscountReport.class)
+        );
 
-        return hasError;
+        return paginationService.buildPaginationResult(reportsInPage);
     }
 
-    private boolean hasPlaceNameAnyError(Optional<String> placeNameOptional, StringBuffer sb, String location) {
+    private Query buildQueryForDiscountReportSearch(
+            Optional<String> boomNameOptional,
+            Optional<String> roomNameOptional,
+            Optional<String> cityNameOptional,
+            Optional<String> provinceNameOptional,
+            Optional<LocalDateTime> createdDateOptional,
+            Optional<LocalDateTime> targetDateOptional,
+            Optional<DiscountExecution> discountExecutionOptional,
+            Optional<Integer> discountAmountMinOptional,
+            Optional<Integer> discountAmountMaxOptional,
+            Optional<Integer> discountPercentMinOptional,
+            Optional<Integer> discountPercentMaxOptional,
+            Principal principal
+    ) {
+        /* Build search query for discount-report according to inputs */
 
-        if (placeNameOptional.isPresent()) {
-            if (placeNameOptional.get().isBlank()) {
-                sb.append(location + ":" + "خالی است");
-                sb.append("\n");
-                return true;
-            }
+        List<Criteria> criteriaList = new ArrayList<>();
+
+        criteriaList.add(Criteria.where("_id").exists(true));
+
+        boomNameOptional.ifPresent(boomName -> criteriaList.add(Criteria.where("boom_name").is(boomName)));
+        roomNameOptional.ifPresent(roomName -> criteriaList.add(Criteria.where("room_name").is(roomName)));
+        cityNameOptional.ifPresent(cityName -> criteriaList.add(Criteria.where("city").is(cityName)));
+        provinceNameOptional.ifPresent(provinceName -> criteriaList.add(Criteria.where("province").is(provinceName)));
+        createdDateOptional.ifPresent(createdDate ->
+                criteriaList.add(
+                        Criteria.where("created_at").gte(getExactStartTimeOfInputDate(createdDate))
+                                .andOperator(Criteria.where("created_at").lte(getExactEndTimeOfInputDate(createdDate)))
+                )
+        );
+        targetDateOptional.ifPresent(targetDate -> criteriaList.add(Criteria.where("target_date").is(targetDate)));
+        discountExecutionOptional.ifPresent(discountExecution -> criteriaList.add(Criteria.where("discount_execution").is(discountExecution)));
+        discountAmountMinOptional.ifPresent(amountMin ->
+                discountAmountMaxOptional.ifPresent(amountMax ->
+                        criteriaList.add(
+                                Criteria.where("discount_amount").gte(amountMin)
+                                        .andOperator(Criteria.where("discount_amount").lte(amountMax)
+                                        )
+                        )
+                )
+        );
+        discountPercentMinOptional.ifPresent(percentMin ->
+                discountPercentMaxOptional.ifPresent(percentMax ->
+                        criteriaList.add(
+                                Criteria.where("discount_percent").gte(percentMin)
+                                        .andOperator(Criteria.where("discount_percent").lte(percentMax))
+                        )
+
+                )
+
+        );
+
+        // Todo: get user authorities, then if it is not admin create a criteria where ownerId equals ApiCallerId
+        List<String> authorities = getUserAuthorities(principal);
+        if (!authorities.contains("ADMIN")) {
+            /* If Api caller is not an admin, then the callerId should be same as the ownerId in the discount-report */
+            criteriaList.add(Criteria.where("owner_id").is(getUserId(principal)));
         }
 
-        return false;
+        // Create search criteria
+        Criteria searchCriteria = new Criteria().andOperator(criteriaList);
+
+        return new Query().addCriteria(searchCriteria);
     }
+
 }

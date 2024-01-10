@@ -89,5 +89,25 @@ public class TimeUtility {
 
     }
 
+    public static LocalDateTime getExactStartTimeOfInputDate(LocalDateTime date) {
+        /* Return exact start time of input date */
+
+        return date
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+    }
+
+    public static LocalDateTime getExactEndTimeOfInputDate(LocalDateTime date) {
+        /* Return exact start time of input date */
+
+        return date
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59)
+                .withNano(999999999);
+    }
+
 
 }
