@@ -44,6 +44,9 @@ public class DiscountReport {
     @Field(name = "boom_name")
     private String boomName;
 
+    @Field(name = "owner_id")
+    private ObjectId ownerId;
+
     private String city;
     private String province;
 

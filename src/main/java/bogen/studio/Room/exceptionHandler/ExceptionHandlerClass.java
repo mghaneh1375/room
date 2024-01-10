@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import static my.common.commonkoochita.Utility.Utility.generateErr;
 
@@ -84,6 +85,12 @@ public class ExceptionHandlerClass {
     public ResponseEntity<String> paymentExceptionHandler(PaymentException e) {
 
         return ResponseEntity.ok(generateErr(e.getMessage()));
+    }
+
+    @ExceptionHandler(value = MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> tst(MethodArgumentTypeMismatchException e) {
+
+        return ResponseEntity.ok(generateErr(String.format("Error in parsing: %s", e.getName())));
     }
 
 }
