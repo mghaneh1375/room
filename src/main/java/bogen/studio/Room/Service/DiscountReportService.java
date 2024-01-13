@@ -59,9 +59,6 @@ public class DiscountReportService {
         try {
             // Fetch room, boom, place ,and city
             Room room = roomService.findById(request.getRoomId());
-            Boom boom = boomService.findById(room.getBoomId());
-            Place place = placeService.fetchById(boom.getPlaceId());
-            City city = cityRepository.fetchById(place.getCityId());
 
             // Loop over target dates
             for (TargetDateDiscountDetail targetDateDiscountDetail : request.getDiscountInfo().getTargetDateDiscountDetails()) {
@@ -79,10 +76,10 @@ public class DiscountReportService {
                             .setRoomId(request.getRoomId().toString())
                             .setRoomName(room.getTitle())
                             .setBoomId(room.getBoomId().toString())
-                            .setBoomName(place.getName())
+                            .setBoomName(fetchedDiscount.getDiscountPlaceInfo().getBoomName())
                             .setBoomOwnerId(request.getOwnerId().toString())
-                            .setCity(city.getName())
-                            .setProvince(city.getState())
+                            .setCity(fetchedDiscount.getDiscountPlaceInfo().getCity())
+                            .setProvince(fetchedDiscount.getDiscountPlaceInfo().getProvince())
                             .setDiscountId(targetDateDiscountDetail.getDiscountId())
                             .setDiscountType(fetchedDiscount.getDiscountType())
                             .setCalculatedDiscount(targetDateDiscountDetail.getCalculatedDiscount());
