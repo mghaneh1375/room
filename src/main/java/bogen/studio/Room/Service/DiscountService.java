@@ -2,8 +2,10 @@ package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.DiscountPostDto;
 import bogen.studio.Room.DTO.TripInfo;
+import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
+import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.DiscountRepository;
 import bogen.studio.Room.documents.City;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static bogen.studio.Room.Enums.DiscountType.CODE;
 import static bogen.studio.Room.Routes.Utility.getUserId;
@@ -39,6 +42,7 @@ public class DiscountService {
     private final BoomService boomService;
     private final PlaceService placeService;
     private final CityService cityService;
+    private final DiscountReportValidatorService discountReportValidatorService;
 
     public Discount insert(DiscountPostDto dto, Principal principal) {
         /* Create Discount doc and insert it into DB */
@@ -55,7 +59,7 @@ public class DiscountService {
                 place.getName(),
                 city.getName(),
                 city.getState()
-                );
+        );
         DiscountType discountType = DiscountType.valueOf(dto.getDiscountType());
 
         // Check the integrity of boomId roomName, and discount code uniqueness;
@@ -208,5 +212,121 @@ public class DiscountService {
     public Discount fetchDiscountById(String discountId) {
 
         return discountRepository.fetchDiscountById(discountId);
+    }
+
+    public void validateSearchFields(
+            Optional<DiscountPlace> discountPlaceOptional,
+            Optional<String> boomNameOptional,
+            Optional<String> roomNameOptional,
+            Optional<String> cityOptional,
+            Optional<String> provinceOptional,
+            Optional<LocalDateTime> createdDateOptional,
+            Optional<LocalDateTime> lifeTimeStartOptional,
+            Optional<LocalDateTime> lifeTimeEndOptional,
+            Optional<LocalDateTime> targetDateStartOptional,
+            Optional<LocalDateTime> targetDateEndOptional,
+            Optional<DiscountExecution> discountExecutionOptional,
+            Optional<Integer> discountAmountMinOptional,
+            Optional<Integer> discountAmountMaxOptional,
+            Optional<Integer> discountPercentMinOptional,
+            Optional<Integer> discountPercentMaxOptional
+    ) {
+
+        StringBuffer sb = new StringBuffer();
+
+        boolean haseDiscountPlaceAndBoomAndRoomAnyError = hasDiscountPlaceAndBoomAndRoomAnyError(
+                discountPlaceOptional,
+                boomNameOptional,
+                roomNameOptional,
+                sb
+        );
+        boolean hasBoomNameAnyError = discountReportValidatorService.hasPlaceNameAnyError(boomNameOptional, sb, "نام اقامت گاه");
+        boolean hasRoomNameAnyError = discountReportValidatorService.hasPlaceNameAnyError(roomNameOptional, sb, "نام اتاق");
+        boolean hasCityNameAnyError = discountReportValidatorService.hasPlaceNameAnyError(cityOptional, sb, "نام شهر");
+        boolean hasProvinceNameAnyError = discountReportValidatorService.hasPlaceNameAnyError(provinceOptional, sb, "نام استان");
+        boolean hasCreatedDateAnyError = discountReportValidatorService.hasDateAnyError(createdDateOptional, sb, "تاریخ ایجاد");
+        boolean hasLifeTimeStartAnyError = discountReportValidatorService.hasDateAnyError(lifeTimeStartOptional, sb, "زمان شروع چرخه عمر");
+        boolean hasLifeTimeEndAnyError = discountReportValidatorService.hasDateAnyError(lifeTimeEndOptional, sb, "زمان پایان چرخه عمر");
+        boolean hasTargetDateStartAnyError = discountReportValidatorService.hasDateAnyError(targetDateStartOptional, sb, "زمان شروع تاریخ هدف");
+        boolean hasTargetDateEndAnyError = discountReportValidatorService.hasDateAnyError(targetDateEndOptional, sb, "زمان پایان تاریخ هدف");
+        boolean hasLifeTimeScopeAnyError = hasTimeScopeAnyError(lifeTimeStartOptional, lifeTimeEndOptional, sb, "چرخه عمر");
+        boolean hasTargetDateScopeAnyError = hasTimeScopeAnyError(targetDateStartOptional, targetDateEndOptional, sb, "تاریخ هدف");
+        boolean hasDiscountExecutionAmountAndPercentAnyError =
+                discountReportValidatorService.hasDiscountExecutionAmountPercentAnyError(
+                        discountExecutionOptional,
+                        discountAmountMinOptional,
+                        discountAmountMaxOptional,
+                        discountPercentMinOptional,
+                        discountPercentMaxOptional,
+                        sb);
+
+        if (haseDiscountPlaceAndBoomAndRoomAnyError || hasBoomNameAnyError || hasRoomNameAnyError ||
+                hasCityNameAnyError || hasProvinceNameAnyError || hasCreatedDateAnyError || hasLifeTimeStartAnyError ||
+                hasLifeTimeEndAnyError || hasTargetDateStartAnyError || hasTargetDateEndAnyError ||
+                hasLifeTimeScopeAnyError || hasTargetDateScopeAnyError || hasDiscountExecutionAmountAndPercentAnyError
+        ) {
+            String errorMsg = sb.toString().replace("\n", ",");
+            log.error("Error in Validating discount search fields: " + errorMsg);
+            throw new InvalidInputException(sb.toString());
+        }
+    }
+
+    private boolean hasDiscountPlaceAndBoomAndRoomAnyError(
+            Optional<DiscountPlace> discountPlaceOptional,
+            Optional<String> boomNameOptional,
+            Optional<String> roomNameOptional,
+            StringBuffer sb
+    ) {
+
+        boolean hasError = false;
+
+        if (
+                discountPlaceOptional.isEmpty() &&
+                        (boomNameOptional.isPresent() || roomNameOptional.isPresent())
+        ) {
+            hasError = true;
+            sb.append("در صورت تهی بودن مکان تخفیف، نام اقامت گاه و نام اتاق هم باید تهی باشند");
+            sb.append("\n");
+        }
+
+        if (discountPlaceOptional.isPresent()) {
+
+            if (
+                    discountPlaceOptional.get().equals(DiscountPlace.BOOM_DISCOUNT) &&
+                            roomNameOptional.isPresent()
+            ) {
+                hasError = true;
+                sb.append("در صورتیکه مکان تخفیف، اقامتگاه باشد، نام اتاق باید تهی باشد");
+                sb.append("\n");
+            }
+
+        }
+
+
+        return hasError;
+    }
+
+    private boolean hasTimeScopeAnyError(Optional<LocalDateTime> start, Optional<LocalDateTime> end, StringBuffer sb, String scopeName) {
+
+        boolean hasError = false;
+
+        if (start.isEmpty() && end.isEmpty()) {
+            return false;
+        } else if (start.isPresent() && end.isPresent()) {
+
+            if (end.get().isBefore(start.get())) {
+                hasError = true;
+                sb.append("بازه " + scopeName + " صحیح نیست");
+                sb.append("\n");
+            }
+
+        } else {
+            hasError = true;
+            sb.append("بازه " + scopeName + " به طور کامل وارد نشده است");
+            sb.append("\n");
+        }
+
+
+        return hasError;
     }
 }

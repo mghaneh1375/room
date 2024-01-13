@@ -70,7 +70,7 @@ public class DiscountReportValidatorService {
                             discountPercentMaxOptional.isPresent()
             ) {
                 hasError = true;
-                sb.append("در حالتی که نوع تخفیف مشخص نشده است، بازه مبلغ و درصد باید تهی باشند");
+                sb.append("در حالتی که نوع اعمال تخفیف مشخص نشده است، بازه مبلغ و درصد باید تهی باشند");
                 sb.append("\n");
             }
         } else {
