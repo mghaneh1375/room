@@ -14,8 +14,14 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class DiscountPlaceInfo {
 
     @Field(name = "boom_id")
-    private ObjectId boomId;
+    private String boomId;
 
     @Field(name = "room_name")
     private String roomName;
+
+    @Field(name = "boom_name")
+    private String boomName;
+
+    private String city;
+    private String province;
 }

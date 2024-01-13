@@ -1,7 +1,8 @@
-package bogen.studio.Room.Routes.API.owner;
+package bogen.studio.Room.Routes.owner_admin;
 
 import bogen.studio.Room.DTO.DiscountPostDto;
 import bogen.studio.Room.Service.DiscountService;
+import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,10 +24,9 @@ public class DiscountController {
     public ResponseEntity<String> createDiscount(
             @RequestBody @Valid DiscountPostDto dto,
             Principal principal
-            ) {
+    ) {
 
-        var dd = discountService.insert(dto, principal);
-        return ResponseEntity.ok("Successfully inserted Discount to DB: " + dd);
+        Discount savedDiscount = discountService.insert(dto, principal);
+        return ResponseEntity.ok("Successfully inserted Discount to DB: " + savedDiscount);
     }
-
 }

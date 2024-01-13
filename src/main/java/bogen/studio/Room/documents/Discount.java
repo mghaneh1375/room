@@ -52,7 +52,7 @@ public class Discount {
     private LocalDateTime createdAt;
 
     @Field(name = "created_by")
-    private ObjectId createdBy; // Discount creator userId
+    private String createdBy; // Discount creator userId
 
     @Version
     private long version;

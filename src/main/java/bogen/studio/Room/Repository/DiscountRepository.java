@@ -30,7 +30,7 @@ public class DiscountRepository {
     public Discount fetchByBoomIdAndDiscountCode(ObjectId boomId, String code) {
         /* Fetch discount by discount-code */
 
-        Criteria boomIdCriteria = Criteria.where("discount_place_info.boom_id").is(boomId);
+        Criteria boomIdCriteria = Criteria.where("discount_place_info.boom_id").is(boomId.toString());
         Criteria discountTypeCriteria = Criteria.where("discount_type").is(CODE);
         Criteria discountCodeCriteria = Criteria.where("code_discount.code").is(code);
         Criteria searchCriteria = new Criteria().andOperator(boomIdCriteria, discountTypeCriteria, discountCodeCriteria);

@@ -4,12 +4,11 @@ import bogen.studio.Room.DTO.DiscountPostDto;
 import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
-import bogen.studio.Room.Models.DiscountInfo;
-import bogen.studio.Room.Models.DiscountPlaceInfo;
-import bogen.studio.Room.Models.ReservationRequest;
-import bogen.studio.Room.Models.TargetDateDiscountDetail;
+import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.DiscountRepository;
+import bogen.studio.Room.documents.City;
 import bogen.studio.Room.documents.Discount;
+import bogen.studio.Room.documents.Place;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -37,6 +36,9 @@ public class DiscountService {
     private final InsertDiscountService insertDiscountService;
     private final CalculateDiscountService calculateDiscountService;
     private final MongoTemplate mongoTemplate;
+    private final BoomService boomService;
+    private final PlaceService placeService;
+    private final CityService cityService;
 
     public Discount insert(DiscountPostDto dto, Principal principal) {
         /* Create Discount doc and insert it into DB */
@@ -44,9 +46,16 @@ public class DiscountService {
         // Create discountPlace, boomId, DiscountPlaceInfo, and DiscountType from DTO
         DiscountPlace discountPlace = DiscountPlace.valueOf(dto.getDiscountPlace());
         ObjectId boomId = new ObjectId(dto.getDiscountPlaceInfoPostDto().getBoomId());
+        Boom boom = boomService.findById(boomId);
+        Place place = placeService.fetchById(boom.getPlaceId());
+        City city = cityService.fetchCityById(place.getCityId());
         DiscountPlaceInfo discountPlaceInfo = new DiscountPlaceInfo(
-                boomId,
-                dto.getDiscountPlaceInfoPostDto().getRoomName());
+                boomId.toString(),
+                dto.getDiscountPlaceInfoPostDto().getRoomName(),
+                place.getName(),
+                city.getName(),
+                city.getState()
+                );
         DiscountType discountType = DiscountType.valueOf(dto.getDiscountType());
 
         // Check the integrity of boomId roomName, and discount code uniqueness;
@@ -62,7 +71,7 @@ public class DiscountService {
                 .setDiscountPlace(discountPlace)
                 .setDiscountPlaceInfo(discountPlaceInfo)
                 .setDiscountType(discountType)
-                .setCreatedBy(getUserId(principal));
+                .setCreatedBy(getUserId(principal).toString());
 
         // According to input discountType set general or lastMinute or code discount
         insertDiscountService.setGeneralOrLastMinuteOrCodeDiscount(discountType, discount, dto);

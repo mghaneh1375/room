@@ -281,7 +281,7 @@ public class DiscountReportService {
         List<String> authorities = getUserAuthorities(principal);
         if (!authorities.contains("ADMIN")) {
             /* If Api caller is not an admin, then the callerId should be same as the ownerId in the discount-report */
-            criteriaList.add(Criteria.where("boom_owner_id").is(getUserId(principal)));
+            criteriaList.add(Criteria.where("boom_owner_id").is(getUserId(principal).toString()));
         }
 
         // Create search criteria

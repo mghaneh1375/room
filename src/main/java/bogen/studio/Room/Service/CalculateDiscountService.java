@@ -66,7 +66,7 @@ public class CalculateDiscountService {
 
         // Create Room related criteria for place
         Criteria roomPlaceCriteria = Criteria.where("discount_place").is(ROOM_DISCOUNT);
-        Criteria boomIdCriteria = Criteria.where("discount_place_info.boom_id").is(boomId);
+        Criteria boomIdCriteria = Criteria.where("discount_place_info.boom_id").is(boomId.toString());
         Criteria roomIdCriteria = Criteria.where("discount_place_info.room_name").is(roomName);
         Criteria roomRelated = new Criteria().andOperator(boomIdCriteria, roomIdCriteria, roomPlaceCriteria);
 
@@ -244,7 +244,7 @@ public class CalculateDiscountService {
 
         } else if (discountExecution.equals(PERCENTAGE)) {
 
-            return calculateGeneralPercentWiseDiscount(generalDiscount, discount.get_id(), totalAmount, targetDate);
+            return calculateGeneralPercentWiseDiscount(generalDiscount, discount.get_id(),nightPrice, totalAmount, targetDate);
 
         } else {
             return null;
@@ -254,6 +254,7 @@ public class CalculateDiscountService {
     private TargetDateDiscountDetail calculateGeneralPercentWiseDiscount(
             GeneralDiscount generalDiscount,
             String discountId,
+            Long nightPrice,
             Long totalAmount,
             LocalDateTime targetDate) {
         /* Calculate general discount if execution type is PERCENTAGE */
@@ -267,7 +268,7 @@ public class CalculateDiscountService {
             }
         }
 
-        long calculatedDiscount = totalAmount * generalDiscount.getPercent() / 100;
+        long calculatedDiscount = nightPrice * generalDiscount.getPercent() / 100;
         if (discountThreshold != null) {
             if (calculatedDiscount > discountThreshold) {
                 calculatedDiscount = discountThreshold;
