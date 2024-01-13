@@ -67,4 +67,10 @@ public class FinancialReport {
     @Field(value = "refund-fee")
     private int refundFee;
 
+    @Field(value = "total_amount")
+    private long totalAmount;
+
+    @Field(value = "total_discount")
+    private long totalDiscount;
+
 }

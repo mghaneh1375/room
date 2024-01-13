@@ -55,7 +55,9 @@ public class FinancialReportService {
                 .setPassengersInfo(buildPassengersInfo(request))
                 .setStatus(request.getStatus())
                 .setDescription(request.getDescription())
-                .setNumberOfPassengers(request.getPassengers().size());
+                .setNumberOfPassengers(request.getPassengers().size())
+                .setTotalAmount(request.getTotalAmount())
+                .setTotalDiscount(request.getDiscountInfo().getTotalDiscount());
 
         if (request.getStatus().equals(ReservationStatus.BOOKED)) {
             financialReport.setPaymentFee(request.getPaid());
