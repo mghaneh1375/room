@@ -1,6 +1,7 @@
 package bogen.studio.Room.Service;
 
 import bogen.studio.Room.DTO.DiscountPostDto;
+import bogen.studio.Room.DTO.PaginationResult;
 import bogen.studio.Room.DTO.TripInfo;
 import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountPlace;
@@ -8,6 +9,7 @@ import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.DiscountRepository;
+import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.City;
 import bogen.studio.Room.documents.Discount;
 import bogen.studio.Room.documents.Place;
@@ -16,19 +18,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static bogen.studio.Room.Enums.DiscountType.CODE;
+import static bogen.studio.Room.Enums.DiscountType.*;
 import static bogen.studio.Room.Routes.Utility.getUserId;
+import static bogen.studio.Room.Utility.TimeUtility.getExactEndTimeOfInputDate;
+import static bogen.studio.Room.Utility.TimeUtility.getExactStartTimeOfInputDate;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +51,7 @@ public class DiscountService {
     private final PlaceService placeService;
     private final CityService cityService;
     private final DiscountReportValidatorService discountReportValidatorService;
+    private final PaginationService paginationService;
 
     public Discount insert(DiscountPostDto dto, Principal principal) {
         /* Create Discount doc and insert it into DB */
@@ -279,7 +288,7 @@ public class DiscountService {
     ) {
 
         boolean hasError = false;
-
+/* Temp
         if (
                 discountPlaceOptional.isEmpty() &&
                         (boomNameOptional.isPresent() || roomNameOptional.isPresent())
@@ -288,7 +297,7 @@ public class DiscountService {
             sb.append("در صورت تهی بودن مکان تخفیف، نام اقامت گاه و نام اتاق هم باید تهی باشند");
             sb.append("\n");
         }
-
+*/
         if (discountPlaceOptional.isPresent()) {
 
             if (
@@ -328,5 +337,165 @@ public class DiscountService {
 
 
         return hasError;
+    }
+
+    public PaginationResult<Discount> paginatedSearch(
+            Optional<DiscountPlace> discountPlaceOptional,
+            Optional<String> boomNameOptional,
+            Optional<String> roomNameOptional,
+            Optional<String> cityOptional,
+            Optional<String> provinceOptional,
+            Optional<LocalDateTime> createdDateOptional,
+            Optional<LocalDateTime> lifeTimeStartOptional,
+            Optional<LocalDateTime> lifeTimeEndOptional,
+            Optional<LocalDateTime> targetDateStartOptional,
+            Optional<LocalDateTime> targetDateEndOptional,
+            Optional<DiscountType> discountTypeOptional,
+            Optional<DiscountExecution> discountExecutionOptional,
+            Optional<Integer> discountAmountMinOptional,
+            Optional<Integer> discountAmountMaxOptional,
+            Optional<Integer> discountPercentMinOptional,
+            Optional<Integer> discountPercentMaxOptional,
+            Principal principal,
+            int page,
+            int size
+    ) {
+        /* Paginated search of discounts */
+
+        // Build paginatedQuery
+        Query query = buildQueryForDiscountSearch(
+                discountPlaceOptional,
+                boomNameOptional,
+                roomNameOptional,
+                cityOptional,
+                provinceOptional,
+                createdDateOptional,
+                lifeTimeStartOptional,
+                lifeTimeEndOptional,
+                targetDateStartOptional,
+                targetDateEndOptional,
+                discountTypeOptional,
+                discountExecutionOptional,
+                discountAmountMinOptional,
+                discountAmountMaxOptional,
+                discountPercentMinOptional,
+                discountPercentMaxOptional,
+                principal
+        );
+        Pageable pageable = paginationService.buildPageable(page, size, "created_at", "ASCENDING");
+        Query paginatedQuery = query.with(pageable);
+
+        // Perform search
+        List<Discount> discounts = mongoTemplate.find(
+                paginatedQuery,
+                Discount.class,
+                mongoTemplate.getCollectionName(Discount.class)
+        );
+
+        // Build page
+        Page<Discount> discountsInPage = PageableExecutionUtils.getPage(
+                discounts,
+                pageable,
+                () -> mongoTemplate.count(Query.of(paginatedQuery).limit(-1).skip(-1), Discount.class)
+        );
+
+        return paginationService.buildPaginationResult(discountsInPage);
+    }
+
+    private Query buildQueryForDiscountSearch(
+            Optional<DiscountPlace> discountPlaceOptional,
+            Optional<String> boomNameOptional,
+            Optional<String> roomNameOptional,
+            Optional<String> cityOptional,
+            Optional<String> provinceOptional,
+            Optional<LocalDateTime> createdDateOptional,
+            Optional<LocalDateTime> lifeTimeStartOptional,
+            Optional<LocalDateTime> lifeTimeEndOptional,
+            Optional<LocalDateTime> targetDateStartOptional,
+            Optional<LocalDateTime> targetDateEndOptional,
+            Optional<DiscountType> discountTypeOptional,
+            Optional<DiscountExecution> discountExecutionOptional,
+            Optional<Integer> discountAmountMinOptional,
+            Optional<Integer> discountAmountMaxOptional,
+            Optional<Integer> discountPercentMinOptional,
+            Optional<Integer> discountPercentMaxOptional,
+            Principal principal
+    ) {
+        /* Build search query for discount according to inputs */
+
+        ArrayList<Criteria> criteriaList = new ArrayList<>();
+
+        criteriaList.add(Criteria.where("_id").exists(true));
+        discountPlaceOptional.ifPresent(discountPlace -> criteriaList.add(Criteria.where("discount_place").is(discountPlace)));
+        boomNameOptional.ifPresent(boomName -> criteriaList.add(Criteria.where("discount_place_info.boom_name").is(boomName)));
+        roomNameOptional.ifPresent(roomName -> criteriaList.add(Criteria.where("discount_place_info.room_name").is(roomName)));
+        cityOptional.ifPresent(city -> criteriaList.add(Criteria.where("discount_place_info.city").is(city)));
+        provinceOptional.ifPresent(province -> criteriaList.add(Criteria.where("discount_place_info.province").is(province)));
+        createdDateOptional.ifPresent(
+                createdDate -> criteriaList.add(
+                        Criteria.where("created_at").gte(getExactStartTimeOfInputDate(createdDate))
+                                .andOperator(Criteria.where("created_at").lte(getExactEndTimeOfInputDate(createdDate)))
+                )
+        );
+        lifeTimeStartOptional.ifPresent(lifeTimeStart ->
+                lifeTimeEndOptional.ifPresent(lifeTimeEnd ->
+                        criteriaList.add(buildLifeTimeCriteria(lifeTimeStart, getExactEndTimeOfInputDate(lifeTimeEnd)))
+                )
+        );
+        targetDateStartOptional.ifPresent(targetDateStart ->
+                targetDateEndOptional.ifPresent(targetDateEnd ->
+                        criteriaList.add(buildTargetDateCriteria(targetDateStart, getExactEndTimeOfInputDate(targetDateEnd)))
+                )
+        );
+
+        // Todo: continue building query
+
+
+        Criteria searchCriteria = new Criteria().andOperator(criteriaList);
+
+        return new Query().addCriteria(searchCriteria);
+    }
+
+    private Criteria buildLifeTimeCriteria(LocalDateTime lifeTimeStart, LocalDateTime lifeTimeEnd) {
+
+        // General Discount
+        //Criteria generalType = Criteria.where("discount_type").is(GENERAL);
+        Criteria generalLifeTimeStart = Criteria.where("general_discount.life_time_start").gte(lifeTimeStart);
+        Criteria generalLifeTimeEnd = Criteria.where("general_discount.life_time_end").lte(lifeTimeEnd);
+        Criteria GeneraLifeTime = new Criteria().andOperator(generalLifeTimeStart, generalLifeTimeEnd);
+
+        // LastMinute Discount
+        //Criteria lastMinuteType = Criteria.where("discount_type").is(LAST_MINUTE);
+        Criteria lastMinuteLifeTimeStart = Criteria.where("last_minute_discount.life_time_start").gte(lifeTimeStart);
+        Criteria lastMinuteLifeTimeEnd = Criteria.where("last_minute_discount.target_date").lte(lifeTimeEnd);
+        Criteria lastMinuteLifeTime = new Criteria().andOperator(lastMinuteLifeTimeStart, lastMinuteLifeTimeEnd);
+
+        // Code Discount
+        //Criteria codeType = Criteria.where("discount_type").is(CODE);
+        Criteria codeLifeTimeStart = Criteria.where("code_discount.life_time_start").gte(lifeTimeStart);
+        Criteria codeLifeTimeEnd = Criteria.where("code_discount.life_time_end").lte(lifeTimeEnd);
+        Criteria codeLifeTime = new Criteria().andOperator(codeLifeTimeStart, codeLifeTimeEnd);
+
+        return new Criteria().orOperator(GeneraLifeTime, lastMinuteLifeTime, codeLifeTime);
+    }
+
+    private Criteria buildTargetDateCriteria(LocalDateTime targetDateStart, LocalDateTime targetDateEnd) {
+
+        // General Discount
+        Criteria generalTargetDateStart = Criteria.where("general_discount.target_date_start").gte(targetDateStart);
+        Criteria generalTargetDateEnd = Criteria.where("general_discount.target_date_end").lte(targetDateEnd);
+        Criteria generalTargetDate = new Criteria().andOperator(generalTargetDateStart, generalTargetDateEnd);
+
+        // LastMinute Discount
+        Criteria lastMinuteTargetDateStart = Criteria.where("last_minute_discount.target_date").gte(targetDateStart);
+        Criteria lastMinuteTargetDateEnd = Criteria.where("last_minute_discount.target_date").lte(targetDateEnd);
+        Criteria lastMinuteTargetDate = new Criteria().andOperator(lastMinuteTargetDateStart, lastMinuteTargetDateEnd);
+
+        // Code Discount
+        Criteria codeTargetDateStart = Criteria.where("code_discount.target_date_start").gte(targetDateStart);
+        Criteria codeTargetDateEnd = Criteria.where("code_discount.target_date_end").lte(targetDateEnd);
+        Criteria codeTargetDate = new Criteria().andOperator(codeTargetDateStart, codeTargetDateEnd);
+
+        return new Criteria().orOperator(generalTargetDate, lastMinuteTargetDate, codeTargetDate);
     }
 }

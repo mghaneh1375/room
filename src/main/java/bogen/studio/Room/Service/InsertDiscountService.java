@@ -15,6 +15,7 @@ import bogen.studio.Room.Models.CodeDiscount;
 import bogen.studio.Room.Models.GeneralDiscount;
 import bogen.studio.Room.Models.LastMinuteDiscount;
 import bogen.studio.Room.Repository.RoomRepository2;
+import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -160,9 +161,9 @@ public class InsertDiscountService {
                 .setDefinedUsageCount(dto.getDefinedUsageCount())
                 .setCurrentUsageCount(0)
                 .setLifeTimeStart(createLdt(dto.getLifeTimeStart()))
-                .setLifeTimeEnd(createLdt(dto.getLifeTimeEnd()).withHour(23).withMinute(59).withSecond(59))
+                .setLifeTimeEnd(TimeUtility.getExactEndTimeOfInputDate(createLdt(dto.getLifeTimeEnd())))
                 .setTargetDateStart(createLdt(dto.getTargetDateStart()))
-                .setTargetDateEnd(createLdt(dto.getTargetDateEnd()).withHour(23).withMinute(59).withSecond(59));
+                .setTargetDateEnd(TimeUtility.getExactEndTimeOfInputDate(createLdt(dto.getTargetDateEnd())));
     }
 
     private LastMinuteDiscount createLastMinuteDiscount(LastMinuteDiscountPostDto dto) {
@@ -174,7 +175,7 @@ public class InsertDiscountService {
                 .setDiscountExecution(discountExecution)
                 .setPercent(dto.getPercent())
                 .setAmount(dto.getAmount())
-                .setTargetDate(createLdt(dto.getTargetDate()).withHour(23).withMinute(59).withSecond(59))
+                .setTargetDate(TimeUtility.getExactEndTimeOfInputDate(createLdt(dto.getTargetDate())))
                 .setLifeTimeStart(createLdt(dto.getLifeTimeStart()));
     }
 
@@ -190,9 +191,9 @@ public class InsertDiscountService {
                 .setMinimumRequiredPurchase(dto.getMinimumRequiredPurchase())
                 .setDiscountThreshold(dto.getDiscountThreshold())
                 .setLifeTimeStart(createLdt(dto.getLifeTimeStart()))
-                .setLifeTimeEnd(createLdt(dto.getLifeTimeEnd()).withHour(23).withMinute(59).withSecond(59))
+                .setLifeTimeEnd(TimeUtility.getExactEndTimeOfInputDate(createLdt(dto.getLifeTimeEnd())))
                 .setTargetDateStart(createLdt(dto.getTargetDateStart()))
-                .setTargetDateEnd(createLdt(dto.getTargetDateEnd()).withHour(23).withMinute(59).withSecond(59));
+                .setTargetDateEnd(TimeUtility.getExactEndTimeOfInputDate(createLdt(dto.getTargetDateEnd())));
     }
 
     private LocalDateTime createLdt(String dateInString) {

@@ -210,7 +210,7 @@ public class DiscountReportService {
                 mongoTemplate.getCollectionName(DiscountReport.class)
         );
 
-        //
+        // Build page
         Page<DiscountReport> reportsInPage = PageableExecutionUtils.getPage(
                 discountReports,
                 pageable,
