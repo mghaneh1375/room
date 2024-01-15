@@ -7,10 +7,8 @@ import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.CityRepository;
 import bogen.studio.Room.Repository.DiscountReportRepository;
-import bogen.studio.Room.documents.City;
 import bogen.studio.Room.documents.Discount;
 import bogen.studio.Room.documents.DiscountReport;
-import bogen.studio.Room.documents.Place;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -274,7 +272,7 @@ public class DiscountReportService {
 
         );
 
-        // Todo: get user authorities, then if it is not admin create a criteria where ownerId equals ApiCallerId
+        // Get user authorities, then if it is not admin, create a criteria where ownerId equals ApiCallerId
         List<String> authorities = getUserAuthorities(principal);
         if (!authorities.contains("ADMIN")) {
             /* If Api caller is not an admin, then the callerId should be same as the ownerId in the discount-report */

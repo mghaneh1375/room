@@ -9,7 +9,6 @@ import bogen.studio.Room.Enums.DiscountType;
 import bogen.studio.Room.Exception.InvalidInputException;
 import bogen.studio.Room.Models.*;
 import bogen.studio.Room.Repository.DiscountRepository;
-import bogen.studio.Room.Utility.TimeUtility;
 import bogen.studio.Room.documents.City;
 import bogen.studio.Room.documents.Discount;
 import bogen.studio.Room.documents.Place;
@@ -29,14 +28,11 @@ import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static bogen.studio.Room.Enums.DiscountType.*;
+import static bogen.studio.Room.Enums.DiscountType.CODE;
 import static bogen.studio.Room.Routes.Utility.getUserId;
-import static bogen.studio.Room.Utility.TimeUtility.getExactEndTimeOfInputDate;
-import static bogen.studio.Room.Utility.TimeUtility.getExactStartTimeOfInputDate;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +48,7 @@ public class DiscountService {
     private final CityService cityService;
     private final DiscountReportValidatorService discountReportValidatorService;
     private final PaginationService paginationService;
+    private final DiscountSearchService discountSearchService;
 
     public Discount insert(DiscountPostDto dto, Principal principal) {
         /* Create Discount doc and insert it into DB */
@@ -363,7 +360,7 @@ public class DiscountService {
         /* Paginated search of discounts */
 
         // Build paginatedQuery
-        Query query = buildQueryForDiscountSearch(
+        Query query = discountSearchService.buildQueryForDiscountSearch(
                 discountPlaceOptional,
                 boomNameOptional,
                 roomNameOptional,
@@ -402,100 +399,4 @@ public class DiscountService {
         return paginationService.buildPaginationResult(discountsInPage);
     }
 
-    private Query buildQueryForDiscountSearch(
-            Optional<DiscountPlace> discountPlaceOptional,
-            Optional<String> boomNameOptional,
-            Optional<String> roomNameOptional,
-            Optional<String> cityOptional,
-            Optional<String> provinceOptional,
-            Optional<LocalDateTime> createdDateOptional,
-            Optional<LocalDateTime> lifeTimeStartOptional,
-            Optional<LocalDateTime> lifeTimeEndOptional,
-            Optional<LocalDateTime> targetDateStartOptional,
-            Optional<LocalDateTime> targetDateEndOptional,
-            Optional<DiscountType> discountTypeOptional,
-            Optional<DiscountExecution> discountExecutionOptional,
-            Optional<Integer> discountAmountMinOptional,
-            Optional<Integer> discountAmountMaxOptional,
-            Optional<Integer> discountPercentMinOptional,
-            Optional<Integer> discountPercentMaxOptional,
-            Principal principal
-    ) {
-        /* Build search query for discount according to inputs */
-
-        ArrayList<Criteria> criteriaList = new ArrayList<>();
-
-        criteriaList.add(Criteria.where("_id").exists(true));
-        discountPlaceOptional.ifPresent(discountPlace -> criteriaList.add(Criteria.where("discount_place").is(discountPlace)));
-        boomNameOptional.ifPresent(boomName -> criteriaList.add(Criteria.where("discount_place_info.boom_name").is(boomName)));
-        roomNameOptional.ifPresent(roomName -> criteriaList.add(Criteria.where("discount_place_info.room_name").is(roomName)));
-        cityOptional.ifPresent(city -> criteriaList.add(Criteria.where("discount_place_info.city").is(city)));
-        provinceOptional.ifPresent(province -> criteriaList.add(Criteria.where("discount_place_info.province").is(province)));
-        createdDateOptional.ifPresent(
-                createdDate -> criteriaList.add(
-                        Criteria.where("created_at").gte(getExactStartTimeOfInputDate(createdDate))
-                                .andOperator(Criteria.where("created_at").lte(getExactEndTimeOfInputDate(createdDate)))
-                )
-        );
-        lifeTimeStartOptional.ifPresent(lifeTimeStart ->
-                lifeTimeEndOptional.ifPresent(lifeTimeEnd ->
-                        criteriaList.add(buildLifeTimeCriteria(lifeTimeStart, getExactEndTimeOfInputDate(lifeTimeEnd)))
-                )
-        );
-        targetDateStartOptional.ifPresent(targetDateStart ->
-                targetDateEndOptional.ifPresent(targetDateEnd ->
-                        criteriaList.add(buildTargetDateCriteria(targetDateStart, getExactEndTimeOfInputDate(targetDateEnd)))
-                )
-        );
-
-        // Todo: continue building query
-
-
-        Criteria searchCriteria = new Criteria().andOperator(criteriaList);
-
-        return new Query().addCriteria(searchCriteria);
-    }
-
-    private Criteria buildLifeTimeCriteria(LocalDateTime lifeTimeStart, LocalDateTime lifeTimeEnd) {
-
-        // General Discount
-        Criteria GeneraLifeTime = buildTimeScopeCriteria("general_discount.life_time_start", lifeTimeStart,
-                "general_discount.life_time_end", lifeTimeEnd);
-
-        // LastMinute Discount
-        Criteria lastMinuteLifeTime = buildTimeScopeCriteria("last_minute_discount.life_time_start",
-                lifeTimeStart,"last_minute_discount.target_date", lifeTimeEnd);
-
-        // Code Discount
-        Criteria codeLifeTime = buildTimeScopeCriteria("code_discount.life_time_start", lifeTimeStart,
-                "code_discount.life_time_end", lifeTimeEnd);
-
-        return new Criteria().orOperator(GeneraLifeTime, lastMinuteLifeTime, codeLifeTime);
-    }
-
-    private Criteria buildTargetDateCriteria(LocalDateTime targetDateStart, LocalDateTime targetDateEnd) {
-
-        // General Discount
-        Criteria generalTargetDate = buildTimeScopeCriteria("general_discount.target_date_start",
-                targetDateStart, "general_discount.target_date_end", targetDateEnd);
-
-        // LastMinute Discount
-        Criteria lastMinuteTargetDate = buildTimeScopeCriteria("last_minute_discount.target_date",
-                targetDateStart, "last_minute_discount.target_date", targetDateEnd);
-
-        // Code Discount
-        Criteria codeTargetDate = buildTimeScopeCriteria("code_discount.target_date_start",
-                targetDateStart, "code_discount.target_date_end", targetDateEnd);
-
-        return new Criteria().orOperator(generalTargetDate, lastMinuteTargetDate, codeTargetDate);
-    }
-
-    private Criteria buildTimeScopeCriteria(String scopeStartKey, LocalDateTime scopeStart, String scopeEndKey, LocalDateTime scopeEnd) {
-        /* Build time scope criteria */
-
-        Criteria scopteStartCriteria = Criteria.where(scopeStartKey).gte(scopeStart);
-        Criteria scopeEndCriteria = Criteria.where(scopeEndKey).lte(scopeEnd);
-
-        return new Criteria().andOperator(scopteStartCriteria, scopeEndCriteria);
-    }
 }

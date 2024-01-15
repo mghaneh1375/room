@@ -1,6 +1,7 @@
 package bogen.studio.Room.Repository;
 
 import bogen.studio.Room.Models.CommonUser;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -19,5 +20,7 @@ public interface UserRepository extends MongoRepository<CommonUser, String> {
 
 	@Query(value = "{'email' : ?0 }")
 	Optional<CommonUser> findByEmail(String email);
+
+	Optional<CommonUser> findById(ObjectId id);
 
 }
