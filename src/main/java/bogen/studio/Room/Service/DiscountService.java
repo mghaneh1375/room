@@ -459,22 +459,16 @@ public class DiscountService {
     private Criteria buildLifeTimeCriteria(LocalDateTime lifeTimeStart, LocalDateTime lifeTimeEnd) {
 
         // General Discount
-        //Criteria generalType = Criteria.where("discount_type").is(GENERAL);
-        Criteria generalLifeTimeStart = Criteria.where("general_discount.life_time_start").gte(lifeTimeStart);
-        Criteria generalLifeTimeEnd = Criteria.where("general_discount.life_time_end").lte(lifeTimeEnd);
-        Criteria GeneraLifeTime = new Criteria().andOperator(generalLifeTimeStart, generalLifeTimeEnd);
+        Criteria GeneraLifeTime = buildTimeScopeCriteria("general_discount.life_time_start", lifeTimeStart,
+                "general_discount.life_time_end", lifeTimeEnd);
 
         // LastMinute Discount
-        //Criteria lastMinuteType = Criteria.where("discount_type").is(LAST_MINUTE);
-        Criteria lastMinuteLifeTimeStart = Criteria.where("last_minute_discount.life_time_start").gte(lifeTimeStart);
-        Criteria lastMinuteLifeTimeEnd = Criteria.where("last_minute_discount.target_date").lte(lifeTimeEnd);
-        Criteria lastMinuteLifeTime = new Criteria().andOperator(lastMinuteLifeTimeStart, lastMinuteLifeTimeEnd);
+        Criteria lastMinuteLifeTime = buildTimeScopeCriteria("last_minute_discount.life_time_start",
+                lifeTimeStart,"last_minute_discount.target_date", lifeTimeEnd);
 
         // Code Discount
-        //Criteria codeType = Criteria.where("discount_type").is(CODE);
-        Criteria codeLifeTimeStart = Criteria.where("code_discount.life_time_start").gte(lifeTimeStart);
-        Criteria codeLifeTimeEnd = Criteria.where("code_discount.life_time_end").lte(lifeTimeEnd);
-        Criteria codeLifeTime = new Criteria().andOperator(codeLifeTimeStart, codeLifeTimeEnd);
+        Criteria codeLifeTime = buildTimeScopeCriteria("code_discount.life_time_start", lifeTimeStart,
+                "code_discount.life_time_end", lifeTimeEnd);
 
         return new Criteria().orOperator(GeneraLifeTime, lastMinuteLifeTime, codeLifeTime);
     }
@@ -482,20 +476,26 @@ public class DiscountService {
     private Criteria buildTargetDateCriteria(LocalDateTime targetDateStart, LocalDateTime targetDateEnd) {
 
         // General Discount
-        Criteria generalTargetDateStart = Criteria.where("general_discount.target_date_start").gte(targetDateStart);
-        Criteria generalTargetDateEnd = Criteria.where("general_discount.target_date_end").lte(targetDateEnd);
-        Criteria generalTargetDate = new Criteria().andOperator(generalTargetDateStart, generalTargetDateEnd);
+        Criteria generalTargetDate = buildTimeScopeCriteria("general_discount.target_date_start",
+                targetDateStart, "general_discount.target_date_end", targetDateEnd);
 
         // LastMinute Discount
-        Criteria lastMinuteTargetDateStart = Criteria.where("last_minute_discount.target_date").gte(targetDateStart);
-        Criteria lastMinuteTargetDateEnd = Criteria.where("last_minute_discount.target_date").lte(targetDateEnd);
-        Criteria lastMinuteTargetDate = new Criteria().andOperator(lastMinuteTargetDateStart, lastMinuteTargetDateEnd);
+        Criteria lastMinuteTargetDate = buildTimeScopeCriteria("last_minute_discount.target_date",
+                targetDateStart, "last_minute_discount.target_date", targetDateEnd);
 
         // Code Discount
-        Criteria codeTargetDateStart = Criteria.where("code_discount.target_date_start").gte(targetDateStart);
-        Criteria codeTargetDateEnd = Criteria.where("code_discount.target_date_end").lte(targetDateEnd);
-        Criteria codeTargetDate = new Criteria().andOperator(codeTargetDateStart, codeTargetDateEnd);
+        Criteria codeTargetDate = buildTimeScopeCriteria("code_discount.target_date_start",
+                targetDateStart, "code_discount.target_date_end", targetDateEnd);
 
         return new Criteria().orOperator(generalTargetDate, lastMinuteTargetDate, codeTargetDate);
+    }
+
+    private Criteria buildTimeScopeCriteria(String scopeStartKey, LocalDateTime scopeStart, String scopeEndKey, LocalDateTime scopeEnd) {
+        /* Build time scope criteria */
+
+        Criteria scopteStartCriteria = Criteria.where(scopeStartKey).gte(scopeStart);
+        Criteria scopeEndCriteria = Criteria.where(scopeEndKey).lte(scopeEnd);
+
+        return new Criteria().andOperator(scopteStartCriteria, scopeEndCriteria);
     }
 }
