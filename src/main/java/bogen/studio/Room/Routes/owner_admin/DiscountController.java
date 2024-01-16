@@ -5,6 +5,8 @@ import bogen.studio.Room.DTO.PaginationResult;
 import bogen.studio.Room.Enums.DiscountExecution;
 import bogen.studio.Room.Enums.DiscountPlace;
 import bogen.studio.Room.Enums.DiscountType;
+import bogen.studio.Room.Models.DiscountDetail;
+import bogen.studio.Room.Service.DiscountDetailService;
 import bogen.studio.Room.Service.DiscountService;
 import bogen.studio.Room.documents.Discount;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class DiscountController {
 
     private final DiscountService discountService;
+    private final DiscountDetailService discountDetailService;
 
     @PostMapping("/create")
     public ResponseEntity<String> createDiscount(
@@ -105,5 +108,22 @@ public class DiscountController {
         map.put("data", paginationResult);
 
         return ResponseEntity.ok(map);
+    }
+
+    @GetMapping("/get-detail")
+    public ResponseEntity<?> getDetail(
+            @RequestParam String discountId,
+            Principal principal
+    ) {
+
+        DiscountDetail discountDetail = discountDetailService.buildDiscountDetail(discountId, principal);
+
+        // :(
+        Map<String, Object> map = new HashMap<>();
+        map.put("status", "ok");
+        map.put("data", discountDetail);
+
+        return ResponseEntity.ok(map);
+
     }
 }
