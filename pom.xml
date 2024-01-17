@@ -19,7 +19,8 @@
 <!--        -->
 <!--        <fontDirectory>E:/Reza/company-projects/room/src/main/resources/fonts-extention.jar</fontDirectory>-->
 <!--        -->
-        <fontDirectory>./room/src/main/resources/fonts-extention.jar</fontDirectory>
+<!--        <fontDirectory>./room/src/main/resources/fonts-extention.jar</fontDirectory>-->
+        <fontDirectory>/home/koochita/koochita/room/src/main/resources/fonts-extention.jar</fontDirectory>
     </properties>
 
     <dependencies>
