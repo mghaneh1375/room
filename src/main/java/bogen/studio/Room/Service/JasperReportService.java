@@ -88,7 +88,8 @@ public class JasperReportService {
         // 1.
         String mapPath = neshanMapService.fetchBoomMapPath(request.getRoomId());
         File mapFile = new File(mapPath);
-        File koochitaLogoFile = new File("./room/src/main/resources/voucher_images/koochitaLogo.png");
+        //File koochitaLogoFile = new File("./room/src/main/resources/voucher_images/koochitaLogo.png");
+        File koochitaLogoFile = new File("/home/koochita/koochita/room/src/main/resources/voucher_images/koochitaLogo.png");
 
         // 2.
         ReservationCreatorInfo creatorInfo = financialReportService.buildCreatorInfo(request);
